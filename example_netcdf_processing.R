@@ -10,6 +10,8 @@
 #
 ################################################################################
 
+# Load libraries 
+library(ncdf4)
 
 ################ EXAMPLE 1: WIND SPEED DATA ################ 
 # File is located on IBEEM google drive > L0 > example_netcdf_files
