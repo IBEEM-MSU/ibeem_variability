@@ -121,3 +121,139 @@ save(wind, file="../Data_Processed/wind_weekly.rda")
 # longname="Wind Speed -- raster brick to netCDF",
 # xname="lon",   yname="lat",zname="time",
 # zunit="numeric")
+
+################ EXAMPLE 2: TEMPERATURE DATA (CRU) ################ 
+
+# Example from https://pjbartlein.github.io/REarthSysSci/netCDF.html#introduction 
+# The examples make use of a netCDF file of climate data from the Climate Research Unit http://www.cru.uea.ac.uk/data, 
+# consisting of long-term mean values (1961-1990) of near-surface air temperature on a 0.5-degree grid (for land points). 
+# The dimensions of the array are 720 (longitudes) x 360 (latitudes) x 12 (months), 
+# thus forming a raster “stack” or “brick” consisting of 12 layers.
+# File is located on IBEEM google drive > L0 > example_netcdf_files
+
+# Load packages
+
+library(ncdf4)
+library(chron)
+library(lattice)
+library(RColorBrewer)
+
+# set path and filename
+ncpath <- "~/example_netcdf_files/"
+ncname <- "cru10min30_tmp"  
+ncfname <- paste(ncpath, ncname, ".nc", sep="")
+dname <- "tmp"  #temperature 
+
+# open a netCDF file
+ncin <- nc_open(ncfname)
+print(ncin)
+
+# get longitude and latitude
+lon <- ncvar_get(ncin,"lon")
+nlon <- dim(lon)
+head(lon)
+
+# get longitude and latitude
+lon <- ncvar_get(ncin,"lon")
+nlon <- dim(lon)
+head(lon)
+
+lat <- ncvar_get(ncin,"lat")
+nlat <- dim(lat)
+head(lat)
+
+print(c(nlon,nlat))
+
+# get time
+time <- ncvar_get(ncin,"time")
+time
+tunits <- ncatt_get(ncin,"time","units")
+nt <- dim(time)
+nt
+tunits
+
+# get temperature
+tmp_array <- ncvar_get(ncin,dname)
+dlname <- ncatt_get(ncin,dname,"long_name")
+dunits <- ncatt_get(ncin,dname,"units")
+fillvalue <- ncatt_get(ncin,dname,"_FillValue")
+dim(tmp_array)
+
+# get global attributes
+title <- ncatt_get(ncin,0,"title")
+institution <- ncatt_get(ncin,0,"institution")
+datasource <- ncatt_get(ncin,0,"source")
+references <- ncatt_get(ncin,0,"references")
+history <- ncatt_get(ncin,0,"history")
+Conventions <- ncatt_get(ncin,0,"Conventions")
+
+# close netCDF file
+nc_close(ncfname)
+
+# convert time -- split the time units string into fields
+tustr <- strsplit(tunits$value, " ")
+tdstr <- strsplit(unlist(tustr)[3], "-")
+tmonth <- as.integer(unlist(tdstr)[2])
+tday <- as.integer(unlist(tdstr)[3])
+tyear <- as.integer(unlist(tdstr)[1])
+chron(time,origin=c(tmonth, tday, tyear))
+
+# replace netCDF fill values with NA's
+tmp_array[tmp_array==fillvalue$value] <- NA
+length(na.omit(as.vector(tmp_array[,,1])))
+
+# get a single slice or layer (January)
+m <- 1
+tmp_slice <- tmp_array[,,m]
+
+# quick map (to see if it's working)
+image(lon,lat,tmp_slice, col=rev(brewer.pal(10,"RdBu")))
+
+# create dataframe -- reshape data
+# matrix (nlon*nlat rows by 2 cols) of lons and lats
+lonlat <- as.matrix(expand.grid(lon,lat))
+dim(lonlat)
+
+# vector of `tmp` values
+tmp_vec <- as.vector(tmp_slice)
+length(tmp_vec)
+
+# create dataframe and add names
+tmp_df01 <- data.frame(cbind(lonlat,tmp_vec))
+names(tmp_df01) <- c("lon","lat",paste(dname,as.character(m), sep="_"))
+head(na.omit(tmp_df01), 10)
+
+# reshape the whole array into vector
+tmp_vec_long <- as.vector(tmp_array)
+length(tmp_vec_long)
+
+# reshape the vector into a matrix
+tmp_mat <- matrix(tmp_vec_long, nrow=nlon*nlat, ncol=nt)
+dim(tmp_mat)
+
+head(na.omit(tmp_mat))
+
+# create a dataframe
+lonlat <- as.matrix(expand.grid(lon,lat))
+tmp_df02 <- data.frame(cbind(lonlat,tmp_mat))
+names(tmp_df02) <- c("lon","lat","tmpJan","tmpFeb","tmpMar","tmpApr","tmpMay","tmpJun",
+                     "tmpJul","tmpAug","tmpSep","tmpOct","tmpNov","tmpDec")
+# options(width=96)
+head(na.omit(tmp_df02, 20))
+
+# get the annual mean and mean temp of the warmest and coldest month (MTWA and MTCO)
+tmp_df02$mtwa <- apply(tmp_df02[3:14],1,max) # mtwa
+tmp_df02$mtco <- apply(tmp_df02[3:14],1,min) # mtco
+tmp_df02$mat <- apply(tmp_df02[3:14],1,mean) # annual (i.e. row) means
+head(na.omit(tmp_df02))
+
+dim(na.omit(tmp_df02))
+
+# There's more on converting data frames to arrays and creating netCDF file in the website (https://pjbartlein.github.io/REarthSysSci/netCDF.html#introduction)
+# There's also a module on time-series plots: https://pjbartlein.github.io/REarthSysSci/rasterVis01.html#time-series-plots
+# Also, a handy function to track processing time:
+
+# time an R process
+ptm <- proc.time() # start the timer
+# ... some code ...
+proc.time() - ptm # how long?
