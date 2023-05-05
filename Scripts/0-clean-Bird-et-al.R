@@ -22,9 +22,9 @@ library(tidyverse)
 
 #ignored Data dir on git...small size though so could add it if desired
 #recorded
-table3 <- readxl::read_excel(paste0(dir, 'Data/L0/cobi13486-sup-0003-tables3.xlsx'))
+table3 <- readxl::read_excel(paste0(dir, 'Data/L0/Bird_et_al_2020/cobi13486-sup-0003-tables3.xlsx'))
 #modeled - should use GenLength
-table4 <- readxl::read_excel(paste0(dir, 'Data/L0/cobi13486-sup-0004-tables4.xlsx'))
+table4 <- readxl::read_excel(paste0(dir, 'Data/L0/Bird_et_al_2020/cobi13486-sup-0004-tables4.xlsx'))
 
 
 # combine -----------------------------------------------------------------
@@ -56,6 +56,6 @@ comb <- cbind(t4_mod, t3_mod) %>%
 
 # write out ---------------------------------------------------------------
 
-write.csv(comb, paste0(dir, 'Data/L1/Bird_et_al_gen_legnth_birds.csv'))
+write.csv(comb, paste0(dir, 'Data/L1/Bird_et_al_gen_length_birds.csv'))
 
           
