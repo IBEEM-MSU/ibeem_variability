@@ -18,4 +18,5 @@ Repo structure:
   * `1-process-ncdf.R` - convert ERA netcdf temp and precip to csvs
   * `2-env-metrics.R` - read in env data, calculate env metrics, and plot
   * `example_netcdf_processing.R` - netcdf processing examples
+* `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
