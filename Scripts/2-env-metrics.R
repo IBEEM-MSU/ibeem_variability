@@ -5,7 +5,7 @@
 # - determine how best to chunk up world for metric calculation
 # - write results back to database
 # - create tif files of all env metrics
-# - worth thinking about the most appropraite lags for temporal autocorrelation (in terms of predictability)
+# - worth thinking about the most appropriate lags for temporal autocorrelation (in terms of predictability)
 # - can we fit regression models with t-distributed errors (estimating and not specificy degrees of freedom parameter) in R at a reasonable speed? (seems possibly -> https://stats.stackexchange.com/questions/117980/regression-with-t-distributed-errors-and-massrlm)
 ################
 
