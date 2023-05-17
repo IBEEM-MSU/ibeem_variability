@@ -24,10 +24,12 @@ library(tidyverse)
 library(ncdf4)
 
 
-# function to process data -------------------------------------------------
-
 #function to process temp OR precip data
-proc_fun <- function(type = 'TEMP')
+# startvallat = starting value for lattitude cell (grid is 721 cells tall)
+# startvallon = starting value for longitude cell (frid is 1440 cells wide)
+# lenlat = number of cells tall for each chunk 
+# lenlon = number of cells wide for each chunk
+proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10, lenlat=10)
 {
   #list full file paths - corresponding to var of interest
   if (type == 'TEMP')
@@ -56,8 +58,12 @@ proc_fun <- function(type = 'TEMP')
     
     # Extract data
     # Read lat, lon, and time for each observation
-    lon_360 <- ncdf4::ncvar_get(tt, "longitude")
-    lat <- ncdf4::ncvar_get(tt, "latitude", verbose = F)
+    lon_360 <- ncdf4::ncvar_get(tt, "longitude",
+                                start=startvallon, 
+                                count=lenlon)
+    lat <- ncdf4::ncvar_get(tt, "latitude", verbose = F,
+                            start=startvallat, 
+                            count=lenlat)
     time <- ncdf4::ncvar_get(tt, "time")
     
     #convert lon to -180 to 180
@@ -68,7 +74,7 @@ proc_fun <- function(type = 'TEMP')
     #Replace missing vals in array with NA
     if (type == 'TEMP')
     {
-      var_array <- ncdf4::ncvar_get(tt, "VAR_2T") # 3dim array
+      var_array <- ncdf4::ncvar_get(tt, "VAR_2T", start=c(startvallat,startvallon,1),count=c(lenlat,lenlon,12)) # 3dim array
       fillvalue <- ncdf4::ncatt_get(tt, "VAR_2T","_FillValue")
       var_array[var_array == fillvalue$value] <- NA
       
@@ -77,7 +83,7 @@ proc_fun <- function(type = 'TEMP')
     }
     if (type == 'PREC')
     {
-      var_array <- ncdf4::ncvar_get(tt, "TCRW") # 3dim array
+      var_array <- ncdf4::ncvar_get(tt, "TCRW", start=c(startvallat,startvallon,1),count=c(lenlat,lenlon,12)) # 3dim array
       fillvalue <- ncdf4::ncatt_get(tt, "TCRW","_FillValue")
       var_array[var_array == fillvalue$value] <- NA
       var_array2 <- var_array
