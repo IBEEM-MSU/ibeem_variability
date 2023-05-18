@@ -4,6 +4,7 @@
 #
 # NOTES:
 # -could mask water (has values)
+# -does not yet average months (i.e., works on a single month)
 ################
 
 
@@ -29,7 +30,11 @@ library(ncdf4)
 # startvallon = starting value for longitude cell (frid is 1440 cells wide)
 # lenlat = number of cells tall for each chunk 
 # lenlon = number of cells wide for each chunk
-proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10, lenlat=10)
+# months = vector of numbered months to average over (e.g., 1 is Jan)
+proc_fun <- function(type = 'TEMP', 
+                     startvallat = 500, startvallon = 500, 
+                     lenlon = 10, lenlat = 10,
+                     months = 1)
 {
   #list full file paths - corresponding to var of interest
   if (type == 'TEMP')
@@ -47,7 +52,7 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
   
   
   #loop through files
-  # counter <- 1 #for use in combining all years into single df
+  counter <- 1 #where to slot in data into df
   for (i in 1:length(files))
   {
     #i <- 1
@@ -59,12 +64,12 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     # Extract data
     # Read lat, lon, and time for each observation
     lon_360 <- ncdf4::ncvar_get(tt, "longitude",
-                                start=startvallon, 
-                                count=lenlon)
+                                start = startvallon, 
+                                count = lenlon)
     lat <- ncdf4::ncvar_get(tt, "latitude", verbose = F,
-                            start=startvallat, 
-                            count=lenlat)
-    time <- ncdf4::ncvar_get(tt, "time")
+                            start = startvallat, 
+                            count = lenlat)
+    time <- ncdf4::ncvar_get(tt, "time")[months]
     
     #convert lon to -180 to 180
     lon <- lon_360
@@ -74,7 +79,10 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     #Replace missing vals in array with NA
     if (type == 'TEMP')
     {
-      var_array <- ncdf4::ncvar_get(tt, "VAR_2T", start=c(startvallat,startvallon,1),count=c(lenlat,lenlon,12)) # 3dim array
+      var_array <- ncdf4::ncvar_get(tt, "VAR_2T", 
+                                    start = c(startvallat, startvallon, min(months)), 
+                                    count = c(lenlat, lenlon, max(months))) # 3dim array
+      # var_array <- ncdf4::ncvar_get(tt, "VAR_2T")
       fillvalue <- ncdf4::ncatt_get(tt, "VAR_2T","_FillValue")
       var_array[var_array == fillvalue$value] <- NA
       
@@ -83,7 +91,10 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     }
     if (type == 'PREC')
     {
-      var_array <- ncdf4::ncvar_get(tt, "TCRW", start=c(startvallat,startvallon,1),count=c(lenlat,lenlon,12)) # 3dim array
+      var_array <- ncdf4::ncvar_get(tt, "TCRW", 
+                                    start = c(startvallat, startvallon, min(months)),
+                                    count = c(lenlat, lenlon, max(months))) # 3dim array
+      #var_array <- ncdf4::ncvar_get(tt, "TCRW")
       fillvalue <- ncdf4::ncatt_get(tt, "TCRW","_FillValue")
       var_array[var_array == fillvalue$value] <- NA
       var_array2 <- var_array
@@ -102,6 +113,9 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     # plot(terra::rast(t(temp_slice)))
     ######
     
+    #collapse months into one measure
+    #ADD HERE
+    
     # reshape temp array into vector
     var_array2_long <- round(as.vector(var_array2), 2)
     
@@ -119,8 +133,8 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     }
     
     #add year and month, remove date
-    tmp_df$year <- as.numeric(substring(tmp_df$date, 1, 4))
-    tmp_df$month <- as.numeric(substring(tmp_df$date, 6, 7))
+    tmp_df$year <- lubridate::year(tmp_df$date)
+    tmp_df$month <- lubridate::month(tmp_df$date)
     tmp_df2 <- dplyr::select(tmp_df, -date)
     
     ######
@@ -131,51 +145,63 @@ proc_fun <- function(type = 'TEMP', startvallat=500, startvallon=500, lenlon=10,
     # plot(terra::rast(pp))
     ######
     
-    #for one df all files (hits mem limit on laptop)
-    # #create empty df if first file
-    # if (i == 1)
+    #create empty df if first file
+    if (i == 1)
+    {
+      if (type == 'TEMP')
+      {
+        out <- data.frame(lon = rep(NA, NROW(tmp_df2) * length(files)),
+                          lat = NA,
+                          temp = NA,
+                          year = NA,
+                          month = NA)
+      }
+      if (type == 'PREC')
+      {
+        out <- data.frame(lon = rep(NA, NROW(tmp_df2) * length(files)),
+                          lat = NA,
+                          precip = NA,
+                          year = NA,
+                          month = NA)
+      }
+    }
+
+    #fill df
+    out[counter:(counter + NROW(tmp_df2) - 1),] <- tmp_df2
+    #advance counter
+    counter <- counter + NROW(tmp_df2)
+    
+    # #write out on csv per year
+    # if (type == 'TEMP')
     # {
-    #   out <- data.frame(lon = rep(NA, NROW(tmp_df2) * length(files)),
-    #                     lat = NA,
-    #                     year = NA,
-    #                     month = NA,
-    #                     temp = NA)
+    #   write.csv(tmp_df2, paste0(out_dir_temp, 'Temp-', tmp_df2$year[1], '.csv'),
+    #             row.names = FALSE)
     # }
-    # 
-    # #fill df
-    # out[counter:(counter + NROW(tmp_df2)) - 1] <- tmp_df2
-    # #advance counter
-    # counter <- counter + NROW(tmp_df2)
+    # if (type == 'PREC')
+    # {
+    #   write.csv(tmp_df2, paste0(out_dir_precip, 'Precip-', tmp_df2$year[1], '.csv'),
+    #             row.names = FALSE)
+    # }
     
-    #write out on csv per year
-    if (type == 'TEMP')
-    {
-      write.csv(tmp_df2, paste0(out_dir_temp, 'Temp-', tmp_df2$year[1], '.csv'),
-                row.names = FALSE)
-    }
-    if (type == 'PREC')
-    {
-      write.csv(tmp_df2, paste0(out_dir_precip, 'Precip-', tmp_df2$year[1], '.csv'),
-                row.names = FALSE)
-    }
-    
-    #clean up memory
-    rm(llt)
-    rm(var_array)
-    rm(var_array2)
-    rm(var_array2_long)
-    rm(tmp_df)
-    rm(tmp_df2)
-    gc()
+    # #clean up memory
+    # rm(llt)
+    # rm(var_array)
+    # rm(var_array2)
+    # rm(var_array2_long)
+    # rm(tmp_df)
+    # rm(tmp_df2)
+    # gc()
   }
+  
+  return(out)
 }
 
 
 # run function ------------------------------------------------------------
 
-#writes out csv for each year with lat, lon, year, month, and env variable (temp or precip)
-proc_fun(type = 'TEMP')
-proc_fun(type = 'PREC')
+#writes out data.frame with lat, lon, year, month, and env variable (temp or precip)
+out <- proc_fun(type = 'TEMP')
+out <- proc_fun(type = 'PREC')
 
 
 # combine csvs ------------------------------------------------------------
