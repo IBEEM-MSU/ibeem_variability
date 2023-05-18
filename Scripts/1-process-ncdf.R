@@ -22,7 +22,6 @@ out_dir_precip <- '~/Desktop/precip/'
 
 library(tidyverse)
 library(ncdf4)
-library(data.table)
 
 
 # function ----------------------------------------------------------------
