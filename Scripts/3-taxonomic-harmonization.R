@@ -31,9 +31,11 @@ library(taxize)
 # read in data -------------------------------------------------
 
 #Birdlife range maps - takes a few minutes (10 min?) to read in
+#data location: https://drive.google.com/drive/u/1/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ
 BL_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'BOTW.gdb/a0000000a.gdbtable'))
 
-#life history data
+#bird life history data (processed to L1)
+#data location: https://drive.google.com/drive/u/1/folders/18p2Zn3dMA78hdwrCVQBtJ8dnnLEYa7_w
 LH_data <- read.csv(paste0(life_history_dir, 'Bird_et_al_gen_length_birds.csv'))
 
 #OR read in species names - SEE BELOW
@@ -41,7 +43,7 @@ LH_data <- read.csv(paste0(life_history_dir, 'Bird_et_al_gen_length_birds.csv'))
 
 # process data ------------------------------------------------------------
 
-#IF OBJECTS EXIST - read in
+#IF ITNERMEDIATE OBJECTS EXIST - read in
 # BL_usp <- readRDS(paste0(out_dir, 'BL_names.rds'))
 # LH_usp <- readRDS(paste0(out_dir, 'LH_names.rds'))
 
