@@ -87,7 +87,7 @@ proc_fun <- function(startvallat = 500,
     var_array_precip <- ncdf4::ncvar_get(tt_precip, "TCRW", 
                                   start = c(startvallon, startvallat, min(months)),
                                   count = c(lenlon, lenlat, max(months))) # 3dim array
-    fillvalue_precip <- ncdf4::ncatt_get(tt, "TCRW","_FillValue")
+    fillvalue_precip <- ncdf4::ncatt_get(tt_precip, "TCRW","_FillValue")
     var_array_precip[var_array_precip == fillvalue_precip$value] <- NA
     var_array_precip2 <- var_array_precip
     
