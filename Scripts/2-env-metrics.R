@@ -53,6 +53,7 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      var = rep(c('temp', 'precip'), length(uci)),
                      lon = NA,
                      lat = NA,
+                     mean = NA,
                      slope = NA, #slope of linear model
                      se_slope = NA, #standard error of slope
                      sd_resid = NA, #sd of residuals for linear model
@@ -90,6 +91,7 @@ for (i in 1:length(uci))
   #fill df
   env_df$lon[counter:(counter + 1)] <- rep(te$lon[1], 2)
   env_df$lat[counter:(counter + 1)] <- rep(te$lat[1], 2)
+  env_df$mean[counter:(counter + 1)] <- c(mean(te$temp), mean(te$precip))
   env_df$slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,1], fit_precip$coefficients[2,1])
   env_df$se_slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,2], fit_precip$coefficients[2,2])
   env_df$sd_resid[counter:(counter + 1)] <- c(sd(temp_resid), sd(precip_resid))
