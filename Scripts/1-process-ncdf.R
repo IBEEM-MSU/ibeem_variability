@@ -1,5 +1,5 @@
 ################
-# Convert netcdf ERA data into df
+# Convert netcdf ERA data into df, averaged of specified months
 #
 # args:
 # - in dir
@@ -121,7 +121,7 @@ proc_fun <- function(startvallat = 500,
     var_array_precip3_long <- round(as.vector(var_array_precip3), 2)
     
     # create a dataframe
-    llt <- expand.grid(lon, lat, lubridate::year(ymd_dates))
+    llt <- expand.grid(lon, lat, lubridate::year(ymd_dates)[1])
     tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long)
     
     colnames(tmp_df) <- c('lon', 'lat', 'year', 'temp', 'precip')
