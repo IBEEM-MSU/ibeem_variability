@@ -6,8 +6,8 @@
 # - phylogeny
 # 
 # NOTES:
-# - should decide on taxonomic source to match to
-# - create taxonomic key to match to from each source?
+# - should decide on taxonomic source to match to (itis? col?)
+# - for species that don't have db match but common among data sources, just merge?
 ################
 
 
@@ -26,6 +26,7 @@ out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
 library(tidyverse)
 library(sf)
 library(taxize)
+library(taxadb)
 
 
 # read in data -------------------------------------------------
@@ -72,7 +73,7 @@ BL_usp[which(BL_usp %ni% LH_usp)]
 LH_usp[which(LH_usp %ni% BL_usp)]
 
 
-# match -------------------------------------------------------------------
+# match using taxize package -------------------------------------------------------------------
 
 BL_test <- sort(BL_usp)[1:50]
 LH_test <- sort(LH_usp)[1:50]
@@ -93,4 +94,29 @@ taxize::gnr_resolve(no_match_LH)
 
 #matches between BL and LH of first 50
 length(match(BL_class, LH_class))
+
+
+# match taxadb ------------------------------------------------------------
+
+#taxadb tutorial: https://docs.ropensci.org/taxadb/articles/intro.html
+#paper: https://besjournals-onlinelibrary-wiley-com.libproxy.lib.unc.edu/doi/full/10.1111/2041-210X.13440
+
+BL_test <- sort(BL_usp)[1:100]
+LH_test <- sort(LH_usp)[1:100]
+
+#get species id (catalogue of life db)
+db <- 'itis' #see: https://docs.ropensci.org/taxadb/articles/data-sources.html
+BL_ids <- data.frame(sci_name = BL_test) %>%
+  dplyr::mutate(id = taxadb::get_ids(sci_name, db)) %>%
+  dplyr::mutate(accepted_name = taxadb::get_names(id, db))
+
+LH_ids <- data.frame(sci_name = LH_test) %>%
+  dplyr::mutate(id = taxadb::get_ids(sci_name, db)) %>%
+  dplyr::mutate(accepted_name = taxadb::get_names(id, db))
+
+#some names match betwen BL and LH but don't have a db id
+
+BL_NAs <- dplyr::filter(BL_ids, is.na(accepted_name))
+taxadb::filter_name(BL_NAs$sci_name[1])
+
 
