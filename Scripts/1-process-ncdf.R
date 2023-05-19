@@ -137,7 +137,7 @@ proc_fun <- function(startvallat = 500,
     #create empty df if first file
     if (i == 1)
     {
-      out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files)),
+      out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files_temp)),
                         lat = NA,
                         year = NA,
                         temp = NA,
