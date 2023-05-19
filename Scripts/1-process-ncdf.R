@@ -35,7 +35,7 @@ library(ncdf4)
 # startvallon = starting value for longitude cell (grid is 1440 cells wide)
 # lenlat = number of cells tall for each chunk 
 # lenlon = number of cells wide for each chunk
-# months = vector of numbered months to average over (e.g., 1 is Jan)
+# months = vector of numbered months to average over (e.g., 1 is Jan) - must be consecutive months
 proc_fun <- function(type = 'TEMP', 
                      startvallat = 500, 
                      startvallon = 500, 
