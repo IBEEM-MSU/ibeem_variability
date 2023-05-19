@@ -12,7 +12,6 @@
 
 
 ## Repo structure:
-
 * `Scripts/`
   * `0-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
   * `1-process-ncdf.R` - create time series of env data averaged over specified months
@@ -39,8 +38,8 @@
 * Env L1 - ERA data averaged to specified months (`/mnt/research/ibeem/L1/climate/era5/`)
 * Env L2 - env variability metrics (`/mnt/research/ibeem/L2/climate/era5/`)
 
-## Calculating Env var:
-* Request high mem interactive session (could batch as well):
+## Env time series (avg over specified months):
+* Request high mem interactive session (could batch as well) - may not need nearly this much memory:
   * `salloc -N 1 -c 4 --time=3:59:00 --constraint=amd22 --mem=400gb`
 * Modules to be loaded:
   * `module load GCC/11.2.0`
@@ -49,6 +48,14 @@
 * Average ER5 data over specified months (year, and JJA) to produce L1 data (3 args: in dir, out dir, months):
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 6,7,8`
+
+## Env variability metrics:
+* Request interactive session (could batch as well) - need ~4.25 hours:
+  * `salloc -N 1 -c 4 --time=10:00:00 --mem=50gb`
+* Modules to be loaded:
+  * `module load GCC/11.2.0`
+  * `module load OpenMPI/4.1.1`
+  * `module load R/4.1.2`
 * Calc env variability metrics to produce L2 data (2 args: in file, out file):
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv`
