@@ -77,6 +77,7 @@ env_out <- data.frame(cell_id = uci,
 
 #loop through each cell to calc metrics
 #takes a handful (on the order of 30 min) of minutes on laptop
+time <- proc.time()
 for (i in 1:length(uci))
 {
   #i <- 1
@@ -107,6 +108,8 @@ for (i in 1:length(uci))
   env_out$rho_l4[i] <- ar_fit$acf[5]
   env_out$rho_l5[i] <- ar_fit$acf[6]
 }
+proc.time() - time
+
 
 #save out intermediate object to avoid having to reprocess
 saveRDS(env_out, paste0(sample_output_dir, 'env_var_out.rds'))
