@@ -1,22 +1,22 @@
 ################
 # Convert netcdf ERA data into df
-# calculate env variabilty metrics
 #
-# NOTES:
-# -could mask water (has values)
+# args:
+# - in dir
+# - out dir
+# - months to avg over (separated by comma, no space)
 ################
 
 
-# specify dir -------------------------------------------------------------
+# get args fed to script --------------------------------------------------
 
-#path for data on CY machine - remember trailing slash
-temp_data_dir <- '~/Downloads/T2m/'
-precip_data_dir <- '~/Downloads/PREC/'
+args <- commandArgs(trailingOnly = TRUE)
+#args[1] = in directory (that contains both temp and precip data) - '/mnt/research/ibeem/L0/climate/era5/'
+#args[2] = out directory - where to write file - '/mnt/research/ibeem/L1/climate/era5/'
+#args[3] = months to average over - 1,2,3,4,5,6,7,8,9,10,11,12
 
-#where to write files to
-out_dir_temp <- '~/Desktop/temp/'
-out_dir_precip <- '~/Desktop/precip/'
-
+#convert to numeric
+MONTHS <- as.numeric(strsplit(args[3], ',')[[1]])
 
 # load packages -----------------------------------------------------------
 
@@ -26,7 +26,7 @@ library(ncdf4)
 
 # function ----------------------------------------------------------------
 
-#function to process temp OR precip data
+#function to process temp and precip data
 #returns one data.frame for all years and specified cells
 #with metric averaged over specified months 
 
@@ -36,47 +36,36 @@ library(ncdf4)
 # lenlat = number of cells tall for each chunk 
 # lenlon = number of cells wide for each chunk
 # months = vector of numbered months to average over (e.g., 1 is Jan) - must be consecutive months
-proc_fun <- function(type = 'TEMP', 
-                     startvallat = 500, 
+proc_fun <- function(startvallat = 500, 
                      startvallon = 500, 
                      lenlon = 10, 
                      lenlat = 10,
                      months = 1)
 {
   #list full file paths - corresponding to var of interest
-  if (type == 'TEMP')
-  {
-    files <- grep('moda', list.files(temp_data_dir, full.names = TRUE), value = TRUE)
-  }
-  if (type == 'PREC')
-  {
-    files <- grep('moda', list.files(precip_data_dir, full.names = TRUE), value = TRUE)
-  }
-  if (type != 'TEMP' & type != 'PREC')
-  {
-    stop('Arg "type" must be either "TEMP" or "PREC"')
-  }
-  
-  
+  files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), full.names = TRUE), value = TRUE)
+  files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), full.names = TRUE), value = TRUE)
+
   #loop through files
   counter <- 1 #where to slot in data into df
-  for (i in 1:length(files))
+  for (i in 1:length(files_temp)) #assuming num of temp files are the same as num precip
   {
     #i <- 1
-    print(paste0('Processing ' , type, ' file: ', i, ' of ', length(files)))
+    print(paste0('Processing year: ', i, ' of ', length(files_temp)))
     
     #open netcdf file  
-    tt <- ncdf4::nc_open(files[i])
+    tt_temp <- ncdf4::nc_open(files_temp[i])
+    tt_precip <- ncdf4::nc_open(files_precip[i])
     
     # Extract data
     # Read lat, lon, and time for each observation
-    lon_360 <- ncdf4::ncvar_get(tt, "longitude",
+    lon_360 <- ncdf4::ncvar_get(tt_temp, "longitude",
                                 start = startvallon, 
                                 count = lenlon)
-    lat <- ncdf4::ncvar_get(tt, "latitude", verbose = F,
+    lat <- ncdf4::ncvar_get(tt_temp, "latitude", verbose = F,
                             start = startvallat, 
                             count = lenlat)
-    time <- ncdf4::ncvar_get(tt, "time")[months]
+    time <- ncdf4::ncvar_get(tt_temp, "time")[months]
     
     #convert lon to -180 to 180
     lon <- lon_360
@@ -84,31 +73,27 @@ proc_fun <- function(type = 'TEMP',
     
     #extract temp/precip data
     #Replace missing vals in array with NA
-    if (type == 'TEMP')
-    {
-      var_array <- ncdf4::ncvar_get(tt, "VAR_2T", 
-                                    start = c(startvallon, startvallat, min(months)), 
-                                    count = c(lenlon, lenlat, max(months))) # 3dim array
-      # var_array <- ncdf4::ncvar_get(tt, "VAR_2T")
-      fillvalue <- ncdf4::ncatt_get(tt, "VAR_2T","_FillValue")
-      var_array[var_array == fillvalue$value] <- NA
-      
-      #convert from K to C
-      var_array2 <- var_array - 273.15
-    }
-    if (type == 'PREC')
-    {
-      var_array <- ncdf4::ncvar_get(tt, "TCRW", 
-                                    start = c(startvallon, startvallat, min(months)),
-                                    count = c(lenlon, lenlat, max(months))) # 3dim array
-      #var_array <- ncdf4::ncvar_get(tt, "TCRW")
-      fillvalue <- ncdf4::ncatt_get(tt, "TCRW","_FillValue")
-      var_array[var_array == fillvalue$value] <- NA
-      var_array2 <- var_array
-    }
+    #temp
+    var_array_temp <- ncdf4::ncvar_get(tt_temp, "VAR_2T", 
+                                       start = c(startvallon, startvallat, min(months)), 
+                                       count = c(lenlon, lenlat, max(months))) # 3dim array
+    fillvalue_temp <- ncdf4::ncatt_get(tt_temp, "VAR_2T","_FillValue")
+    var_array_temp[var_array_temp == fillvalue_temp$value] <- NA
+    
+    #convert from K to C
+    var_array_temp2 <- var_array_temp - 273.15
+    
+    #precip
+    var_array_precip <- ncdf4::ncvar_get(tt_precip, "TCRW", 
+                                  start = c(startvallon, startvallat, min(months)),
+                                  count = c(lenlon, lenlat, max(months))) # 3dim array
+    fillvalue_precip <- ncdf4::ncatt_get(tt, "TCRW","_FillValue")
+    var_array_precip[var_array_precip == fillvalue_precip$value] <- NA
+    var_array_precip2 <- var_array_precip
     
     # Close netcdf file
-    ncdf4::nc_close(tt)
+    ncdf4::nc_close(tt_temp)
+    ncdf4::nc_close(tt_precip)
     
     #covert dates to ymd
     ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
@@ -116,60 +101,47 @@ proc_fun <- function(type = 'TEMP',
     ######
     # #Check - plot rast
     # library(terra)
-    # temp_slice <- var_array2[,,1]
+    # temp_slice <- var_array_temp2[,,1]
     # plot(terra::rast(t(temp_slice)))
     ######
     
     #collapse months into one measure if there is more than one month
     #collapse date into single measure
-    if (length(dim(var_array2)) > 2)
+    if (length(months) > 1)
     {
-      var_array3 <- apply(var_array2, c(1, 2), mean)
+      var_array_temp3 <- apply(var_array_temp2, c(1, 2), mean)
+      var_array_precip3 <- apply(var_array_precip2, c(1, 2), mean)
     } else {
-      var_array3 <- var_array2
+      var_array_temp3 <- var_array_temp2
+      var_array_precip3 <- var_array_precip2
     }
     
     # reshape temp array into vector
-    var_array3_long <- round(as.vector(var_array3), 2)
+    var_array_temp3_long <- round(as.vector(var_array_temp3), 2)
+    var_array_precip3_long <- round(as.vector(var_array_precip3), 2)
     
     # create a dataframe
     llt <- expand.grid(lon, lat, lubridate::year(ymd_dates))
-    tmp_df <- data.frame(llt, var_array3_long)
+    tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long)
     
-    if (type == 'TEMP')
-    {
-      colnames(tmp_df) <- c('lon', 'lat', 'year', 'temp')
-    }
-    if (type == 'PREC')
-    {
-      colnames(tmp_df) <- c('lon', 'lat', 'year', 'precip')
-    }
+    colnames(tmp_df) <- c('lon', 'lat', 'year', 'temp', 'precip')
     
     ######
     # #Check - turn df into rast
     # library(terra)
     # pp <- dplyr::filter(tmp_df) %>%
-    #   dplyr::select(-year)
+    #   dplyr::select(-year, -precip)
     # plot(terra::rast(pp))
     ######
     
     #create empty df if first file
     if (i == 1)
     {
-      if (type == 'TEMP')
-      {
-        out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files)),
-                          lat = NA,
-                          year = NA,
-                          temp = NA)
-      }
-      if (type == 'PREC')
-      {
-        out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files)),
-                          lat = NA,
-                          year = NA,
-                          precip = NA)
-      }
+      out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files)),
+                        lat = NA,
+                        year = NA,
+                        temp = NA,
+                        precip = NA)
     }
 
     #fill df
@@ -193,31 +165,25 @@ proc_fun <- function(type = 'TEMP',
 
 # run function ------------------------------------------------------------
 
-#writes out data.frame with lat, lon, year, month, and env variable (temp or precip)
-temp_out <- proc_fun(type = 'TEMP', 
-                     startvallat = 1, 
+#writes out data.frame with lat, lon, year, month, temp and precip
+env_out <- proc_fun(startvallat = 1, 
                      startvallon = 1,
                      lenlon = 1440, #entire world
                      lenlat = 721, #entire world
-                     months = 1) # JAN
-
-#precip_out <- proc_fun(type = 'PREC')
+                     months = MONTHS)
 
 
 # check -------------------------------------------------------------------
 
 # library(terra)
-# pp <- dplyr::filter(temp_out, year == 1979) %>%
-#   dplyr::select(-year)
+# pp <- dplyr::filter(env_out, year == 1979) %>%
+#   dplyr::select(-year, -precip)
 # plot(terra::rast(pp))
 
 
 # write to csv ------------------------------------------------------------
 
-#VAR-MONTHS.csv
-write.csv(temp_out, paste0(out_dir_temp, 'Temp-', 
-                           paste0(as.character(months), collapse = '_'), '.csv'), 
-          row.names = FALSE)
-write.csv(precip_out, paste0(out_dir_precip, 'Precip-', 
-                             paste0(as.character(months), collapse = '_'), '.csv'), 
+#ERA5-MONTHS.csv
+write.csv(env_out, paste0(args[2], 'ERA5-', 
+                           paste0(MONTHS, collapse = '_'), '.csv'), 
           row.names = FALSE)
