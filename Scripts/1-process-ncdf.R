@@ -76,7 +76,7 @@ proc_fun <- function(startvallat = 500,
     #temp
     var_array_temp <- ncdf4::ncvar_get(tt_temp, "VAR_2T", 
                                        start = c(startvallon, startvallat, min(months)), 
-                                       count = c(lenlon, lenlat, max(months))) # 3dim array
+                                       count = c(lenlon, lenlat, length(months))) # 3dim array
     fillvalue_temp <- ncdf4::ncatt_get(tt_temp, "VAR_2T","_FillValue")
     var_array_temp[var_array_temp == fillvalue_temp$value] <- NA
     
@@ -86,7 +86,7 @@ proc_fun <- function(startvallat = 500,
     #precip
     var_array_precip <- ncdf4::ncvar_get(tt_precip, "TCRW", 
                                   start = c(startvallon, startvallat, min(months)),
-                                  count = c(lenlon, lenlat, max(months))) # 3dim array
+                                  count = c(lenlon, lenlat, length(months))) # 3dim array
     fillvalue_precip <- ncdf4::ncatt_get(tt_precip, "TCRW","_FillValue")
     var_array_precip[var_array_precip == fillvalue_precip$value] <- NA
     var_array_precip2 <- var_array_precip
