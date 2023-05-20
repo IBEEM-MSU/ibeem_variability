@@ -68,6 +68,16 @@ dplyr::filter(env_out, var == 'temp') %>%
   plot(main = 'TEMP - skew')
 
 dplyr::filter(env_out, var == 'temp') %>%
-  dplyr::select(lon, lat, rho_l1) %>%
+  dplyr::select(lon, lat, rho_l1^2) %>%
   terra::rast() %>%
   plot(main = 'TEMP - rho_l1')
+
+#which areas are highly predictable (P) on short time scales (S) and have low intrinsic variability (IV)?
+#high P, short S, low IV = short LH
+#low P, long S, high IV = long LH
+
+#high P/short S = faster LH
+#high IV = slower LH
+
+#is P at lag = gen time the same across all species?
+
