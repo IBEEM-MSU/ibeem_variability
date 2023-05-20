@@ -13,11 +13,14 @@
 
 ## Repo structure:
 * `Scripts/`
-  * `0-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
-  * `1-process-ncdf.R` - create time series of env data averaged over specified months
-  * `2-env-metrics.R` - calculate env variability metrics
-  * `3-taxonomic-harmonization.R` - sort out naming differences
-  * `X-explore-env-var.R` - explore environmental variabilty metrics
+  * `1-clean-data/`
+    * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
+    * `1b-process-ncdf.R` - create time series of env data averaged over specified months
+    * `1c-taxonomic-harmonization.R` - sort out naming differences
+  * `2-env-metrics/`
+    * `2-env-metrics.R` - calculate env variability metrics
+    * `2-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
+  * `3-explore-env-var.R` - explore environmental variability metrics
   * `example_netcdf_processing.R` - netcdf processing examples
 * `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
@@ -46,8 +49,8 @@
   * `module load OpenMPI/4.1.1`
   * `module load R/4.1.2`
 * Average ER5 data over specified months (year, and JJA) to produce L1 data (3 args: in dir, out dir, months):
-  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
-  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 6,7,8`
+  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
+  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 6,7,8`
 
 ## Env variability metrics:
 * Request interactive session (could batch as well) - need ~4.25 hours:
@@ -57,5 +60,5 @@
   * `module load OpenMPI/4.1.1`
   * `module load R/4.1.2`
 * Calc env variability metrics to produce L2 data (2 args: in file, out file):
-  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
-  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv`
+  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
+  * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv`
