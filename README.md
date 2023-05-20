@@ -45,20 +45,20 @@
 * Request high mem interactive session (could batch as well) - may not need nearly this much memory:
   * `salloc -N 1 -c 4 --time=3:59:00 --constraint=amd22 --mem=400gb`
 * Modules to be loaded:
-  * `module load GCC/11.2.0`
-  * `module load OpenMPI/4.1.1`
-  * `module load R/4.1.2`
+  * `module load GCC/8.3.0`
+  * `module load OpenMPI/3.1.4`
+  * `module load R/4.1.0`
 * Average ER5 data over specified months (year, and JJA) to produce L1 data (3 args: in dir, out dir, months):
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 6,7,8`
 
 ## Env variability metrics:
-* Request interactive session (could batch as well) - need ~4.25 hours:
-  * `salloc -N 1 -c 4 --time=10:00:00 --mem=50gb`
+* Request interactive session (could batch as well):
+  * `salloc -N 1 -c 4 --time=14:00:00 --mem=50gb`
 * Modules to be loaded:
-  * `module load GCC/11.2.0`
-  * `module load OpenMPI/4.1.1`
-  * `module load R/4.1.2`
+  * `module load GCC/8.3.0`
+  * `module load OpenMPI/3.1.4`
+  * `module load R/4.1.0`
 * Calc env variability metrics to produce L2 data (2 args: in file, out file):
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv`
