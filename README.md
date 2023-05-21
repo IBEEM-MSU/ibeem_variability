@@ -53,8 +53,8 @@
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/L0/climate/era5/ /mnt/research/ibeem/L1/climate/era5/ 6,7,8`
 
 ## Env variability metrics:
-* Request interactive session (could batch as well):
-  * `salloc -N 1 -c 4 --time=14:00:00 --mem=50gb`
+* Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
+  * `salloc -N 1 -c 4 --time=40:00:00 --mem=50gb`
 * Modules to be loaded:
   * `module load GCC/8.3.0`
   * `module load OpenMPI/3.1.4`
