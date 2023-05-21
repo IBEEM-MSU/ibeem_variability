@@ -1,5 +1,5 @@
 ################
-# Calc env variability metrics - detrend with GAM instead of linear regression
+# Calc env variability metrics
 #
 # args:
 # - in file
@@ -81,11 +81,15 @@ for (i in 1:length(uci))
   
   te <- env_out2[cell_id == uci[i],]
   
+  #linear model fit
+  fit_temp <- summary(lm(temp ~ year, data = te))
+  fit_precip <- summary(lm(precip ~ year, data = te))
+  
   #GAM model fit
   gam_temp <- mgcv::gam(temp ~ year, data = te)
   gam_precip <- mgcv::gam(precip ~ year, data = te)
   
-  #residuals from GAM
+  #residuals from model
   temp_resid <- residuals(gam_temp)
   precip_resid <- residuals(gam_precip)
   
@@ -96,12 +100,17 @@ for (i in 1:length(uci))
   #period = 1/freq; ~2 - 36 years
   temp_spec <- lomb::lsp(temp_resid, from = 0.0278, to = 0.5, type = 'frequency',
                          normalize =  'standard', plot = FALSE)
-  pecip_spec <- lomb::lsp(precip_resid, from = 0.0278, to = 0.5, type = 'frequency',
-                          normalize =  'standard', plot = FALSE)
-  
   #spectral exponent (1/f^beta)
-  temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))
-  precip_spec_fit <- summary(lm(log10(precip_spec$power) ~ log10(precip_spec$scanned)))
+  temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
+  #precip - only run if residuals exist (i.e., all precip values were not 0)
+  if (sum(precip_resid) > 0)
+  {
+    precip_spec <- lomb::lsp(precip_resid, from = 0.0278, to = 0.5, type = 'frequency',
+                             normalize =  'standard', plot = FALSE)
+    precip_spec_fit <- summary(lm(log10(precip_spec$power) ~ log10(precip_spec$scanned)))$coefficients[,1]
+  } else {
+    precip_spec_fit <- rep(NA, 2)
+  }
   
   #temporal autocorrelation
   temp_acf <- acf(temp_resid, lag.max = 5, plot = FALSE)
@@ -120,10 +129,10 @@ for (i in 1:length(uci))
                                           moments::kurtosis(precip_resid))
   env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
                                           moments::skewness(precip_resid))
-  env_df$spectral_alpha[counter:(counter + 1)] <- c(temp_spec_fit$coefficients[1,1], 
-                                                    precip_spec_fit$coefficients[1,1])
-  env_df$spectral_beta[counter:(counter + 1)] <- c(temp_spec_fit$coefficients[2,1] * -1, 
-                                                   precip_spec_fit$coefficients[2,1] * -1)
+  env_df$spectral_alpha[counter:(counter + 1)] <- c(temp_spec_fit[1], 
+                                                    precip_spec_fit[1])
+  env_df$spectral_beta[counter:(counter + 1)] <- c(temp_spec_fit[2] * -1, 
+                                                   precip_spec_fit[2] * -1)
   env_df$rho_l1[counter:(counter + 1)] <- c(temp_acf$acf[2], precip_acf$acf[2])
   env_df$rho_l2[counter:(counter + 1)] <- c(temp_acf$acf[3], precip_acf$acf[3])
   env_df$rho_l3[counter:(counter + 1)] <- c(temp_acf$acf[4], precip_acf$acf[4])
