@@ -86,8 +86,8 @@ for (i in 1:length(uci))
   fit_precip <- summary(lm(precip ~ year, data = te))
   
   #GAM model fit
-  gam_temp <- mgcv::gam(temp ~ year, data = te)
-  gam_precip <- mgcv::gam(precip ~ year, data = te)
+  gam_temp <- mgcv::gam(temp ~ s(year), data = te)
+  gam_precip <- mgcv::gam(precip ~ s(year), data = te)
   
   #residuals from model
   temp_resid <- residuals(gam_temp)
