@@ -46,6 +46,7 @@ env_out <- read.csv(args[1])
 env_out2 <- dplyr::group_by(env_out, lat, lon) %>%
   dplyr::mutate(cell_id = cur_group_id()) %>%
   dplyr::ungroup() %>%
+  dplyr::arrange(cell_id, year) %>%
   data.table::as.data.table()
 
 #unique cells
@@ -94,15 +95,23 @@ for (i in 1:length(uci))
   #following Marshall and Burgess 2015 Eco Letters
   #see also Vasseur and Yodzis 2004 Ecology
   #period = 1/freq; ~2 - 36 years
-  temp_spec <- lomb::lsp(temp_resid, from = 0.0278, to = 0.5, type = 'frequency',
-                         normalize =  'standard', plot = FALSE)
+  ll_freq <- 0.0278
+  ul_freq <- 0.5
+  temp_spec <- lomb::lsp(temp_resid, 
+                         from = ll_freq, to = ul_freq, 
+                         type = 'frequency',
+                         normalize =  'standard', 
+                         plot = FALSE)
   #spectral exponent (1/f^beta)
   temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
   #precip - only run if residuals exist (i.e., all precip values were not 0)
   if (sum(precip_resid) > 0)
   {
-    precip_spec <- lomb::lsp(precip_resid, from = 0.0278, to = 0.5, type = 'frequency',
-                             normalize =  'standard', plot = FALSE)
+    precip_spec <- lomb::lsp(precip_resid, 
+                             from = ll_freq, to = ul_freq, 
+                             type = 'frequency', 
+                             normalize = 'standard', 
+                             plot = FALSE)
     precip_spec_fit <- summary(lm(log10(precip_spec$power) ~ log10(precip_spec$scanned)))$coefficients[,1]
   } else {
     precip_spec_fit <- rep(NA, 2)

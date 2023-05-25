@@ -46,6 +46,7 @@ env_out <- read.csv(args[1])
 env_out2 <- dplyr::group_by(env_out, lat, lon) %>%
   dplyr::mutate(cell_id = cur_group_id()) %>%
   dplyr::ungroup() %>%
+  dplyr::arrange(cell_id, year) %>%
   data.table::as.data.table()
 
 #unique cells
