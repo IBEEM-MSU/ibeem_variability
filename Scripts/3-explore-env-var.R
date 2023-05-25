@@ -8,7 +8,7 @@
 
 # Specify dir --------------------------------------------------
 
-XXXX
+dir <- '~/Downloads/era5/'
 
 
 # load packages -----------------------------------------------------------
@@ -19,19 +19,24 @@ library(terra)
 
 # read in data -------------------------------------------------
 
-env_out <- read.csv('~/Downloads/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')
-# env_out <- read.csv('/mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv')
-
+env_out <- read.csv(paste0(dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+env_GAM_out <- read.csv(paste0(dir, 'Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+env_out <- env_GAM_out
 
 # stats -------------------------------------------------------------------
 
 head(env_out)
+#degrees C per year
 dplyr::filter(env_out, var == 'temp') %>%
   summarize(median(slope))
 dplyr::filter(env_out, var == 'temp') %>%
   summarize(median(kurt))
 dplyr::filter(env_out, var == 'temp') %>%
   summarize(median(skew))
+dplyr::filter(env_out, var == 'temp') %>%
+  summarize(median(spectral_beta))
+dplyr::filter(env_out, var == 'temp') %>%
+  summarize(median(rho_l1))
 
 
 # plots -----------------------------------------------------------------
@@ -67,12 +72,19 @@ dplyr::filter(env_out, var == 'temp') %>%
   terra::rast() %>%
   plot(main = 'TEMP - skew')
 
+#need to figure out why there are some negative values...
 dplyr::filter(env_out, var == 'temp') %>%
-  dplyr::select(lon, lat, rho_l1^2) %>%
+  dplyr::select(lon, lat, spectral_beta) %>%
   terra::rast() %>%
-  plot(main = 'TEMP - rho_l1')
+  plot(main = 'TEMP - spectral exponent')
 
-#which areas are highly predictable (P) on short time scales (S) and have low intrinsic variability (IV)?
+dplyr::filter(env_out, var == 'temp') %>%
+  dplyr::mutate(rho2_l1 = rho_l1^2) %>%
+  dplyr::select(lon, lat, rho2_l1) %>%
+  terra::rast() %>%
+  plot(main = 'TEMP - rho^2_l1')
+
+#which areas are highly predictable (P; high temporal autocorrelation) on short time scales (S) and have low intrinsic variability (IV)?
 #high P, short S, low IV = short LH
 #low P, long S, high IV = long LH
 
