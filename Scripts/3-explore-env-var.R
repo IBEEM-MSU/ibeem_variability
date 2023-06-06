@@ -8,34 +8,76 @@
 
 # Specify dir --------------------------------------------------
 
-dir <- '~/Downloads/era5/'
+#path CY machine
+dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
 
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
 library(terra)
+library(sf)
 
 
 # read in data -------------------------------------------------
 
-env_var <- read.csv(paste0(dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-env_GAM_var <- read.csv(paste0(dir, 'Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+#environmental variability
+env_var <- read.csv(paste0(dir, 'Data/L2/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+env_var_GAM <- read.csv(paste0(dir, 'Data/L2/Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+
+#landmask
+lm <- sf::st_read(paste0(dir, 'Data/L0/landmask/ne_10m_land.shp')) %>%
+  dplyr::filter(featurecla == 'Land')
+
+
+# rasterize and mask env var data -------------------------------------------------------
+
+#multiband raster (each band different env metric)
+#var = temp or precip
+#function
+mbr_fun <- function(input, VAR)
+{
+  #rasterize
+  trast <- dplyr::filter(input, var == VAR) %>%
+    dplyr::select(-cell_id, -var) %>%
+    terra::rast(crs = "epsg:4326") %>%
+    #mask out water
+    terra::mask(terra::vect(lm))
+  
+  #get relative slope
+  sl_resid <- trast[['slope']] / trast[['sd_resid']]
+  names(sl_resid) <- 'rel_slope'
+  
+  #add band
+  trast2 <- c(trast, sl_resid)
+  
+  return(trast2)
+}
+
+
+#run function - putting some cells outside of lat/lon bounds for some reason
+ev_temp <- mbr_fun(input = env_var, VAR = 'temp')
+ev_precip <- mbr_fun(input = env_var, VAR = 'precip')
+ev_temp_GAM <- mbr_fun(input = env_var_GAM, VAR = 'temp')
+ev_precip_GAM <- mbr_fun(input = env_var_GAM, VAR = 'precip')
+
+#bands
+names(ev_temp)
+
+#check
+# plot(ev_temp[[1]])
 
 
 # stats -------------------------------------------------------------------
 
-#degrees C per year
-dplyr::filter(env_var, var == 'temp') %>%
-  summarize(median(slope))
-dplyr::filter(env_var, var == 'temp') %>%
-  summarize(median(kurt))
-dplyr::filter(env_var, var == 'temp') %>%
-  summarize(median(skew))
-dplyr::filter(env_var, var == 'temp') %>%
-  summarize(median(spectral_beta))
-dplyr::filter(env_var, var == 'temp') %>%
-  summarize(median(rho_l1))
+#median over globe
+terra::global(ev_temp[['slope']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['sd_resid']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['kurt']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['skew']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['spectral_beta']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['rho_l1']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(ev_temp[['rel_slope']], fun = function(x) median(x, na.rm = TRUE))
 
 
 # plots -----------------------------------------------------------------
@@ -44,44 +86,46 @@ dplyr::filter(env_var, var == 'temp') %>%
 #                            lon > -170, lon < -50,
 #                            lat > 15, lat < 75)
 
-#convert to raster to visualize
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::select(lon, lat, slope) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - slope')
+#function to plot lm and gam
+gc_fun <- function(rast, rast_gam, var)
+{
+  par(mfrow = c(2,1))
+  
+  #get range of values  
+  rng <- range(terra::global(c(rast[[var]], rast_gam[[var]]), 
+                             fun = function(x) range(x, na.rm = TRUE)))
+  plot(rast[[var]], 
+       main = var,
+       range = rng)
+  plot(rast_gam[[var]], 
+       main = paste0(var, ' - GAM'),
+       range = rng)
+}
 
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::select(lon, lat, sd_resid) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - sd resid')
+#run fun
+#slope doesn't vary since calcated with lm for both
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'slope')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'sd_resid')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'kurt')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'skew')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'spectral_beta')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'rho_l1')
+gc_fun(rast = ev_temp, 
+       rast_gam = ev_temp_GAM,
+       var = 'rel_slope')
 
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::mutate(sl_sd = slope / sd_resid) %>%
-  dplyr::select(lon, lat, sl_sd) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - slope/sd')
-
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::select(lon, lat, kurt) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - kurt')
-
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::select(lon, lat, skew) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - skew')
-
-#need to figure out why there are some negative values...
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::select(lon, lat, spectral_beta) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - spectral exponent')
-
-dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::mutate(rho2_l1 = rho_l1^2) %>%
-  dplyr::select(lon, lat, rho2_l1) %>%
-  terra::rast() %>%
-  plot(main = 'TEMP - rho^2_l1')
 
 #which areas are highly predictable (P; high temporal autocorrelation) on short time scales (S) and have low intrinsic variability (IV)?
 #high P, short S, low IV = short LH
