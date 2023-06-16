@@ -62,3 +62,11 @@
 * Calc env variability metrics to produce L2 data (2 args: in file, out file):
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
   * `Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/L2/climate/era5/Env-var-6_7_8.csv`
+
+## Extracting env and trait data for each species
++ Code for initial processing for birds (breeding season) is in `Scripts/4-extract-species-env`
++ Currently using species with ITIS ids, did not resolve NAs. 
++ Generates a main file with each row a species (with associated ITIS ID and accepted name). Each column contains either the average of one of the environmental variables across the range of the species, or some trait value. 
++ Main file is stored in `/mnt/research/ibeem/data/L2/main-bird-data.csv` and is also in the [`L2` folder on Google drive](https://drive.google.com/drive/folders/1c4dF8AEgOf7zvVUd5GTUT7vzj5hoLuGj). 
++ Trait data in the master file currently include values from Bird et al and AVONET. Can add in ELTON later on if there is something specific we want from there. The column name has the data source as a prefix. See metadata for the data sources for specific info.
+
