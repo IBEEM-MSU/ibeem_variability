@@ -85,6 +85,43 @@ gen_pts_all <- base_plt +
 gen_pts_wo_seabirds_coastal
 gen_pts_all
 
+#plot by habitat type
+(uhab <- unique(bird_df$avonet.Habitat))
+hab_fun <- function(habitat)
+{
+  bird_t <- dplyr::filter(bird_df, avonet.Habitat == habitat)
+  fun_plt <- base_plt +
+    geom_point(data = bird_t,
+               aes(avonet.Centroid.Longitude, avonet.Centroid.Latitude,
+                   col = log(bird.et.al.GenLength)),
+               alpha = 0.8,
+               size = 1.1) +
+    scale_color_viridis() +
+    ggtitle(habitat) +
+    xlab('Longitude') +
+    ylab('Latitude')
+
+    print(fun_plt)
+}
+
+hab_fun(habitat = 'Forest')
+hab_fun(habitat = 'Woodland')
+hab_fun(habitat = 'Wetland')
+hab_fun(habitat = 'Shrubland')
+hab_fun(habitat = 'Grassland')
+hab_fun(habitat = 'Rock')
+hab_fun(habitat = 'Desert')
+hab_fun(habitat = 'Coastal')
+hab_fun(habitat = 'Marine')
+hab_fun(habitat = 'Riverine')
+hab_fun(habitat = 'Human Modified')
+
+dplyr::filter(bird_df, 
+              avonet.Habitat == 'Grassland', 
+              avonet.Centroid.Latitude > 60,
+              avonet.Centroid.Longitude < 20,
+              avonet.Centroid.Longitude > -20)
+
 
 # quick and dirty GAM spatial model ---------------------------------------
 
@@ -96,6 +133,17 @@ plot(sg_fit, contour.col = 'black', too.far = 0.2, scheme = 2, rug = TRUE,
      main = 'GAM spatial - Red = short gen, Yellow = long gen',
      xlab = 'Longitude',
      ylab = 'Latitude')
+
+#with sd temp included as covariate
+sg_fit2 <- mgcv::gam(log(bird_df2$bird.et.al.GenLength) ~ s(bird_df2$avonet.Centroid.Longitude, 
+                                                           bird_df2$avonet.Centroid.Latitude) +
+                       bird_df2$sd_resid_temp)
+
+plot(sg_fit2, contour.col = 'black', too.far = 0.2, scheme = 2, rug = TRUE,
+     main = 'GAM spatial + sd temp - Red = short gen, Yellow = long gen',
+     xlab = 'Longitude',
+     ylab = 'Latitude')
+summary(sg_fit2)
 
 
 # filter data -----------------------------------------------------------------
