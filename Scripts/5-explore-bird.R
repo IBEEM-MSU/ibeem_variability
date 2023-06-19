@@ -2,7 +2,7 @@
 # Initial exploration bird
 #
 # Notes:
-# - might be good to do PCA to collapse env var metrics -> e.g., mean temp, sd temp, rho_l1_temp
+# - might be good to do PCA to collapse env var metrics -> e.g., mean temp, sd temp, rho_l1_temp (see end of script)
 # - responses are likely to vary by habitat, trophic level, migratory status
 # - might be good to get number of species coexists at a given cell? (via rasterizing range maps)
 ################
@@ -292,4 +292,33 @@ ggplot(tt5, aes(sd_resid_temp, log(bird.et.al.GenLength),
   ylim(c(0, 3)) +
   theme_bw() +
   ggtitle('Shrubland birds')
+
+
+# PCA env var -------------------------------------------------------------
+
+bird_df3 <- dplyr::filter(bird_df2, !is.na(mean_temp), 
+              !is.na(sd_resid_temp), 
+              !is.na(rho_l1_temp),
+              avonet.Habitat == 'Forest',
+              avonet.Trophic.Level == 'Herbivore')
+
+pr_fit <- prcomp(cbind(bird_df3$mean_temp, 
+                       bird_df3$sd_resid_temp,
+                       bird_df3$rho_l1_temp), scale = TRUE)
+
+#INTERPRETATION OF PC DEPENDS ON GROUPING
+#for forest herbivore
+#pos PC1 = low temp, high sd, slightly low rho
+#pos PC2 = slightly low sd, low rho
+factoextra::fviz_pca_var(pr_fit,
+                         #geom = 'arrow',
+                         #col.var = "contrib", # Color by contributions to the PC
+                         #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         repel = FALSE)
+#first 2 PC
+bird_df3$PC1 <- pr_fit$x[,1]
+bird_df3$PC2 <- pr_fit$x[,2]
+
+summary(lm(log(bird.et.al.GenLength) ~ PC1 + PC2, data = bird_df3))
+summary(lm(log(bird.et.al.GenLength) ~ sd_resid_temp, data = bird_df3))
 
