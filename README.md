@@ -21,6 +21,8 @@
     * `2-env-metrics.R` - calculate env variability metrics
     * `2-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
   * `3-explore-env-var.R` - explore environmental variability metrics
+  * `4-extract-species-env/` - extract env var data from species ranges
+  * `5-explore-bird.R` - explore joined bird life history/env data
   * `example_netcdf_processing.R` - netcdf processing examples
 * `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
