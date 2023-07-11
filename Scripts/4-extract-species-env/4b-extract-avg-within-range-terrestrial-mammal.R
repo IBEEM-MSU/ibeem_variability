@@ -7,19 +7,19 @@ library(tidyverse)
 library(sf)
 
 # Specify directory -------------------------------------------------------
-mam.dir <- '../terrestrial-mammal/'
-env.dir <- '../env/'
-out.dir <- '../env_out/'
+MAM.dir <- '/mnt/research/ibeem/data/L1/range-mammal/'
+env.dir <- '/mnt/research/ibeem/L2/climate/era5/'
+out.dir <- '/mnt/research/ibeem/data/L2/range-env-pieces/'
 
 # Get the current file to process -----------------------------------------
-# file.name <- commandArgs(trailingOnly = TRUE)
+file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
 # file.name <- 'BLIDsPiece-14.rda'
-# if(length(file.name) == 0) base::stop('Need to give the file name to process')
+if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 # Read in data ------------------------------------------------------------
 # Loads in current set of ids (a vector called ids)
-mam <- st_read(paste0(mam.dir, "terrestrial-mammals-clean.shp"))
+load(paste0(MAM.dir, file.name))
 # Climate data (takes a couple of minutes to load
 # NOTE: can change this to the GAM stuff if that's what we want.
 env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
@@ -46,11 +46,10 @@ id.indx <- which(colnames(avg.clim.df) == 'id')
 avg.clim.df <- as.data.frame(avg.clim.df)
 
 start <- proc.time()			  
-for (i in 1:5) {
-# for (i in 1:length(mam$sci_name)) {
-  print(paste0("Currently on species ", i, " out of ", length(mam$sci_name)))
-  curr.sp <- mam$sci_name[i]  
-  curr.range <- mam[mam$sci_name ==  mam$sci_name[i],]
+for (i in 1:length(ids)) {
+  print(paste0("Currently on species ", i, " out of ", length(ids)))
+  curr.sp <- ids[i]  
+  curr.range <- st_read(paste0(MAM.dir, curr.sp, '.shp'))
   # Get pixels within current species range. Takes about 2 min per species
   env.curr.range <- st_crop(env.dat.sf, curr.range)
   # Get average of all the environmental variables for the given species
