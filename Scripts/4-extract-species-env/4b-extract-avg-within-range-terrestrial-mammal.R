@@ -39,7 +39,7 @@ metrics <- env.dat %>%
   dplyr::select(-cell_id, -var, -lon, -lat) %>%
   colnames()
 n.metrics <- length(metrics)
-avg.clim.df <- matrix(NA, nrow = length(mam$sci_name), ncol = n.metrics * n.clim.var + 1)
+avg.clim.df <- matrix(NA, nrow = length(ids), ncol = n.metrics * n.clim.var + 1)
 # Definitely a better way to do this
 tmp.names <- paste(rep(metrics, each = n.clim.var), clim.var.names, sep = "_")
 colnames(avg.clim.df) <- c('id', tmp.names)
