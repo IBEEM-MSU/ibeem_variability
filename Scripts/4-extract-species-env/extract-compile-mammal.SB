@@ -1,7 +1,7 @@
 #!/bin/bash
 n="extractSpecies" # job name
 
-# Note that 52 is the number of pieces the BL IDs were split up into. 
+# Note that 52 is the number of pieces the MAM IDs were split up into. 
 # Should probably not hardcode this...
 for i in {1..52}
 do

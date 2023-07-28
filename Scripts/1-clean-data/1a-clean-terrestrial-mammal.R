@@ -1,5 +1,5 @@
 ################
-# Combine/clean bird gen time from Bird et al. 2020 Conservation Biology
+# Combine/clean mammal range data
 #
 ################
 
@@ -7,7 +7,6 @@
 # specify dir -------------------------------------------------------------
 
 #path KK machine
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- "../terrestrial-mammal/MAMMALS_TERRESTRIAL_ONLY.shp"
 
 # load packages -----------------------------------------------------------

@@ -1,5 +1,5 @@
 ################
-# Resolve differences in species names and combine bird/mammal datasets:
+# Resolve differences in species names:
 # - range maps
 # - generation time
 # - other traits
@@ -13,14 +13,13 @@
 
 # specify dir -------------------------------------------------------------
 
-#path for data on CY machine - remember trailing slash
-# range_map_data_dir <- '~/Downloads/BOTW_2022_2/'
-# life_history_dir <- '~/Downloads/'
-# paths on HPCC
-# range_map_data_dir <- '/mnt/research/ibeem/data/L0/ranges/'
-# life_history_dir <- '/mnt/research/ibeem/data/L0/trait/'
+#path for data on KK machine - remember trailing slash
 range_map_data_dir <-"../terrestrial-mammal/"
 life_history_dir <- "../terrestrial-mammal/"
+
+# paths on HPCC
+# range_map_data_dir <- '/mnt/research/ibeem/data/L1/range-mammal-clean/'
+# life_history_dir <- '/mnt/research/ibeem/data/L0/trait-mammal/'
 
 #directory to save out intermediate file
 # out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
@@ -37,14 +36,14 @@ library(taxadb)
 
 # read in data -------------------------------------------------
 
-#Birdlife range maps - takes a few minutes (40 min on HPCC) to read in
+# Mammal range maps 
 #data location: https://drive.google.com/drive/u/1/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ
 # Get all species
 MAM_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'terrestrial-mammals-clean.shp'))
 
 
-#bird life history data (processed to L1)
-#data location: https://drive.google.com/drive/u/1/folders/18p2Zn3dMA78hdwrCVQBtJ8dnnLEYa7_w
+#mammal life history data
+#data location: https://drive.google.com/drive/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ?usp=drive_link
 LH_data <- read.csv(paste0(life_history_dir, 'Generation Length for Mammals.csv'))
 
 #OR read in species names - SEE BELOW
@@ -83,10 +82,10 @@ miss <- MAM_data[!(MAM_data$id %in% LH_data$id),]
 # data sources. Leaving the missing values as missing values for now just 
 # so we have something to work with. 
 # Trait data
-write.csv(LH_data, file = paste0(out_dir, 'trait/pacifici-traits-with-id.csv'),
+write.csv(LH_data, file = paste0(out_dir, 'trait-mammal/pacifici-traits-with-id.csv'),
 	  row.names = FALSE)
 
-# Bird range data one by one ----------
+# Mammal range data one by one ----------
 
 # Save out MAM species names in case you want them without reading in the whole thing.
 MAM.unique <- MAM_data %>% filter(!is.na(itis_id)) 
