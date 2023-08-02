@@ -19,12 +19,17 @@ env_out2 <- dplyr::group_by(env_out, lat, lon) %>%
   dplyr::arrange(cell_id, year) %>%
   data.table::as.data.table()
 
-# Calculate average temp per cell
-avg_temp <- env_out2 %>%
+# Calculate average temp and seasonality per cell
+avg_season <- env_out2 %>%
   dplyr::group_by(cell_id) %>%
   dplyr::reframe(lat = as.numeric(lat),
           lon = as.numeric(lon),
-          avg_temp = mean(temp))
+          avg_temp = mean(temp),
+          seasonality_temp_sd = sd(temp),
+          seasonality_temp_cv = (seasonality_temp_sd/(avg_temp+273.15))*100,
+          annual_precip = sum(precip),
+          seasonality_precip = (sd(precip)/(1+(annual_precip/12)))*100)
+
 
 # Save file ----------------------------------
-write.csv(avg_temp, file= paste0(clim_dir_out, 'avg_temp.csv'), row.names = FALSE)
+write.csv(avg_season, file= paste0(clim_dir_out, 'avg_temp_seasonality.csv'), row.names = FALSE)
