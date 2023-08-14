@@ -7,7 +7,7 @@
 # specify dir -------------------------------------------------------------
 
 #path KK machine
-dir <- "../terrestrial-mammal/MAMMALS_TERRESTRIAL_ONLY.shp"
+dir <- "./data/L0/range/MAMMALS_TERRESTRIAL_ONLY.shp"
 
 # load packages -----------------------------------------------------------
 
