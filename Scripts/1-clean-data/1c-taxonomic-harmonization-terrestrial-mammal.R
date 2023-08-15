@@ -80,6 +80,14 @@ sum(!is.na(t_no_match$name_iucn))
 
 write.csv(t_no_match, file = paste0(out_dir, 'trait/mammal-names-full.csv'), row.names = FALSE)
 
+test <- read.csv('./data/L1/trait/mammal-names-full.csv')
+
+# for loop on iucn species and then get list of synonyms....
+# see if those synonyms match 
+
+
+###################################################################################
+
 # Process data to get consistent names ------------------------------------
 
 #taxadb tutorial: https://docs.ropensci.org/taxadb/articles/intro.html
