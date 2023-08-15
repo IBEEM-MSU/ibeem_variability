@@ -53,13 +53,13 @@ PH_data <- read.csv(paste0(life_history_dir, 'phylacine_data/Trait_data.csv'))
 NM <- NM_data %>% 
   select(Genus.1.2, Species.1.2,
          IUCN.2016.3.Genus, IUCN.2016.3.Species) %>% 
-  mutate(name_pantheria = paste(Genus.1.2, Species.1.2), 
+  mutate(name_phylacine= paste(Genus.1.2, Species.1.2), 
          name_iucn = paste(IUCN.2016.3.Genus, IUCN.2016.3.Species)) %>% 
   select(-Genus.1.2, -Species.1.2,
          -IUCN.2016.3.Genus, -IUCN.2016.3.Species) %>% 
   mutate (name_iucn = gsub("000 Species not accepted 000 Species not accepted", "NA", name_iucn),
-          name_pantheria = gsub("000 Species not accepted 000 Species not accepted", "NA", name_pantheria)) %>% 
-  select(name_pantheria)
+          name_phylacine = gsub("000 Species not accepted 000 Species not accepted", "NA", name_pantheria)) %>% 
+  select(name_phylacine)
 
 LH <- LH_data %>% 
   select(Scientific_name) %>% 
@@ -72,7 +72,7 @@ MAM <- MAM_data %>%
   rename(name_iucn = sci_name) 
 
 # Complete DF
-t <- full_join(MAM, NM, by=c("name_iucn" = "name_pantheria"), keep=TRUE)
+t <- full_join(MAM, NM, by=c("name_iucn" = "name_phylacine"), keep=TRUE)
 t <- full_join(t, LH, by=c("name_iucn" = "name_pacifici"), keep=TRUE)
 
 t_no_match <- t[rowSums(is.na(t)) > 0,]
