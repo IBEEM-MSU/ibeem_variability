@@ -7,9 +7,9 @@ library(tidyverse)
 library(sf)
 
 # Specify directory -------------------------------------------------------
-MAM.dir <- '/mnt/research/ibeem/data/L1/range-mammal/'
-env.dir <- '/mnt/research/ibeem/L2/climate/era5/'
-out.dir <- '/mnt/research/ibeem/data/L2/range-env-pieces-mammal/'
+MAM.dir <- './data/L1/range-mammal/'
+env.dir <- './data/L2/climate/era5/'
+out.dir <- './data/L2/range-env-pieces-mammal/'
 
 
 # Get the current file to process -----------------------------------------
