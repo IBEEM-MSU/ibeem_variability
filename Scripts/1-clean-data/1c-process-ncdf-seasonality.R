@@ -186,7 +186,6 @@ env_out2 <- dplyr::group_by(env_out, lat, lon) %>%
   dplyr::ungroup()
 
 
-
 # check -------------------------------------------------------------------
 
 # library(terra)

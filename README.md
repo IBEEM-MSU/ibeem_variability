@@ -17,9 +17,9 @@
     * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
     * `1a-clean-terrestrial-mammal.R` - clean mammal range data 
     * `1b-process-ncdf.R` - create time series of env data averaged over specified months
-    * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
+    * `1c-process-ncdf-seasonality.R` - calculate env seasonality from ncdf
+    * `1d-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
     * `1d-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
-    * `1e-process-ncdf-seasonality.R` - calculate env seasonality from ncdf
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
@@ -91,8 +91,8 @@
   * `module load OpenMPI/3.1.4`
   * `module load R/4.1.0`
 * Average ER5 data over specified months (year, and JJA) to produce L1 data (3 args: in dir, out dir, months):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1e-process-ncdf-seasonality.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
-  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1e-process-ncdf-seasonality.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 6,7,8`
+  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1c-process-ncdf-seasonality.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
+  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1c-process-ncdf-seasonality.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 6,7,8`
 
 ## Env variability metrics:
 * Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
