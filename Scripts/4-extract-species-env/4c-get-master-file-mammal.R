@@ -44,6 +44,6 @@ trait.dat <- gen.time.dat %>%
   rename(id = pacifici.et.al.id, accepted_name = pacifici.et.al.accepted_name)
 
 # Put it all together -----------------------------------------------------
-main.dat <- full_join(climate.df, trait.dat, by = c("id"))
+main.dat <- left_join(climate.df, trait.dat, by = c("id"))
 write.csv(main.dat, file = paste0(out.dir, 'main-mammal-data.csv'), row.names = FALSE)
 
