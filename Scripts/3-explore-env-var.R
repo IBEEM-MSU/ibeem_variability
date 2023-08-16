@@ -22,8 +22,10 @@ library(sf)
 # read in data -------------------------------------------------
 
 #environmental variability
-env_var <- read.csv(paste0(dir, 'Data/L2/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-env_var_GAM <- read.csv(paste0(dir, 'Data/L2/Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+env_var <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+env_var_GAM <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
+#READ IN FROM L1
+env_season <- read.csv(paste0(dir, 'Data/L1/climate/era5/Env-seasonality-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
 
 #landmask
 lm <- sf::st_read(paste0(dir, 'Data/L0/landmask/ne_10m_land.shp')) %>%

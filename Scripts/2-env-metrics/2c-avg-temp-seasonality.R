@@ -6,8 +6,8 @@
 library(tidyverse)
 
 # Read in data ------------------------------
-clim_dir_in <- '/mnt/research/ibeem/data/L1/climate/era5/'
-clim_dir_out <- '/mnt/research/ibeem/L2/climate/era5/'
+clim_dir_in <- '/mnt/research/ibeem/variability/data/L1/climate/era5/'
+clim_dir_out <- '/mnt/research/ibeem/variability/data/L2/climate/era5/'
 env_out <- read.csv(paste0(clim_dir_in, 'ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
 
 # Calculate average temp --------------------
@@ -32,4 +32,4 @@ avg_season <- env_out2 %>%
 
 
 # Save file ----------------------------------
-write.csv(avg_season, file= paste0(clim_dir_out, 'avg_temp_seasonality.csv'), row.names = FALSE)
+write.csv(avg_season, file= paste0(clim_dir_out, 'Env-seasonality.csv'), row.names = FALSE)
