@@ -20,24 +20,41 @@
     * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
     * `1c-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
   * `2-env-metrics/`
-    * `2-env-metrics.R` - calculate env variability metrics
-    * `2-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
+    * `2a-env-metrics.R` - calculate env variability metrics
+    * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
+    * `2c-avg-temp-seasonality.R` - calculate env seasonality
   * `3-explore-env-var.R` - explore environmental variability metrics
   * `4-extract-species-env/` - extract env var data from species range
     * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `4a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
     * `4b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
     * `4b-extract-avg-within-range.R` - extract environmental covariates from species ranges
+    * `4c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
+    * `4c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
     * `extract.SB` - bash script to load one piece of data and run script 4b on HPCC
     * `extract-mammal.SB` - bash script to load one piece of data and run script 4b on HPCC
     * `extract-compile.SB` - bash script to iterate through all pieces of data and run extract script on them
     * `extract-compile-mammal.SB` - bash script to iterate through all pieces of data and run extract script on them
-    * `4c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
-    * `4c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
   * `5-explore-bird.R` - explore joined bird life history/env data
   * `example_netcdf_processing.R` - netcdf processing examples
 * `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
+  * `L0/` - raw data
+    * `climate/era5/` - raw ERA5 reanalysis data
+    * `ranges/BOTW.gdb` - BirdLife range maps
+    * `trait/` - raw trait data
+  * `L1/` - 
+    * `climate/era5/` - ERA data averaged to specified months
+    * `range/` - bird ranges
+    * `range-mammal/` - mammal ranges
+    * `trait/` - processed bird traits
+    * `trait-mammal/` - processed mammal traits
+  * `L2/` - 
+    * `climate/era5/` - env variability metrics
+    * `main-bird-data.csv` - merged bird data
+    * `main-mammal-data.csv` - merged mammal data
+    * `range-env-pieces/` - ??? birds
+    * `range-env-pieces-mammal/` - ??? mammals
 
 ## Data sources:
 * [ERA5 reanalysis data (temp and precipitation)](https://rda.ucar.edu/datasets/ds633.1/)
@@ -49,11 +66,6 @@
 * [PanTHERIA (Jones et al. 2009) for mammals](https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1890/08-1494.1)
 * [AVONET (Tobias et al. 2022) for birds](https://onlinelibrary.wiley.com/doi/full/10.1111/ele.13898)
 * [Coonety et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
-
-## Data processing levels:
-* Env L0 - raw ERA data (`/mnt/research/ibeem/L0/climate/era5/`)
-* Env L1 - ERA data averaged to specified months (`/mnt/research/ibeem/L1/climate/era5/`)
-* Env L2 - env variability metrics (`/mnt/research/ibeem/L2/climate/era5/`)
 
 ## Env time series (avg over specified months):
 * Request high mem interactive session (could batch as well) - may not need nearly this much memory:
