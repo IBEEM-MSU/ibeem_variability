@@ -19,10 +19,10 @@
     * `1b-process-ncdf.R` - create time series of env data averaged over specified months
     * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
     * `1d-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
+    * `1e-process-ncdf-seasonality.R` - calculate env seasonality from ncdf
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
-    * `2c-avg-temp-seasonality.R` - calculate env seasonality
   * `3-explore-env-var.R` - explore environmental variability metrics
   * `4-extract-species-env/` - extract env var data from species range
     * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
@@ -36,7 +36,7 @@
     * `extract-compile.SB` - bash script to iterate through all pieces of data and run extract script on them
     * `extract-compile-mammal.SB` - bash script to iterate through all pieces of data and run extract script on them
   * `5-explore-bird.R` - explore joined bird life history/env data
-  * `example_netcdf_processing.R` - netcdf processing examples
+* `Archive/` - ununsed scripts  
 * `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
   * `L0/` - raw data
@@ -47,6 +47,7 @@
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
       * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - averaged over all months
       * `ERA5-6_7_8.csv` - averaged over JJA
+      * `Env-seasonality-1_2_3_4_5_6_7_8_9_10_11_12.csv` - seasonality (sd across months) for temp and precip
     * `range/` - bird ranges
     * `range-mammal/` - mammal ranges
     * `trait/` - processed bird traits
@@ -55,7 +56,6 @@
     * `climate/era5/` - env variability metrics per cell (including seasonality)
       * `Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months
       * `Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months (detrended by GAM)
-      * `Env-seasonality.csv` - seasonality for temp and precip
     * `main-bird-data.csv` - merged bird data
     * `main-mammal-data.csv` - merged mammal data
     * `range-env-pieces/` - ??? birds
