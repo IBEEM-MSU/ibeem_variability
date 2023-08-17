@@ -55,7 +55,9 @@
   * `L2/` - 
     * `climate/era5/` - env variability metrics per cell (including seasonality)
       * `Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months
-      * `Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months (detrended by GAM)
+      * `Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months (detrended with GAM rather than lm)
+      * `Env-main.csv` - THIS IS THE MAIN MERGED ENV DATA TO USE DOWNSTREAM
+      * `Env-main-GAM.csv` - Main merged env data, but detrended with GAM
     * `main-bird-data.csv` - merged bird data
     * `main-mammal-data.csv` - merged mammal data
     * `range-env-pieces/` - ??? birds
