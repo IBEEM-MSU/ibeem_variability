@@ -159,11 +159,11 @@ proc_fun <- function(startvallat = 500,
 #each job runs through a limited set of lats and all lons
 lenlat <- 721 %/% 20 #entire world / number chunks
 lenlon <- 1440 / 20 #entire world / number chunks
-lat_start <- (args[3] * lenlat) - lenlat + 1
+lat_start <- (as.numeric(args[3]) * lenlat) - lenlat + 1
 lon_start <- 1
 
 #in last lat chunk remainder of len / # chunks
-if (args[3] == 21)
+if (as.numeric(args[3]) == 21)
 {
   lenlat <- 1
 }
