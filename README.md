@@ -75,13 +75,13 @@
 * [Coonety et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
 
 ## Env time series (avg over specified months and sd across months [seasonality]):
-* `sbatch variability/Scripts/1-clean-data/process-ncdf.slurm`
+* `sbatch variability/Scripts/1-clean-data/1b-process-ncdf.slurm`
 
 ## Spectral exponent monthly time series:
-* `sbatch variability/Scripts/1-clean-data/process-ncdf-monthly.slurm`
+* `./variability/Scripts/1-clean-data/1c-master-submit.sh`
 
 ## Env variability metics:
-* `sbatch variability/Scripts/2-env-metrics/env-1_12.slurm`
+* `sbatch variability/Scripts/2-env-metrics/2a-env-1_12.slurm`
 
 ## Extracting env and trait data for each species
 + Code for initial processing for birds (breeding season) is in `Scripts/4-extract-species-env`
