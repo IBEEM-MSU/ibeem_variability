@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #SBATCH --job-name=ncdf-monthly-21
 #SBATCH -N 1 #number of tasks

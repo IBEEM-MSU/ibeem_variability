@@ -2,8 +2,7 @@
 
 for i in {1..21}
 do
-echo "
-#!/bin/bash
+echo "#!/bin/bash
 #SBATCH --job-name=ncdf-monthly-$i
 #SBATCH -N 1 #number of tasks
 #SBATCH -n 1 #number of nodes
