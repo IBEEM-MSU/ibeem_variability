@@ -49,7 +49,7 @@ proc_fun <- function(startvallat = 500,
   for (i in 1:length(files_temp)) #assuming num of temp files are the same as num precip
   {
     #i <- 1
-    print(paste0('Processing year: ', i, ' of ', length(files_temp)))
+    #print(paste0('Processing year: ', i, ' of ', length(files_temp)))
     
     #open netcdf file  
     tt_temp <- ncdf4::nc_open(files_temp[i])
@@ -153,26 +153,136 @@ proc_fun <- function(startvallat = 500,
 
 lat_start <- 1
 lon_start <- 1
-lenlon <- 1440 / 10 #entire world / number chunks
-lenlat <- 721 %/% 10 #entire world / number chunks
-for (i in 1:10)
+lenlat <- 721 %/% 20 #entire world / number chunks
+lenlon <- 1440 / 20 #entire world / number chunks
+chunk_counter <- 1
+counter2 <- 1
+for (l in 1:21) #lat
 {
-  #in last chunk, only 1 lat (remaider of len / # chunks)
-  if (i == 10)
+  #in last lat chunk remainder of len / # chunks
+  if (l == 21)
   {
-    lenlat <- 721 %% 10
+    lenlat <- 721 %% 20
   }
-  print(paste0('Chunk ', i, ' of ', 10))
   
-  #writes out data.frame with lat, lon, year, month, temp and precip
-  env_out <- proc_fun(startvallon = lon_start,
-                      startvallat = lat_start, 
-                      lenlon = lenlon,
-                      lenlat = lenlat)
+  for (k in 1:20) #lon
+  {
+    # l <- 1
+    # k <- 1
+    #writes out data.frame with lat, lon, year, month, temp and precip
+    env_out <- proc_fun(startvallon = lon_start,
+                        startvallat = lat_start, 
+                        lenlon = lenlon,
+                        lenlat = lenlat)
+    
+    if (l == 1 & k == 1)
+    {
+      #create unique time point
+      ut <- unique(env_out[,c('year', 'month')]) %>%
+        dplyr::arrange(year, month)
+      ut_df <- data.frame(num = 1:NROW(ut), 
+                          ut)
+    }
+    
+    env_out2 <- dplyr::group_by(env_out, lat, lon) %>%
+      dplyr::mutate(cell_id = cur_group_id()) %>%
+      dplyr::ungroup() %>%
+      dplyr::left_join(ut_df, by = c('year', 'month')) %>%
+      dplyr::arrange(cell_id, year, month) %>%
+      data.table::as.data.table()
+    
+    #unique cells
+    uci <- unique(env_out2$cell_id)
+    
+    #data.frame to fill
+    t_df <- data.frame(cell_id = uci,
+                       lon = NA,
+                       lat = NA,
+                       spectral_beta_temp = NA, #spectral exponent
+                       spectral_beta_precip = NA) #spectral exponent
+    
+    #loop through each cell to calc metrics
+    counter <- 1
+    for (i in 1:length(uci))
+    {
+      #i <- 1
+      print(paste0('Processing chunk ', chunk_counter, ' of ', 21*20, 
+                   '; cell ', i, ' of ', length(uci)))
+      
+      #just one cell
+      te <- env_out2[cell_id == uci[i],]
+      
+      #linear model fit (yearly env ~ num)
+      fit_temp <- summary(lm(temp ~ num, data = te))
+      fit_precip <- summary(lm(precip ~ num, data = te))
+      
+      #residuals from model
+      temp_resid <- residuals(fit_temp)
+      precip_resid <- residuals(fit_precip)
+      
+      #spectral analysis using Lomb-Scargle Periodogram
+      #between freq 2/(n*dt) and 1/(2*dt), where dt = 1 and n = 72; 0.0278 to 0.5
+      #following Marshall and Burgess 2015 Eco Letters
+      #see also Vasseur and Yodzis 2004 Ecology
+      #period = 1/freq; ~2 - 36 years
+      ll_freq <- 0.0278
+      ul_freq <- 0.5
+      temp_spec <- lomb::lsp(temp_resid, 
+                             from = ll_freq, to = ul_freq, 
+                             type = 'frequency',
+                             normalize =  'standard', 
+                             plot = FALSE)
+      #spectral exponent (1/f^beta)
+      temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
+      #precip - only run if residuals exist (i.e., all precip values were not 0)
+      if (sum(precip_resid) > 0)
+      {
+        precip_spec <- lomb::lsp(precip_resid, 
+                                 from = ll_freq, to = ul_freq, 
+                                 type = 'frequency', 
+                                 normalize = 'standard', 
+                                 plot = FALSE)
+        precip_spec_fit <- summary(lm(log10(precip_spec$power) ~ log10(precip_spec$scanned)))$coefficients[,1]
+      } else {
+        precip_spec_fit <- rep(NA, 2)
+      }
+      
+      #fill df
+      t_df$lon[counter] <- te$lon[1]
+      t_df$lat[counter] <- te$lat[1]
+      t_df$spectral_beta_temp[counter] <- temp_spec_fit[2] * -1
+      t_df$spectral_beta_precip[counter] <- precip_spec_fit[2] * -1
+      
+      counter <- counter + 1
+    }
+    if (chunk_counter == 1)
+    {
+      main_out <- data.frame(cell_id = rep(NA, NROW(t_df) * 21 * 20),
+                             lon = NA,
+                             lat = NA,
+                             spectral_beta_temp = NA,
+                             spectral_beta_precip = NA)
+    }
+    
+    main_out[counter2:(counter2 + NROW(t_df) - 1),] <- t_df
+    
+    #advance counters
+    chunk_counter <- chunk_counter + 1
+    counter2 <- counter2 + NROW(t_df)
+    
+    #advance lon marker
+    lon_start <- lon_start + lenlon
+  }
   
-  write.csv(env_out, paste0(args[2], 'ERA5-monthly-time-series-chunk-', i, '.csv'), 
-            row.names = FALSE)  
-  
+  #advance lat marker
   lat_start <- lat_start + lenlat
-  lon_start <- lon_start + lenlon
 }
+
+#remove trailing NA
+main_out2 <- main_out[-(min(which(is.na(main_out$cell_id))):NROW(main_out)),]
+
+
+# write to csv ------------------------------------------------------------
+
+write.csv(main_out2, paste0(args[2], 'Env-spectral-exp-monthly.csv'), 
+          row.names = FALSE)  

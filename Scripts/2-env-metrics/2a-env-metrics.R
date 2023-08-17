@@ -38,7 +38,7 @@ env_out <- read.csv(args[1])
 #-variance (or sd) of residuals (i.e., variability of detrended time series)
 #-kurtosis (i.e., heavy-tailed ness - or model time series using t-distribution and estimate degrees of freedom parameter)
 #-skew (i.e., skew of residuals)
-#-spectral exponent ('color' of noise - 0 <= B <= 0.5 = white, 0.5 < B <= 1.5 = red, 1.5 < brown <= 2)
+#-spectral exponent ('color' of noise)
 #-temporal autocorrelation (of residuals - see Leung et al. 2020 Eco Letters for use of this metric for 'predictability')
 
 #add unique cell id
