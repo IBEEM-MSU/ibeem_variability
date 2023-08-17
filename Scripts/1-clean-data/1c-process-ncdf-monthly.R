@@ -28,7 +28,7 @@ library(ncdf4)
 #with metric averaged over specified months 
 
 # ARGS:
-# startvallat = starting value for lattitude cell (grid is 721 cells tall)
+# startvallat = starting value for latitude cell (grid is 721 cells tall)
 # startvallon = starting value for longitude cell (grid is 1440 cells wide)
 # lenlat = number of cells tall for each chunk 
 # lenlon = number of cells wide for each chunk
@@ -149,15 +149,28 @@ proc_fun <- function(startvallat = 500,
 
 # run function ------------------------------------------------------------
 
-#writes out data.frame with lat, lon, year, month, temp and precip
-env_out <- proc_fun(startvallat = 1, 
-                    startvallon = 1,
-                    lenlon = 1440, #entire world
-                    lenlat = 721) #entire world
-
-
-# write to csv ------------------------------------------------------------
-
-#ERA5-MONTHS.csv
-write.csv(env_out, paste0(args[2], 'ERA5-monthly_time-series.csv'), 
-          row.names = FALSE)
+lat_start <- 1
+lon_start <- 1
+lenlon <- 1440 / 10 #entire world / number chunks
+lenlat <- 721 %/% 10 #entire world / number chunks
+for (i in 1:10)
+{
+  #in last chunk, only 1 lat (remaider of len / # chunks)
+  if (i == 10)
+  {
+    lenlat <- 721 %% 10
+  }
+  print(paste0('Chunk ', i, ' of ', 10))
+  
+  #writes out data.frame with lat, lon, year, month, temp and precip
+  env_out <- proc_fun(startvallon = lon_start,
+                      startvallat = lat_start, 
+                      lenlon = lenlon,
+                      lenlat = lenlat)
+  
+  write.csv(env_out, paste0(args[2], 'ERA5-monthly_time-series.csv'), 
+            row.names = FALSE)  
+  
+  lat_start <- lat_start + lenlat
+  lon_start <- lon_start + lenlon
+}

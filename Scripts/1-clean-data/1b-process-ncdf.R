@@ -31,7 +31,7 @@ library(ncdf4)
 #with metric averaged over specified months 
 
 # ARGS:
-# startvallat = starting value for lattitude cell (grid is 721 cells tall)
+# startvallat = starting value for latitude cell (grid is 721 cells tall)
 # startvallon = starting value for longitude cell (grid is 1440 cells wide)
 # lenlat = number of cells tall for each chunk 
 # lenlon = number of cells wide for each chunk
