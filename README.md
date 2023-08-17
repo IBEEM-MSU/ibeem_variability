@@ -17,11 +17,13 @@
     * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
     * `1a-clean-terrestrial-mammal.R` - clean mammal range data 
     * `1b-process-ncdf.R` - create time series of env data, yearly averages for specified months, and sd across specified months (seasonality)
-    * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
-    * `1c-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
+    * `1c-process-ncdf-monthly.R` - create monthly time series of env data, then calculate spectral exponent
+    * `1d-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
+    * `1d-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
+    * `2c-env-merge.R` - merge env metrics
   * `3-explore-env-var.R` - explore environmental variability metrics
   * `4-extract-species-env/` - extract env var data from species range
     * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
@@ -45,7 +47,7 @@
   * `L1/` - 
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
       * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - yearly average over all months and sd across months (seasonality) for temp and (sqrt root transform of) precip
-      * `ERA5-6_7_8.csv` - yearly averaged over JJA
+      * `Env-spectral-exp-monthly.csv` - spectral exponent of monthly env variables
     * `range/` - bird ranges
     * `range-mammal/` - mammal ranges
     * `trait/` - processed bird traits
@@ -73,44 +75,13 @@
 * [Coonety et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
 
 ## Env time series (avg over specified months and sd across months [seasonality]):
-* Request high mem interactive session (could batch as well) - may not need nearly this much memory:
-  * `salloc -N 1 -c 4 --time=3:59:00 --constraint=amd22 --mem=400gb`
-* Modules to be loaded:
-  * `module load GCC/8.3.0`
-  * `module load OpenMPI/3.1.4`
-  * `module load R/4.1.0`
-* Average ER5 data over specified months (entire year in this case) to produce L1 data (3 args: in dir, out dir, months):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12`
-  
-## Monthly env time series:
-* Request high mem interactive session (could batch as well):
-  * `salloc -N 1 -c 4 --time=3:59:00 --constraint=amd22 --mem=400gb`
-* Modules to be loaded:
-  * `module load GCC/8.3.0`
-  * `module load OpenMPI/3.1.4`
-  * `module load R/4.1.0`
-* Produce L1 data monthly time series (2 args: in dir, out dir):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1c-process-ncdf-monthly.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/`
-  
-## Env variability metrics:
-* Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
-  * `salloc -N 1 -c 4 --time=10:00:00 --mem=50gb`
-* Modules to be loaded:
-  * `module load GCC/8.3.0`
-  * `module load OpenMPI/3.1.4`
-  * `module load R/4.1.0`
-* Calc env variability metrics to produce L2 data (2 args: in file, out file):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2a-env-metrics.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
-  
-## Spectral exp from monthly:
-* Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
-  * `salloc -N 1 -c 4 --time=40:00:00 --mem=100gb`
-* Modules to be loaded:
-  * `module load GCC/8.3.0`
-  * `module load OpenMPI/3.1.4`
-  * `module load R/4.1.0`
-* Calc spectral exponents using monthly data (2 args: in dir, out dir):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2c-spectral-monthly.R /mnt/research/ibeem/variability/data/L1/climate/era5/ /mnt/research/ibeem/variability/data/L2/climate/era5/` 
+* `sbatch variability/Scripts/1-clean-data/process-ncdf.slurm`
+
+## Spectral exponent monthly time series:
+* `sbatch variability/Scripts/1-clean-data/process-ncdf-monthly.slurm`
+
+## Env variability metics:
+* `sbatch variability/Scripts/2-env-metrics/env-1_12.slurm`
 
 ## Extracting env and trait data for each species
 + Code for initial processing for birds (breeding season) is in `Scripts/4-extract-species-env`

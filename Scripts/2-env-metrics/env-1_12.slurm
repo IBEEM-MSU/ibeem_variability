@@ -22,4 +22,4 @@ module load R/4.1.0
 export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
 
 #months 1-12
-Rscript /mnt/research/ibeem/ibeem_variability/Scripts/2-env-metrics/2-env-metrics.R /mnt/research/ibeem/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv
+Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2a-env-metrics.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv

@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=env-6_8
+#SBATCH --job-name=ncdf
 #SBATCH -N 1 #number of tasks
 #SBATCH -n 1 #number of nodes
 #SBATCH -c 4 #cpus
-#SBATCH --time=48:00:00
+#SBATCH --time=3:59:00
 #SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=ccy@msu.edu
-#SBATCH --mem=50G #memory requested
+#SBATCH --mem=400G #memory requested
+#SBATCH --constraint=amd22
 #SBATCH --output=%x-%j.SLURMout
-#SBATCH --account plzbuyin #Space lab node
 
 #echos name of node
 echo `hostname`
@@ -21,5 +21,4 @@ module load R/4.1.0
 #manually specify R lib
 export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
 
-#months 6-8
-Rscript /mnt/research/ibeem/variability/Scripts/2a-env-metrics/2-env-metrics.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-6_7_8.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-6_7_8.csv
+Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12
