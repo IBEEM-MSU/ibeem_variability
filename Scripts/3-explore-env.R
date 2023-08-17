@@ -20,33 +20,10 @@ library(sf)
 # read in data -------------------------------------------------
 
 #environmental variability
-env_var <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-env_var_GAM <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-#enviromental seasonality
-env_season <- read.csv(paste0(dir, 'Data/L1/climate/era5/Env-seasonality-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-
-#landmask
-lm <- sf::st_read(paste0(dir, 'Data/L0/landmask/ne_10m_land.shp')) %>%
-  dplyr::filter(featurecla == 'Land')
+env_main <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-main.csv'))
 
 
-# merge env data ----------------------------------------------------------
-
-#merge
-temp_mrg <- dplyr::filter(env_var, var == 'temp') %>%
-  dplyr::left_join(env_season, by = c('lat', 'lon')) %>%
-  dplyr::select(-mn_sd_precip) %>%
-  dplyr::rename(sd_season = mn_sd_temp)
-
-precip_mrg <- dplyr::filter(env_var, var == 'precip') %>%
-  dplyr::left_join(env_season, by = c('lat', 'lon')) %>%
-  dplyr::select(-mn_sd_temp) %>%
-  dplyr::rename(sd_season = mn_sd_precip)
-
-env_mrg <- rbind(temp_mrg, precip_mrg)
-
-
-# rasterize and mask env var data ----------------------------------------------
+# rasterize ------------------------------------------------------------------
 
 #multiband raster (each band different env metric)
 #var = temp or precip
@@ -54,114 +31,74 @@ env_mrg <- rbind(temp_mrg, precip_mrg)
 mbr_fun <- function(input, VAR)
 {
   #rasterize
-  trast <- dplyr::filter(input, var == VAR) %>%
-    dplyr::select(-cell_id, -var) %>%
-    terra::rast(crs = "epsg:4326") %>%
-    #mask out water
-    terra::mask(terra::vect(lm))
-  
-  #get relative slope
-  sl_resid <- trast[['slope']] / trast[['sd_resid']]
-  names(sl_resid) <- 'rel_slope'
-  
-  #add band
-  trast2 <- c(trast, sl_resid)
-  
-  return(trast2)
+  trast <- dplyr::filter(input, var == VAR, valid == TRUE) %>%
+    dplyr::select(lon, lat, mean, slope, sd_resid, sd_season, kurt, skew, 
+                  spectral_beta, rho_l1, rel_slope, PC1, PC2, PC3) %>%
+    terra::rast(crs = "epsg:4326")
+  return(trast)
 }
 
 
 #run function - putting some cells outside of lat/lon bounds for some reason
-ev_temp <- mbr_fun(input = env_mrg, VAR = 'temp')
-ev_precip <- mbr_fun(input = env_mrg, VAR = 'precip')
-# ev_temp_GAM <- mbr_fun(input = env_var_GAM, VAR = 'temp')
-# ev_precip_GAM <- mbr_fun(input = env_var_GAM, VAR = 'precip')
+ev_temp <- mbr_fun(input = env_main, VAR = 'temp')
+ev_precip <- mbr_fun(input = env_main, VAR = 'precip')
 
 #bands
-names(ev_temp)
-
-#check
-# plot(ev_temp[[1]])
-# plot(ev_temp[[4]])
-# plot(ev_temp[[14]])
+names(ev_precip)
 
 
-# extract values from masked raster ---------------------------------------
+# plots -------------------------------------------------------------------
 
-#coords (lat/lon)
-t_crds <- terra::crds(ev_temp)
-#values
-t_vals <- data.frame(terra::values(ev_temp)) %>%
-  dplyr::filter(!is.na(mean))
-#combine
-t_mrg <- cbind(t_crds, t_vals) %>%
-  dplyr::rename(lat = y, lon = x) %>%
-  dplyr::filter(lat > -60)
+#temperature
+plot(ev_temp[[1]], main = 'Mean')
+plot(ev_temp[[3]], main = 'Inter-annual sd')
+plot(ev_temp[[4]], main = 'Intra-annual sd')
 
+plot(ev_temp[[5]], main = 'Kurtosis')
+plot(ev_temp[[6]], main = 'Skew')
+plot(ev_temp[[7]], main = 'Spectral exponent')
+plot(ev_temp[[8]], main = 'Rho Lag 1')
 
-# PCA ---------------------------------------------------------------------
+plot(ev_temp[[2]], main = 'Slope')
+plot(ev_temp[[9]], main = 'Relative slope')
 
-cor(cbind(t_mrg$sd_resid, t_mrg$mean, t_mrg$sd_season))
-
-t_cov <- t_mrg[,c('sd_resid', 'mean', 'sd_season')]
-colnames(t_cov) <- c('Inter-annual sd', 'Mean', 'Intra-annual sd')
-covs_pca <- prcomp(t_cov, center = TRUE, scale. = TRUE)
-
-# pdf(paste0(fig_dir,'pca_biplot-', run_date, '.pdf'),
-#     height = 5.75, width = 5.75)
-factoextra::fviz_pca_var(covs_pca,
-                         axes = c(1,2),
-                         #geom = 'arrow',
-                         #col.var = "contrib", # Color by contributions to the PC
-                         #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         repel = FALSE)
-# dev.off()
-
-factoextra::fviz_pca_var(covs_pca,
-                         axes = c(2,3),
-                         #geom = 'arrow',
-                         #col.var = "contrib", # Color by contributions to the PC
-                         #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         repel = FALSE)
-
-#extract PCs
-t_mrg$PC1 <- covs_pca$x[,1]
-t_mrg$PC2 <- covs_pca$x[,2]
-t_mrg$PC3 <- covs_pca$x[,3]
+plot(ev_temp[[10]], main = 'PC1 (+ = v mean, ^ inter, ^ intra)')
+plot(ev_temp[[11]], main = 'PC2 (+ = ^ inter, v intra)')
+plot(ev_temp[[12]], main = 'PC3 (+ = ^ mean, ^ intra)')
 
 
-# rerasterize -------------------------------------------------------------
+#Precip
+plot(ev_precip[[1]], main = 'Mean')
+plot(ev_precip[[3]], main = 'Inter-annual sd')
+plot(ev_precip[[4]], main = 'Intra-annual sd')
 
-tt <- terra::rast(t_mrg, crs = "epsg:4326")
-names(tt)
+plot(ev_precip[[5]], main = 'Kurtosis')
+plot(ev_precip[[6]], main = 'Skew')
+plot(ev_precip[[7]], main = 'Spectral exponent')
+plot(ev_precip[[8]], main = 'Rho Lag 1')
 
-#mean
-plot(tt[[1]], main = 'mean')
-plot(tt[[4]], main = 'Inter-annual sd')
-plot(tt[[14]], main = 'Intra-annual sd')
+plot(ev_precip[[2]], main = 'Slope')
+plot(ev_precip[[9]], main = 'Relative slope')
 
-plot(tt[[16]], main = 'PC1 (+ = ^ mean, v sd)')
-plot(tt[[17]], main = 'PC2 (+ = ^ intra, v inter)')
-plot(tt[[18]], main = 'PC3 (+ = ^ mean, ^ intra)')
+#there are weird - is this bc precip data is less reliable?
+plot(ev_precip[[10]], main = 'PC1 (+ = v mean, ^ inter, ^ intra)')
+plot(ev_precip[[11]], main = 'PC2 (+ = ^ inter, v intra)')
+plot(ev_precip[[12]], main = 'PC3 (+ = ^ mean, ^ intra)')
 
 
 # stats -------------------------------------------------------------------
 
-#median over globe
-terra::global(ev_temp[['slope']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['sd_resid']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['kurt']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['skew']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['spectral_beta']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['rho_l1']], fun = function(x) median(x, na.rm = TRUE))
-terra::global(ev_temp[['rel_slope']], fun = function(x) median(x, na.rm = TRUE))
+# #median over globe
+# terra::global(ev_temp[['slope']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['sd_resid']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['kurt']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['skew']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['spectral_beta']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['rho_l1']], fun = function(x) median(x, na.rm = TRUE))
+# terra::global(ev_temp[['rel_slope']], fun = function(x) median(x, na.rm = TRUE))
 
 
-# plots -----------------------------------------------------------------
-
-# NA_out <- dplyr::filter(env_var, 
-#                            lon > -170, lon < -50,
-#                            lat > 15, lat < 75)
+# compare lm and GAM -----------------------------------------------------------------
 
 #function to plot lm and gam
 gc_fun <- function(rast, rast_gam, var)
