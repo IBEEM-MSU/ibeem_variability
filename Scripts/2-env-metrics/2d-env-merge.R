@@ -1,7 +1,6 @@
 ################
-# Merge seasonality and env
+# Mask out land and everything below 60 S lat for env var data and calc PCA
 #
-# Filter out non-land and everything below 60 S lat
 ################
 
 

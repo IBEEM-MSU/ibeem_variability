@@ -1,19 +1,10 @@
-################
-# Calc env variability metrics
-#
-# args:
-# - in file
-# - out file
-#
-# NOTES:
-# - what are the most appropriate lags for temporal autocorrelation (in terms of predictability)
-# - can we fit regression models with t-distributed errors (estimating and not specificy degrees of freedom parameter) in R at a reasonable speed? (seems possibly -> https://stats.stackexchange.com/questions/117980/regression-with-t-distributed-errors-and-massrlm)
-################
+#detrend and calc spectral exponent monthly time series
+
 
 # get args fed to script --------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-#args[1] = in file (L1 env data) - '/mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv'
+#args[1] = in file (L1 env data) - '/mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-monthly_time-series.csv'
 #args[2] = out file (L2 env data) - '/mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'
 
 
@@ -138,7 +129,7 @@ for (i in 1:length(uci))
   env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
                                           moments::skewness(precip_resid))
   env_df$spectral_alpha[counter:(counter + 1)] <- c(temp_spec_fit[1], 
-                                                   precip_spec_fit[1])
+                                                    precip_spec_fit[1])
   env_df$spectral_beta[counter:(counter + 1)] <- c(temp_spec_fit[2] * -1, 
                                                    precip_spec_fit[2] * -1)
   env_df$rho_l1[counter:(counter + 1)] <- c(temp_acf$acf[2], precip_acf$acf[2])
