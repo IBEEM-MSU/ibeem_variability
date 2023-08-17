@@ -1,8 +1,6 @@
 ################
 # Explore env variability metrics
 #
-# NOTES:
-# - apply land mask
 ################
 
 
