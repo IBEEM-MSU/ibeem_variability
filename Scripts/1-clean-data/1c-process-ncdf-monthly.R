@@ -168,7 +168,7 @@ for (i in 1:10)
                       lenlon = lenlon,
                       lenlat = lenlat)
   
-  write.csv(env_out, paste0(args[2], 'ERA5-monthly_time-series.csv'), 
+  write.csv(env_out, paste0(args[2], 'ERA5-monthly-time-series-chunk-', i, '.csv'), 
             row.names = FALSE)  
   
   lat_start <- lat_start + lenlat
