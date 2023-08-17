@@ -11,8 +11,9 @@
 # get args fed to script --------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-#args[1] = in directory (that contains both temp and precip data) - '/mnt/research/ibeem/L0/climate/era5/'
-#args[2] = out directory - where to write file - '/mnt/research/ibeem/L1/climate/era5/'
+#args <- rep(NA, 2)
+#args[1] = '/mnt/research/ibeem/variability/data/L0/climate/era5/'
+#args[2] = '/mnt/research/ibeem/variability/data/L1/climate/era5/'
 
 
 # load packages -----------------------------------------------------------
@@ -110,8 +111,9 @@ proc_fun <- function(startvallat = 500,
     
     
     # create a dataframe
-    llt <- expand.grid(lon, lat, 
-                       lubridate::year(ymd_dates), 
+    llt <- expand.grid(lon, 
+                       lat, 
+                       lubridate::year(ymd_dates)[1], 
                        lubridate::month(ymd_dates))
     tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long)
     

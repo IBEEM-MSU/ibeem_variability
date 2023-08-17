@@ -73,7 +73,6 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      rho_l5 = NA)
 
 #loop through each cell to calc metrics
-#takes a handful (on the order of 30 min) of minutes on laptop
 time <- proc.time()
 counter <- 1
 for (i in 1:length(uci))

@@ -94,23 +94,23 @@
   
 ## Env variability metrics:
 * Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
-  * `salloc -N 1 -c 4 --time=40:00:00 --mem=50gb`
+  * `salloc -N 1 -c 4 --time=10:00:00 --mem=50gb`
 * Modules to be loaded:
   * `module load GCC/8.3.0`
   * `module load OpenMPI/3.1.4`
   * `module load R/4.1.0`
 * Calc env variability metrics to produce L2 data (2 args: in file, out file):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2a-env-metrics.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-monthly_time-series.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-mothly-spec-exp.csv`
+  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2a-env-metrics.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
   
 ## Spectral exp from monthly:
 * Request interactive session (could/should batch - see `Scripts/2-env-metrics/env-1_12.slurm` and `Scripts/2-env-metrics/env-6_8.slurm`):
-  * `salloc -N 1 -c 4 --time=40:00:00 --mem=200gb`
+  * `salloc -N 1 -c 4 --time=40:00:00 --mem=100gb`
 * Modules to be loaded:
   * `module load GCC/8.3.0`
   * `module load OpenMPI/3.1.4`
   * `module load R/4.1.0`
-* Calc env variability metrics to produce L2 data (2 args: in file, out file):
-  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2c-spectral-monthly.R /mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv /mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv`
+* Calc spectral exponents using monthly data (2 args: in dir, out dir):
+  * `Rscript /mnt/research/ibeem/variability/Scripts/2-env-metrics/2c-spectral-monthly.R /mnt/research/ibeem/variability/data/L1/climate/era5/ /mnt/research/ibeem/variability/data/L2/climate/era5/` 
 
 ## Extracting env and trait data for each species
 + Code for initial processing for birds (breeding season) is in `Scripts/4-extract-species-env`
