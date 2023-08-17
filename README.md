@@ -16,10 +16,9 @@
   * `1-clean-data/`
     * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
     * `1a-clean-terrestrial-mammal.R` - clean mammal range data 
-    * `1b-process-ncdf.R` - create time series of env data averaged over specified months
-    * `1c-process-ncdf-seasonality.R` - calculate env seasonality from ncdf
-    * `1d-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
-    * `1d-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
+    * `1b-process-ncdf.R` - create time series of env data, yearly averages for specified months, and sd across specified months (seasonality)
+    * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
+    * `1c-taxonomic-harmonization-terrestrial-mammal.R` - sort out naming differences and save individual range maps for mammals
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
@@ -45,9 +44,8 @@
     * `trait/` - raw trait data
   * `L1/` - 
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
-      * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - averaged over all months
-      * `ERA5-6_7_8.csv` - averaged over JJA
-      * `Env-seasonality-1_2_3_4_5_6_7_8_9_10_11_12.csv` - seasonality (sd across months) for temp and precip
+      * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - yearly average over all months and sd across months (seasonality) for temp and (sqrt root transform of) precip
+      * `ERA5-6_7_8.csv` - yearly averaged over JJA
     * `range/` - bird ranges
     * `range-mammal/` - mammal ranges
     * `trait/` - processed bird traits

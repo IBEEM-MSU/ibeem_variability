@@ -141,6 +141,27 @@ env_main <- rbind(pc_temp$mrg_out, pc_precip$mrg_out)
 env_main_GAM <- rbind(pc_temp_GAM$mrg_out, pc_precip_GAM$mrg_out)
 
 
+# PCA for temp/precip jointly ---------------------------------------------
+
+tenv <- dplyr::filter(env_mrg, valid == TRUE, var == 'precip')
+tcor <- round(cor(cbind(tenv$sd_resid, tenv$sd_season, tenv$mean)), 3)
+
+hist(sqrt(tenv$mean))
+hist(tenv$sd_resid)
+hist(tenv$sd_season)
+
+tcov <- tenv[,c('sd_resid', 'sd_season', 'mean')]
+colnames(tcov) <- c('Inter-annual sd', 'Intra-annual sd', 'Mean')
+covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
+
+#extract PCs and merge with data
+tenv$PC1 <- covs_pca$x[,1]
+tenv$PC2 <- covs_pca$x[,2]
+tenv$PC3 <- covs_pca$x[,3]
+
+tlist <- list(cor = tcor, covs_pca = covs_pca, mrg_out = tenv)
+
+
 # write out merged data -----------------------------------------------------
 
 write.csv(env_main, paste0(dir, 'Data/L2/climate/era5/Env-main.csv'))

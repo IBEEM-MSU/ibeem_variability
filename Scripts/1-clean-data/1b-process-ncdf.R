@@ -1,5 +1,5 @@
 ################
-# Convert netcdf ERA data into df, averaged of specified months
+# Convert netcdf ERA data into df, yearly averages for specified months, and sd across specified months (seasonality)
 #
 # args:
 # - in dir
@@ -89,7 +89,9 @@ proc_fun <- function(startvallat = 500,
                                   count = c(lenlon, lenlat, length(months))) # 3dim array
     fillvalue_precip <- ncdf4::ncatt_get(tt_precip, "TCRW","_FillValue")
     var_array_precip[var_array_precip == fillvalue_precip$value] <- NA
-    var_array_precip2 <- var_array_precip
+    
+    #squar root transform precip
+    var_array_precip2 <- sqrt(var_array_precip)
     
     # Close netcdf file
     ncdf4::nc_close(tt_temp)
@@ -111,20 +113,31 @@ proc_fun <- function(startvallat = 500,
     {
       var_array_temp3 <- apply(var_array_temp2, c(1, 2), mean)
       var_array_precip3 <- apply(var_array_precip2, c(1, 2), mean)
+      
+      season_array_temp3 <- apply(var_array_temp2, c(1, 2), sd)
+      season_array_precip3 <- apply(var_array_precip2, c(1, 2), sd)
     } else {
       var_array_temp3 <- var_array_temp2
       var_array_precip3 <- var_array_precip2
+      
+      season_array_temp3 <- NA
+      season_array_precip3 <- NA
     }
     
     # reshape temp array into vector
     var_array_temp3_long <- round(as.vector(var_array_temp3), 2)
     var_array_precip3_long <- round(as.vector(var_array_precip3), 2)
     
+    season_array_temp3_long <- round(as.vector(var_array_temp3), 3)
+    season_array_precip3_long <- round(as.vector(var_array_precip3), 3)
+    
     # create a dataframe
     llt <- expand.grid(lon, lat, lubridate::year(ymd_dates)[1])
-    tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long)
+    tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long,
+                         season_array_temp3_long, season_array_precip3_long)
     
-    colnames(tmp_df) <- c('lon', 'lat', 'year', 'temp', 'precip')
+    colnames(tmp_df) <- c('lon', 'lat', 'year', 'mean_temp', 'mean_precip', 
+                          'season_temp', 'season_precip')
     
     ######
     # #Check - turn df into rast
@@ -140,8 +153,10 @@ proc_fun <- function(startvallat = 500,
       out <- data.frame(lon = rep(NA, NROW(tmp_df) * length(files_temp)),
                         lat = NA,
                         year = NA,
-                        temp = NA,
-                        precip = NA)
+                        mean_temp = NA,
+                        mean_precip = NA,
+                        season_temp = NA,
+                        season_precip = NA)
     }
 
     #fill df
