@@ -6,7 +6,7 @@
 #SBATCH --time=48:00:00
 #SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=ccy@msu.edu
-#SBATCH --mem=50G #memory requested
+#SBATCH --mem=60G #memory requested
 #SBATCH --output=%x-%j.SLURMout
 #SBATCH --account plzbuyin #Space lab node
 

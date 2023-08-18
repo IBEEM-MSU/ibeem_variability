@@ -13,8 +13,9 @@
 # get args fed to script --------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-#args[1] = in file (L1 env data) - '/mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv'
-#args[2] = out file (L2 env data) - '/mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'
+# args <- rep(NA, 2)
+# args[1] <- '/mnt/research/ibeem/variability/data/L1/climate/era5/ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv'
+# args[2] <- '/mnt/research/ibeem/variability/data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'
 
 
 # load packages -----------------------------------------------------------
@@ -124,7 +125,7 @@ for (i in 1:length(uci))
   #fill df
   env_df$lon[counter:(counter + 1)] <- rep(te$lon[1], 2)
   env_df$lat[counter:(counter + 1)] <- rep(te$lat[1], 2)
-  env_df$mean[counter:(counter + 1)] <- c(mean(te$temp), mean(te$precip))
+  env_df$mean[counter:(counter + 1)] <- c(mean(te$mean_temp), mean(te$mean_precip))
   env_df$slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,1], 
                                            fit_precip$coefficients[2,1])
   env_df$se_slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,2], 

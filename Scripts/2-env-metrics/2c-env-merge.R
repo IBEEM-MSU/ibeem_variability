@@ -7,7 +7,8 @@
 # Specify dir --------------------------------------------------
 
 #path CY machine
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+dir <- '/mnt/research/ibeem/variability/'
 
 
 # load packages -----------------------------------------------------------
@@ -20,25 +21,22 @@ library(sf)
 # read in data -------------------------------------------------
 
 #environmental variability - add relative slope
-env_var <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
+env_var <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
   dplyr::mutate(rel_slope = slope / sd_resid)
-env_var_GAM <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-var-GAM-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
-  dplyr::mutate(rel_slope = slope / sd_resid)
-#environmental seasonality - long format
-env_season <- read.csv(paste0(dir, 'Data/L1/climate/era5/Env-seasonality-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
-  reshape2::melt(id.vars = c('lat', 'lon')) %>%
-  dplyr::rename(sd_season = value)
-#replace with temp and precip
-temp_idx <- which(env_season$variable == 'mn_sd_temp')
-precip_idx <- which(env_season$variable == 'mn_sd_precip')
-#remove variable (factor), add var with same names as other dfs
-env_season2 <- dplyr::select(env_season, -variable) %>%
-  dplyr::mutate(var = NA)
-env_season2$var[temp_idx] <- 'temp'
-env_season2$var[precip_idx] <- 'precip'
+
+#monthly spectral exponent
+lf <- list.files(paste0(dir, 'data/L1/climate/era5/'), full.names = TRUE)
+ef <- grep('spectral', lf, value = TRUE)
+#read all files in and bind - change name to match env_var
+se <- do.call(rbind, lapply(ef, read.csv)) %>%
+  reshape2::melt(id.vars = c('cell_id', 'lon', 'lat'),
+                 value.name = 'spectral_exp', variable.name = 'var')
+se$var <- as.character(se$var)
+se$var[which(se$var == 'spectral_beta_temp')] <- 'temp'
+se$var[which(se$var == 'spectral_beta_precip')] <- 'precip'
 
 #landmask
-lm <- sf::st_read(paste0(dir, 'Data/L0/landmask/ne_10m_land.shp')) %>%
+lm <- sf::st_read(paste0(dir, 'data/L0/landmask/ne_10m_land.shp')) %>%
   dplyr::filter(featurecla == 'Land')
 
 
@@ -69,15 +67,13 @@ t_cval <- cbind(t_crds, t_vals) %>%
 
 #merge masked df with actual data
 #set all ocean and land < 60 S lat to FALSE for field valid
-env_mrg <- dplyr::left_join(env_var, t_cval, 
-                          by = c('cell_id', 'lon', 'lat')) %>%
-  dplyr::left_join(env_season2, by = c('lat', 'lon', 'var'))
-env_mrg_GAM <- dplyr::left_join(env_var_GAM, t_cval, 
-                            by = c('cell_id', 'lon', 'lat')) %>%
-  dplyr::left_join(env_season2, by = c('lat', 'lon', 'var'))
+env_mrg <- dplyr::left_join(env_var, se, 
+                          by = c('cell_id', 'var', 'lon', 'lat')) %>%
+  dplyr::left_join(t_cval, by = c('cell_id', 'lon', 'lat'))
 na_idx <- which(is.na(env_mrg$valid))
 env_mrg$valid[na_idx] <- FALSE
-env_mrg_GAM$valid[na_idx] <- FALSE
+
+# saveRDS(env_mrg, '~/tt.rds')
 
 
 # PCA ---------------------------------------------------------------------
