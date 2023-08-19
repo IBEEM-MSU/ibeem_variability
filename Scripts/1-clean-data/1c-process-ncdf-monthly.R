@@ -12,10 +12,10 @@
 # get args fed to script --------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-#args <- rep(NA, 3)
-#args[1] = '/mnt/research/ibeem/variability/data/L0/climate/era5/'
-#args[2] = '/mnt/research/ibeem/variability/data/L1/climate/era5/'
-#args[3] = 1
+# args <- rep(NA, 3)
+# args[1] = '/mnt/research/ibeem/variability/data/L0/climate/era5/'
+# args[2] = '/mnt/research/ibeem/variability/data/L1/climate/era5/'
+# args[3] = 1
 
 
 # load packages -----------------------------------------------------------
@@ -43,8 +43,10 @@ proc_fun <- function(startvallat = 500,
                      months = 1:12)
 {
   #list full file paths - corresponding to var of interest
-  files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), full.names = TRUE), value = TRUE)
-  files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), full.names = TRUE), value = TRUE)
+  files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), 
+                                        full.names = TRUE), value = TRUE)
+  files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), 
+                                          full.names = TRUE), value = TRUE)
   
   #loop through files
   counter <- 1 #where to slot in data into df
@@ -240,7 +242,7 @@ for (k in 1:20) #lon
     #spectral exponent (1/f^beta)
     temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
     #precip - only run if residuals exist (i.e., all precip values were not 0)
-    if (sum(precip_resid) > 0)
+    if (sd(precip_resid) > 0)
     {
       precip_spec <- lomb::lsp(precip_resid, 
                                from = ll_freq, to = ul_freq, 

@@ -106,7 +106,7 @@ for (i in 1:length(uci))
   #spectral exponent (1/f^beta)
   temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
   #precip - only run if residuals exist (i.e., all precip values were not 0)
-  if (sum(precip_resid) > 0)
+  if (sd(precip_resid) > 0)
   {
     precip_spec <- lomb::lsp(precip_resid, 
                              from = ll_freq, to = ul_freq, 
