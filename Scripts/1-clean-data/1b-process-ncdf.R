@@ -128,8 +128,8 @@ proc_fun <- function(startvallat = 500,
     var_array_temp3_long <- round(as.vector(var_array_temp3), 2)
     var_array_precip3_long <- round(as.vector(var_array_precip3), 2)
     
-    season_array_temp3_long <- round(as.vector(var_array_temp3), 3)
-    season_array_precip3_long <- round(as.vector(var_array_precip3), 3)
+    season_array_temp3_long <- round(as.vector(season_array_temp3), 3)
+    season_array_precip3_long <- round(as.vector(season_array_precip3), 3)
     
     # create a dataframe
     llt <- expand.grid(lon, lat, lubridate::year(ymd_dates)[1])
