@@ -5,9 +5,6 @@
 # - in file
 # - out file
 #
-# NOTES:
-# - what are the most appropriate lags for temporal autocorrelation (in terms of predictability)
-# - can we fit regression models with t-distributed errors (estimating and not specificy degrees of freedom parameter) in R at a reasonable speed? (seems possibly -> https://stats.stackexchange.com/questions/117980/regression-with-t-distributed-errors-and-massrlm)
 ################
 
 # get args fed to script --------------------------------------------------
@@ -61,12 +58,11 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      mean = NA,
                      slope = NA, #slope of linear model
                      se_slope = NA, #standard error of slope
-                     sd_resid = NA, #sd of residuals for linear model
+                     sd_year = NA, #sd of residuals for linear model
                      sd_season = NA, #mean yearly sd across months
                      kurt = NA, #kurtosis
                      skew = NA, #skewness
-                     spectral_alpha = NA, #intercept of log10(power) ~ log10(freq)
-                     spectral_beta = NA, #spectral exponent
+                     sp_color_year = NA, #spectral exponent
                      rho_l1 = NA, #temporal autocorrelation lag 1
                      rho_l2 = NA, #lag 2
                      rho_l3 = NA,
@@ -130,16 +126,14 @@ for (i in 1:length(uci))
                                            fit_precip$coefficients[2,1])
   env_df$se_slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,2], 
                                               fit_precip$coefficients[2,2])
-  env_df$sd_resid[counter:(counter + 1)] <- c(sd(temp_resid), sd(precip_resid))
+  env_df$sd_year[counter:(counter + 1)] <- c(sd(temp_resid), sd(precip_resid))
   env_df$sd_season[counter:(counter + 1)] <- c(mean(te$season_temp), 
                                                mean(te$season_precip))
   env_df$kurt[counter:(counter + 1)] <- c(moments::kurtosis(temp_resid), 
                                           moments::kurtosis(precip_resid))
   env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
                                           moments::skewness(precip_resid))
-  env_df$spectral_alpha[counter:(counter + 1)] <- c(temp_spec_fit[1], 
-                                                   precip_spec_fit[1])
-  env_df$spectral_beta[counter:(counter + 1)] <- c(temp_spec_fit[2] * -1, 
+  env_df$sp_color_year[counter:(counter + 1)] <- c(temp_spec_fit[2] * -1, 
                                                    precip_spec_fit[2] * -1)
   env_df$rho_l1[counter:(counter + 1)] <- c(temp_acf$acf[2], precip_acf$acf[2])
   env_df$rho_l2[counter:(counter + 1)] <- c(temp_acf$acf[3], precip_acf$acf[3])
