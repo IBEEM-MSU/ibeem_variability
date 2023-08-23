@@ -298,4 +298,4 @@ tt_mrg2 <- dplyr::left_join(tt_mrg, mys_f, by = 'cell_id') %>%
                 valid)
 
 #write to csv
-write.csv(tt_mrg2, paste0(dir, 'data/L2/climate/era5/Env-main.csv'))
+write.csv(tt_mrg2, paste0(dir, 'data/L2/climate/era5/Env-main.csv'), row.names = FALSE)
