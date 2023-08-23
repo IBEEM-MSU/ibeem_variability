@@ -59,7 +59,9 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      slope = NA, #slope of linear model
                      se_slope = NA, #standard error of slope
                      sd_year = NA, #sd of residuals for linear model
+                     cv_year = NA,
                      sd_season = NA, #mean yearly sd across months
+                     cv_season = NA,
                      kurt = NA, #kurtosis
                      skew = NA, #skewness
                      sp_color_year = NA, #spectral exponent
@@ -127,8 +129,12 @@ for (i in 1:length(uci))
   env_df$se_slope[counter:(counter + 1)] <- c(fit_temp$coefficients[2,2], 
                                               fit_precip$coefficients[2,2])
   env_df$sd_year[counter:(counter + 1)] <- c(sd(temp_resid), sd(precip_resid))
+  env_df$cv_year[counter:(counter + 1)] <- c(sd(temp_resid) / mean(te$mean_temp), 
+                                             sd(precip_resid) / mean(te$mean_precip))
   env_df$sd_season[counter:(counter + 1)] <- c(mean(te$season_temp), 
                                                mean(te$season_precip))
+  env_df$cv_season[counter:(counter + 1)] <- c(mean(te$season_temp) / mean(te$mean_temp), 
+                                               mean(te$season_precip) / mean(te$mean_precip))
   env_df$kurt[counter:(counter + 1)] <- c(moments::kurtosis(temp_resid), 
                                           moments::kurtosis(precip_resid))
   env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
