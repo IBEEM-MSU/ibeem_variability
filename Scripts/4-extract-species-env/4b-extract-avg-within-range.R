@@ -46,21 +46,34 @@ cn <- c('ID', names(env.dat.rast), 'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
 
+# to avoid some 'duplciate vertex' errors (this might prevent centroid from being calculated):
+# https://github.com/r-spatial/sf/issues/1762
+# sf::sf_use_s2(FALSE)
+
 counter <- 1
 for (i in 1:length(ids)) {
   #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
-  curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'))
+  curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'),
+                            quiet = TRUE)
+  
+  #if more than one polygon, merge them
+  if (NROW(curr.range) > 1)
+  {
+    curr.range2 <- sf::st_union(curr.range)
+  } else {
+    curr.range2 <- curr.range
+  }
   
   # Extract mean env value across range from raster
   env.vals <- terra::extract(env.dat.rast,
-                 terra::vect(curr.range),
+                 terra::vect(curr.range2),
                  touches = TRUE,
                  fun = function(x) mean(x, na.rm = TRUE))
 
   # reproject to laea (equal area)
-  curr.range.tr <- sf::st_transform(curr.range, crs = "+proj=laea")
+  curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
   # get centroid - ignore warning
   cen_ll <- sf::st_centroid(curr.range.tr) %>%
     sf::st_transform(4326) %>%
@@ -68,7 +81,6 @@ for (i in 1:length(ids)) {
     as.numeric()
   # get range size - km^2
   rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
-  
   
   # #TO DO: RASTERIZE SHP FILE
   # #create empty rast
@@ -88,7 +100,7 @@ for (i in 1:length(ids)) {
   counter <- counter + 1
   
   #clean up memory
-  rm(curr.range, curr.range.tr, env.vals)
+  rm(curr.range, curr.range2, curr.range.tr, env.vals)
   gc()
 }
 
