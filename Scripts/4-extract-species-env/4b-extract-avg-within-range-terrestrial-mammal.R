@@ -3,7 +3,11 @@
 #                              and output all the associated information for 
 #                              running models of the form trait ~ climate
 
-# Hello 
+
+#SEE CHANGES/COMMENTS IN 4b-extract-avg-within-range.R (bird script)
+
+
+
 rm(list = ls())
 library(tidyverse)
 library(sf)
@@ -25,25 +29,9 @@ if(length(file.name) == 0) base::stop('Need to give the file name to process')
 load(paste0(MAM.dir, file.name))
 # Climate data (takes a couple of minutes to load
 # NOTE: can change this to the GAM stuff if that's what we want.
-env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
-
-##MIGHT NEED TO RASTERIZE AND THEN EXTRACT INSTEAD, TO MAKE SURE CELLS THAT JUST INTERSECT (BUT DON'T NECESSARILY HAVE CENTROIDS THAT OVERLAP RANGE) GET EXTRACTED
-# VV I (Casey) think this should rasterize
-#I think this needs to be done separately for temp and precip - maybe not though
-# temp.dat.rast <- dplyr::filter(env.dat, 
-#                               var = 'temp',
-#                               valid == TRUE) %>% #valid cells are only those over land
-#   terra::rast(crs = "epsg:4326")
-# precip.dat.rast <- dplyr::filter(env.dat, 
-#                                var = 'precip',
-#                                valid == TRUE) %>%
-#   terra::rast(crs = "epsg:4326")
-#
-# VV I think this should extract
-# terra::extract(temp.dat.rast, 
-#                terra::vect(curr.range),
-#                touches = TRUE,
-#                fun = mean)
+env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
+  #only 'valid' cells (those over land and > -60S lat)
+  dplyr::filter(valid == TRUE)
 
 # Convert to sf
 env.dat.sf <- st_as_sf(env.dat, 
@@ -74,11 +62,6 @@ for (i in 1:length(ids)) {
   curr.range <- st_read(paste0(MAM.dir, curr.sp, '.shp'))
   # Get pixels within current species range. Takes about 2 min per species
   env.curr.range <- st_crop(env.dat.sf, curr.range)
-  
-  ##CALC RANGE SIZE AND LAT/LON CENTROIDS HERE?
-  ##RASTERIZE SHP FILE, RESAMPLE TO ENV GRID, REPLACE RASTER VALUES (1'S) WITH GENERATION LENGTH
-  ##believe this should resample to env grid
-  #terra::resample(range.rast, temp.dat.rast, method = 'near'))
   
   # Get average of all the environmental variables for the given species
   bad.cols <- which(names(env.curr.range) %in% c('cell_id', 'geometry'))
