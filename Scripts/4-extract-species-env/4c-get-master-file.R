@@ -1,57 +1,67 @@
 # 4c-get-master-file.R: script to generate a single master file where each 
 #                       row is a species and the columns contain the traits, 
 #                       and average climate variables
+
 rm(list = ls())
 library(tidyverse)
 
+
 # Specify directories -----------------------------------------------------
-climate.dir <- '/mnt/research/ibeem/data/L2/range-env-pieces/'
-BL.dir <- '/mnt/research/ibeem/data/L1/range/bird-breeding/'
-trait.dir <- '/mnt/research/ibeem/data/L1/trait/'
-out.dir <- '/mnt/research/ibeem/data/L2/'
+
+climate.dir <- '/mnt/research/ibeem/variability/data/L2/range-env-pieces/'
+BL.dir <- '/mnt/research/ibeem/variability/data/L1/range/bird-breeding/'
+trait.dir <- '/mnt/research/ibeem/variability/data/L1/trait/'
+out.dir <- '/mnt/research/ibeem/variability/data/L2/'
+
 
 # Get the climate data ----------------------------------------------------
+
 # Loads the full set of current BL IDs 
 load(paste0(BL.dir, 'BL-ids.rda'))
 # Load the first chunk of species and climate averages to get number of variables
-# Loads object called "avg.clim.df"
+# Loads object called "env.out"
 load(paste0(climate.dir, 'summarized-data-piece-1'))
-# Yeah, I know this is super inefficient, but it gets the job done.
+
+#build into list
 climate.list <- list()
 clim.files <- list.files(climate.dir)
 for (i in 1:length(clim.files)) {
   print(i)
   load(paste0(climate.dir, clim.files[i]))
-  climate.list[[i]] <- avg.clim.df
+  climate.list[[i]] <- env.out
 }
 # Put it in a data frame
 climate.df <- do.call("rbind", climate.list)
-# Note that some of the species are waterbirds, and their ranges don't overlap
-# with the extracted climate data. 
-# How many species are NA? 
+# Some species don't overlap climate data (e.g., Antarctic-only seabirds)
+# How many species are NA? Just 24
 sum(apply(climate.df, 1, function(a) sum(is.na(a))) > 0)
-# So, still a good amount of species!
 
-# Load in some of the trait data ------------------------------------------
+
+# Load in trait data ------------------------------------------
+
 # AVONET data
-avonet.dat <- read.csv(paste0(trait.dir, 'avonet-with-id.csv'))
-# Bird et al data
-gen.time.dat <- read.csv(paste0(trait.dir, 'bird-et-al-data-with-id.csv'))
-# Get rid of species without an id and only grab columns of relevance
-gen.time.dat <- gen.time.dat %>%
-  dplyr::filter(!is.na(id)) %>%
-  dplyr::select(starts_with('Measured'), starts_with('Modeled'), GenLength, accepted_name, id) %>%
-  setNames(paste0('bird.et.al.', names(.))) %>%
-  rename(id = bird.et.al.id, accepted_name = bird.et.al.accepted_name)
-avonet.dat <- avonet.dat %>%
-  dplyr::filter(!is.na(id)) %>%
-  dplyr::select(-Sequence, -Species1, -Family1, -Order1, -Avibase.ID1) %>%
-  setNames(paste0('avonet.', names(.))) %>%
-  rename(id = avonet.id, accepted_name = avonet.accepted_name)
-# Join the two trait data sources
-trait.dat <- full_join(gen.time.dat, avonet.dat, by = c('id', 'accepted_name'))
+avonet.dat <- read.csv(paste0(trait.dir, 'avonet-with-id.csv')) %>%
+  dplyr::filter(!is.na(BirdLife_ID)) %>%
+  dplyr::select(-Sequence, -Family1, -Order1, -Avibase.ID1,
+                -Total.individuals, -Female, -Male, -Unknown, 
+                -Complete.measures, -Inference, -Traits.inferred, 
+                -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
+                -Range.Size, -Notes, -Mass.Source, -Mass.Refs.Other) %>%
+  dplyr::rename(ID = BirdLife_ID, accepted_name = Species1)
 
-# Put it all together -----------------------------------------------------
-main.dat <- full_join(climate.df, trait.dat, by = c('id'))
+# Bird et al data - Get rid of species without an id and only grab columns of relevance
+gen.time.dat <- read.csv(paste0(trait.dir, 'bird-et-al-data-with-id.csv')) %>%
+  dplyr::filter(!is.na(BirdLife_ID)) %>%
+  dplyr::select(BirdLife_ID, Sci_name, GenLength) %>%
+  rename(ID = BirdLife_ID, accepted_name = Sci_name)
+
+
+# combine -----------------------------------------------------------------
+
+main.dat <- dplyr::full_join(gen.time.dat, avonet.dat, 
+                             by = c('ID', 'accepted_name')) %>%
+  dplyr::full_join(climate.df, trait.dat, by = c('ID'))
+
+#write to file
 write.csv(main.dat, file = paste0(out.dir, 'main-bird-data.csv'), row.names = FALSE)
 
