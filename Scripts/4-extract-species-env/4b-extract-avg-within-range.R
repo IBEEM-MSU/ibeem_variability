@@ -54,14 +54,22 @@ for (i in 1:length(ids)) {
   curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
-  # to avoid some 'duplciate vertex' errors:
-  # https://github.com/r-spatial/sf/issues/1762
-  sf::sf_use_s2(FALSE)
-  
   #if more than one polygon, merge them
   if (NROW(curr.range) > 1)
   {
-    curr.range2 <- sf::st_union(curr.range)
+    curr.range2 <- try(sf::st_union(curr.range))
+    
+    if (inherits(curr.range2, "try-error"))
+    {
+      # to avoid some 'duplciate vertex' errors:
+      # https://github.com/r-spatial/sf/issues/1762
+      sf::sf_use_s2(FALSE)
+      
+      curr.range2 <- sf::st_union(curr.range)
+      
+      #switch back to get centroid
+      sf::sf_use_s2(TRUE)
+    }
   } else {
     curr.range2 <- curr.range
   }
@@ -71,9 +79,6 @@ for (i in 1:length(ids)) {
                  terra::vect(curr.range2),
                  touches = TRUE,
                  fun = function(x) mean(x, na.rm = TRUE))
-
-  #switch back to get centroid
-  sf::sf_use_s2(TRUE)
   
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
