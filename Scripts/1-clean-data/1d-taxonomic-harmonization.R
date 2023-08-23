@@ -108,8 +108,8 @@ BL_data <- BL_data %>%
   dplyr::left_join(BL_data, full.name.dat, by = c('sci_name' = 'name'))
 
 
-# Save Bird range data one by one with ID ---------------------------------
 # Bird range data one by one ----------
+
 # Grab breeding/resident ranges, only extant ranges, only native ranges
 BL_data_breeding <- BL_data %>%
   dplyr::filter(seasonal %in% 1:2, presence == 1, origin == 1)

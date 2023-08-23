@@ -33,13 +33,13 @@ for (i in 1:length(clim.files)) {
 # Put it in a data frame
 climate.df <- do.call("rbind", climate.list)
 # Some species don't overlap climate data (e.g., Antarctic-only seabirds)
-# How many species are NA? Just 24
+# How many species are NA? Just 16
 sum(apply(climate.df, 1, function(a) sum(is.na(a))) > 0)
 
 
 # Load in trait data ------------------------------------------
 
-# AVONET data
+# AVONET data - keep only necessary fields
 avonet.dat <- read.csv(paste0(trait.dir, 'avonet-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
   dplyr::select(-Sequence, -Family1, -Order1, -Avibase.ID1,
@@ -49,18 +49,20 @@ avonet.dat <- read.csv(paste0(trait.dir, 'avonet-with-id.csv')) %>%
                 -Range.Size, -Notes, -Mass.Source, -Mass.Refs.Other) %>%
   dplyr::rename(ID = BirdLife_ID, accepted_name = Species1)
 
-# Bird et al data - Get rid of species without an id and only grab columns of relevance
+# Bird et al data
 gen.time.dat <- read.csv(paste0(trait.dir, 'bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
   dplyr::select(BirdLife_ID, Sci_name, GenLength) %>%
-  rename(ID = BirdLife_ID, accepted_name = Sci_name)
+  dplyr::rename(ID = BirdLife_ID, accepted_name = Sci_name)
 
 
-# combine -----------------------------------------------------------------
+# combine trait and climate data-----------------------------------------------
 
+#only species with values for mean temp
 main.dat <- dplyr::full_join(gen.time.dat, avonet.dat, 
                              by = c('ID', 'accepted_name')) %>%
-  dplyr::full_join(climate.df, trait.dat, by = c('ID'))
+  dplyr::full_join(climate.df, trait.dat, by = c('ID')) %>%
+  dplyr::filter(!is.na(temp_mean))
 
 #write to file
 write.csv(main.dat, file = paste0(out.dir, 'main-bird-data.csv'), row.names = FALSE)
