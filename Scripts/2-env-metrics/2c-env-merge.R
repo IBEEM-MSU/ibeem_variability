@@ -130,7 +130,7 @@ env_mrg$valid[na_idx] <- FALSE
 # tt$pc2 <- covs_pca$x[,2]
 # tt$pc3 <- covs_pca$x[,3]
 # 
-# plt <- dplyr::select(tt, lon, lat, pc2) %>%
+# plt <- dplyr::select(tt, lon, lat, XXXX) %>%
 #   terra::rast(crs = "epsg:4326")
 # plot(plt)
 

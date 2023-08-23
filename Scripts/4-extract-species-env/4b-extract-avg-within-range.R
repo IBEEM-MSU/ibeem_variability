@@ -42,13 +42,13 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 # Loop through all the species in the current file ------------------------
 
 # Make data frame to hold everything
-env.temp <- dplyr::select(env.dat, -cell_id, -lon, -lat)[1,]
-cn <- c('ID', colnames(env.temp), 'cen_lon', 'cen_lat', 'range_size_km2')
+cn <- c('ID', names(env.dat.rast), 'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
 
 counter <- 1
 for (i in 1:length(ids)) {
+  #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
   curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'))
@@ -61,7 +61,7 @@ for (i in 1:length(ids)) {
 
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range, crs = "+proj=laea")
-  # get centroid
+  # get centroid - ignore warning
   cen_ll <- sf::st_centroid(curr.range.tr) %>%
     sf::st_transform(4326) %>%
     sf::st_coordinates() %>%
@@ -81,8 +81,8 @@ for (i in 1:length(ids)) {
   # save out as single-species tifs
   
   
-  #fill df
-  env.out[counter,] <- c(env.vals, cen_ll, rsize_km2)
+  #fill df - current id, env vals, centroid, range size
+  env.out[counter,] <- c(curr.sp, env.vals[-1], cen_ll, rsize_km2)
   
   #advance counter
   counter <- counter + 1
@@ -91,5 +91,7 @@ for (i in 1:length(ids)) {
   rm(curr.range, curr.range.tr, env.vals)
   gc()
 }
+
+#write out file
 save(env.out, file = paste0(out.dir, 'summarized-data-piece-', 
 				stringr::str_extract(file.name, '\\d+')))
