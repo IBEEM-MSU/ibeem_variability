@@ -5,11 +5,12 @@
 rm(list = ls())
 library(tidyverse)
 library(sf)
+library(terra)
 
 # Specify directory -------------------------------------------------------
-BL.dir <- '/mnt/research/ibeem/data/L1/range/bird-breeding/'
-env.dir <- '/mnt/research/ibeem/L2/climate/era5/'
-out.dir <- '/mnt/research/ibeem/data/L2/range-env-pieces/'
+BL.dir <- '/mnt/research/ibeem/variability/data/L1/range/bird-breeding/'
+env.dir <- '/mnt/research/ibeem/variability/data/L2/climate/era5/'
+out.dir <- '/mnt/research/ibeem/variability/data/L2/range-env-pieces/'
 
 # Get the current file to process -----------------------------------------
 file.name <- commandArgs(trailingOnly = TRUE)
@@ -17,84 +18,78 @@ file.name <- commandArgs(trailingOnly = TRUE)
 # file.name <- 'BLIDsPiece-14.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
+
 # Read in data ------------------------------------------------------------
 # Loads in current set of ids (a vector called ids)
 load(paste0(BL.dir, file.name))
 # Climate data (takes a couple of minutes to load
 # NOTE: can change this to the GAM stuff if that's what we want.
-env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv'))
 
-##MIGHT NEED TO RASTERIZE AND THEN EXTRACT INSTEAD, TO MAKE SURE CELLS THAT JUST INTERSECT (BUT DON'T NECESSARILY HAVE CENTROIDS THAT OVERLAP RANGE) GET EXTRACTED
-# VV I (Casey) think this should rasterize
-#I think this needs to be done separately for temp and precip - maybe not though
-# temp.dat.rast <- dplyr::filter(env.dat, 
-#                               var = 'temp',
-#                               valid == TRUE) %>% #valid cells are only those over land
-#   terra::rast(crs = "epsg:4326")
-# precip.dat.rast <- dplyr::filter(env.dat, 
-#                                var = 'precip',
-#                                valid == TRUE) %>%
-#   terra::rast(crs = "epsg:4326")
-#
-# VV I think this should extract
-# terra::extract(temp.dat.rast, 
-#                terra::vect(curr.range),
-#                touches = TRUE,
-#                fun = mean)
+#only valid cells (land and N of -60S lat)
+env.dat <- read.csv(paste0(env.dir, 'Env-main.csv')) %>%
+  #only 'valid' cells (those over land and > -60S lat)
+  dplyr::filter(valid == TRUE) %>%
+  dplyr::select(-valid)
 
-# Convert to sf
-env.dat.sf <- st_as_sf(env.dat, 
-		       coords = c('lon', 'lat'),
-		       crs = 4326)
+#rasterize env data for extraction (so ensure that ranges that don't intersect cell centers are captured)
+env.dat.rast <- dplyr::select(env.dat, lon, lat,
+                               grep('temp', colnames(env.dat), value = TRUE),
+                               grep('precip', colnames(env.dat), value = TRUE),
+                              grep('mys', colnames(env.dat), value = TRUE)) %>%
+  terra::rast(crs = "epsg:4326")
+
 
 # Loop through all the species in the current file ------------------------
+
 # Make data frame to hold everything
-# Number of climate variables
-clim.var.names <- sort(unique(env.dat.sf$var))
-n.clim.var <- length(clim.var.names)
-# Different metrics of the variables
-metrics <- env.dat %>%
-  dplyr::select(-cell_id, -var, -lon, -lat) %>%
-  colnames()
-n.metrics <- length(metrics)
-avg.clim.df <- matrix(NA, nrow = length(ids), ncol = n.metrics * n.clim.var + 1)
-# Definitely a better way to do this
-tmp.names <- paste(rep(metrics, each = n.clim.var), clim.var.names, sep = "_")
-colnames(avg.clim.df) <- c('id', tmp.names)
-id.indx <- which(colnames(avg.clim.df) == 'id')
-avg.clim.df <- as.data.frame(avg.clim.df)
-			  
+env.temp <- dplyr::select(env.dat, -cell_id, -lon, -lat)[1,]
+cn <- c('ID', colnames(env.temp), 'cen_lon', 'cen_lat', 'range_size_km2')
+env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
+colnames(env.out) <- cn                      
+
+counter <- 1
 for (i in 1:length(ids)) {
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
-  curr.range <- st_read(paste0(BL.dir, curr.sp, '-breeding.shp'))
-  # Get pixels within current species range. Takes about 2 min per species
-  env.curr.range <- st_crop(env.dat.sf, curr.range)
+  curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'))
   
-  ##CALC RANGE SIZE AND LAT/LON CENTROIDS HERE?
-  ##RASTERIZE SHP FILE, RESAMPLE TO ENV GRID, REPLACE RASTER VALUES (1'S) WITH GENERATION LENGTH
-  ##believe this should resample to env grid
-  #terra::resample(range.rast, temp.dat.rast, method = 'near'))
+  # Extract mean env value across range from raster
+  env.vals <- terra::extract(env.dat.rast,
+                 terra::vect(curr.range),
+                 touches = TRUE,
+                 fun = function(x) mean(x, na.rm = TRUE))
+
+  # reproject to laea (equal area)
+  curr.range.tr <- sf::st_transform(curr.range, crs = "+proj=laea")
+  # get centroid
+  cen_ll <- sf::st_centroid(curr.range.tr) %>%
+    sf::st_transform(4326) %>%
+    sf::st_coordinates() %>%
+    as.numeric()
+  # get range size - km^2
+  rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
   
-  # Get average of all the environmental variables for the given species
-  bad.cols <- which(names(env.curr.range) %in% c('cell_id', 'geometry'))
-  avg.clim.vars <- env.curr.range %>%
-    dplyr::select(-cell_id, -geometry) %>%
-    st_drop_geometry() %>%
-    group_by(var) %>%
-    summarize(across(where(is.numeric), ~ mean(.x, na.rm = TRUE))) %>%
-    arrange(var) %>%
-    dplyr::select(-var) %>%
-    as.matrix() %>%
-    c()
-  avg.clim.df[i, id.indx] <- curr.sp
-  # Need this if, as there are some species whose ranges don't overlap the climate
-  # data (e.g., Snares Penguin)
-  if (length(avg.clim.vars) > 0) {
-    avg.clim.df[i, -id.indx] <- avg.clim.vars
-  }
-  rm(curr.range, env.curr.range)
+  
+  # #TO DO: RASTERIZE SHP FILE
+  # #create empty rast
+  # er <- temp.dat.rast[[1]]
+  # er[] <- NA
+  # #rasterize range with same crs as temp raster
+  # curr.range.rast <- terra::rasterize(vect(curr.range), tt)
+  #
+  # REPLACE RASTER VALUES (1'S) WITH GENERATION LENGTH (WILL NEED TO READ IN GEN LENGTH DATA FROM 4C...)
+  # save out as single-species tifs
+  
+  
+  #fill df
+  env.out[counter,] <- c(env.vals, cen_ll, rsize_km2)
+  
+  #advance counter
+  counter <- counter + 1
+  
+  #clean up memory
+  rm(curr.range, curr.range.tr, env.vals)
   gc()
 }
-save(avg.clim.df, file = paste0(out.dir, 'summarized-data-piece-', 
-				str_extract(file.name, '\\d+')))
+save(env.out, file = paste0(out.dir, 'summarized-data-piece-', 
+				stringr::str_extract(file.name, '\\d+')))
