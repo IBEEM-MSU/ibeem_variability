@@ -22,7 +22,7 @@ library(sf)
 
 #environmental variability - add relative slope
 env_var <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
-  dplyr::mutate(rel_slope = slope / sd_resid)
+  dplyr::mutate(rel_slope = slope / sd_year)
 
 #monthly spectral exponent
 lf <- list.files(paste0(dir, 'data/L1/climate/era5/'), full.names = TRUE)
@@ -80,43 +80,62 @@ env_mrg$valid[na_idx] <- FALSE
 # saveRDS(env_mrg, '~/tt.rds')
 
 # plt <- dplyr::filter(env_mrg, var == 'temp', valid == TRUE) %>%
-#   dplyr::select(lon, lat, sp_color_yearly) %>%
+#   dplyr::select(lon, lat, sp_color_year) %>%
 #   terra::rast(crs = "epsg:4326")
 # plot(plt)
 
 
 # explore -----------------------------------------------------------------
 
-tt <- dplyr::filter(env_mrg, var == 'precip', valid == TRUE,
-                    !is.na(sp_color_yearly))
-# plot(tt$sd_resid, tt$sd_season, col = rgb(0,0,0,0.1))
-# plot(tt$sd_resid, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
-# plot(tt$sd_resid, tt$sp_color_year, col = rgb(0,0,0,0.1))
-# plot(tt$sd_season, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
-# plot(tt$sd_season, tt$sp_color_yearly, col = rgb(0,0,0,0.1))
-# plot(tt$sp_color_yearly, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
+# tt <- dplyr::filter(env_mrg, var == 'temp', valid == TRUE,
+#                     !is.na(sp_color_year))
+# # plot(tt$sd_resid, tt$sd_season, col = rgb(0,0,0,0.1))
+# # plot(tt$sd_resid, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
+# # plot(tt$sd_resid, tt$sp_color_year, col = rgb(0,0,0,0.1))
+# # plot(tt$sd_season, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
+# # plot(tt$sd_season, tt$sp_color_yearly, col = rgb(0,0,0,0.1))
+# # plot(tt$sp_color_yearly, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
+# 
+# #with temp sd_year, sd_season, and sp_color_year, + PC2 = + var, + spectral exp, - mean
+# 
+# cor(cbind(tt$mean, 
+#           tt$sd_year, 
+#           tt$sd_season, 
+#           tt$sp_color_year#, 
+#           # tt$sp_color_month
+#           ))
+# tcov <- tt[,c('mean', 
+#               'sd_year', 
+#               'sd_season', 
+#               'sp_color_year'#, 
+#               # 'sp_color_month'
+#               )]
+# colnames(tcov) <- c('Mean', 
+#                     'Inter-annual', 
+#                     'Intra-annual', 
+#                     'Spec (year)'#, 
+#                     # 'Spec (month)'
+#                     )
+# covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
+# 
+# factoextra::fviz_pca_var(covs_pca,
+#                          axes = c(1,2),
+#                          #geom = 'arrow',
+#                          col.var = "contrib", # Color by contributions to the PC
+#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                          repel = FALSE,
+#                          title = 'PCA - Temperature')
+# 
+# tt$pc1 <- covs_pca$x[,1]
+# tt$pc2 <- covs_pca$x[,2]
+# tt$pc3 <- covs_pca$x[,3]
+# 
+# plt <- dplyr::select(tt, lon, lat, pc2) %>%
+#   terra::rast(crs = "epsg:4326")
+# plot(plt)
 
-cor(cbind(tt$mean, tt$sd_resid, tt$sd_season, tt$sp_color_yearly, tt$sp_color_monthly))
-tcov <- tt[,c('mean', 'sd_resid', 'sd_season', 'sp_color_yearly', 'sp_color_monthly')]
-colnames(tcov) <- c('Mean', 'Inter-annual', 'Intra-annual', 'Spec (year)', 'Spec (month)')
-covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
 
-factoextra::fviz_pca_var(covs_pca,
-                         axes = c(2,3),
-                         #geom = 'arrow',
-                         col.var = "contrib", # Color by contributions to the PC
-                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         repel = FALSE,
-                         title = 'PCA - Temperature')
-
-tt$pc1 <- covs_pca$x[,1]
-tt$pc2 <- covs_pca$x[,2]
-tt$pc3 <- covs_pca$x[,3]
-
-plt <- dplyr::select(tt, lon, lat, mean) %>%
-  terra::rast(crs = "epsg:4326")
-plot(plt)
-
+# joint temp and precip ---------------------------------------------------
 
 #both temp and precip together
 tt_temp <- dplyr::filter(env_mrg, var == 'temp')
@@ -126,145 +145,157 @@ tt_precip <- dplyr::filter(env_mrg, var == 'precip') %>%
   dplyr::select(-c(var, valid, cell_id, lon, lat))
 names(tt_precip) <- paste0('precip_', names(tt_precip))
 tt_mrg <- cbind(tt_temp, tt_precip) %>%
-  dplyr::rename(valid = temp_valid)
-str(tt_mrg)
+  dplyr::rename(valid = temp_valid) %>%
+  dplyr::select(-var)
 
-tt_f <- dplyr::filter(tt_mrg, valid == TRUE, 
-                      !is.na(precip_sp_color_yearly)) %>%
-  dplyr::select(lon, lat, 
+#mean, yearly sd, season sd
+tt_mean_year_season <- dplyr::filter(tt_mrg, valid == TRUE) %>%
+  dplyr::select(cell_id, lon, lat, 
     # #TEMP
     temp_mean,
-    # precip_mean,
+    precip_mean,
     # #INTER-ANNUAL SD
-    temp_sd_resid,
-    # precip_sd_resid,
+    temp_sd_year,
+    precip_sd_year,
     # #INTRA-ANNUAL SD
-    # temp_sd_season,
-    # precip_sd_season,
+    temp_sd_season,
+    precip_sd_season,
     # #YEAR SPECTRAL COLOR
-    temp_sp_color_yearly,
-    # precip_sp_color_yearly,
+    # temp_sp_color_year,
+    # precip_sp_color_year,
     # #MONTH SPECTRAL COLOR
     # temp_sp_color_monthly,
     # precip_sp_color_monthly
+    # # #SKEW
+    # temp_skew,
+    # precip_skew,
+    # # #KURTOSIS
+    # temp_kurt,
+    # precip_kurt
     )
 
-cor(tt_f)
-covs_pca <- dplyr::select(tt_f, -lon, -lat) %>%
+cor(tt_mean_year_season)
+mys_pca <- dplyr::select(tt_mean_year_season, -cell_id, -lon, -lat) %>%
   prcomp(center = TRUE, scale. = TRUE)
 
-factoextra::fviz_pca_var(covs_pca,
-                         axes = c(1,2),
-                         #geom = 'arrow',
-                         col.var = "contrib", # Color by contributions to the PC
-                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         repel = FALSE,
-                         title = 'PCA - Temp and Precip')
-tt_f$pc1 <- covs_pca$x[,1]
-tt_f$pc2 <- covs_pca$x[,2]
+# factoextra::fviz_pca_var(mys_pca,
+#                          axes = c(2,3),
+#                          #geom = 'arrow',
+#                          col.var = "contrib", # Color by contributions to the PC
+#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                          repel = FALSE,
+#                          title = 'PCA - Temp and Precip')
 
-plt <- dplyr::select(tt_f, lon, lat, pc1) %>%
-  # dplyr::mutate(tt = scale(temp_sd_resid, scale = TRUE)) %>%
-  # dplyr::mutate(tt = log(temp_sd_resid)) %>%
-  dplyr::mutate(tt = pc1) %>%
-  dplyr::select(lon, lat, tt) %>%
-  terra::rast(crs = "epsg:4326")
-rv <- range(terra::values(plt$tt), na.rm = TRUE)
-pal <- leaflet::colorNumeric(palette = "RdBu", 
-                             domain = rv, 
-                             reverse = T)
-plot(plt, range = rv, col = pal(seq(rv[1], rv[2], by = 0.1)))
+#Interpretation with mean, sd_year, sd_season, sp_color_year:
+#+ PC1 = + mean (temp and precip), + precip var (intra and inter), - temp var (intra and inter)
+#+ PC2 = + var (intra, inter, temp, and precip), + precip mean, - temp mean
+#PC3 = not very interpretable
+
+#positive effect of PC2 says var is important, negative effect of PC3 says var and sp_color is important
+tt_mean_year_season$mys_pc1 <- mys_pca$x[,1]
+tt_mean_year_season$mys_pc2 <- mys_pca$x[,2]
 
 
-
-# PCA ---------------------------------------------------------------------
-
-#variables: mean, sd_year, sd_season, sp_color_year, sp_color_month
-
-#function to get correlation between metrics, conduct pca, and add pc to env data
-pca_fun <- function(df, VAR)
-{
-  tenv <- dplyr::filter(df, valid == TRUE, var == VAR)
-  tcor <- round(cor(cbind(tenv$sd_resid, tenv$sd_season, tenv$mean)), 3)
-  
-  tcov <- tenv[,c('sd_resid', 'sd_season', 'mean')]
-  colnames(tcov) <- c('Inter-annual sd', 'Intra-annual sd', 'Mean')
-  covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
-  
-  #extract PCs and merge with data
-  tenv$PC1 <- covs_pca$x[,1]
-  tenv$PC2 <- covs_pca$x[,2]
-  tenv$PC3 <- covs_pca$x[,3]
-  
-  tlist <- list(cor = tcor, covs_pca = covs_pca, mrg_out = tenv)
-  return(tlist)
-}
-
-#run function
-pc_temp <- pca_fun(df = env_mrg, VAR = 'temp')
-pc_precip <- pca_fun(df = env_mrg, VAR = 'precip')
-
-
-#pca plots
-# pdf(paste0(fig_dir,'pca_biplot-', run_date, '.pdf'),
-#     height = 5.75, width = 5.75)
-factoextra::fviz_pca_var(pc_temp$covs_pca,
-                         axes = c(1,2),
-                         #geom = 'arrow',
-                         #col.var = "contrib", # Color by contributions to the PC
-                         #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         repel = FALSE,
-                         title = 'PCA - Temperature')
-# dev.off()
-
-factoextra::fviz_pca_var(pc_temp$covs_pca,
-                         axes = c(2,3),
-                         repel = FALSE,
-                         title = 'PCA - Temperature')
-
-factoextra::fviz_pca_var(pc_precip$covs_pca,
-                         axes = c(1,2),
-                         repel = FALSE,
-                         title = 'PCA - Precip')
-
-factoextra::fviz_pca_var(pc_precip$covs_pca,
-                         axes = c(2,3),
-                         repel = FALSE,
-                         title = 'PCA - Precip')
-
-#merge both temp and precip into main dfs
-env_main <- rbind(pc_temp$mrg_out, pc_precip$mrg_out)
-env_main_GAM <- rbind(pc_temp_GAM$mrg_out, pc_precip_GAM$mrg_out)
+#mean, yearly sd, season sd, spectral color
+#need to remove sp color invalid (no variation in values)
+tt_mean_year_season_color <- dplyr::filter(tt_mrg, valid == TRUE, 
+                                     !is.na(precip_sp_color_year)) %>%
+  dplyr::select(cell_id, lon, lat, 
+                # #TEMP
+                temp_mean,
+                precip_mean,
+                # #INTER-ANNUAL SD
+                temp_sd_year,
+                precip_sd_year,
+                # #INTRA-ANNUAL SD
+                temp_sd_season,
+                precip_sd_season,
+                # #YEAR SPECTRAL COLOR
+                temp_sp_color_year,
+                precip_sp_color_year,
+                # #MONTH SPECTRAL COLOR
+                # temp_sp_color_monthly,
+                # precip_sp_color_monthly,
+                # #SKEW
+                # temp_skew,
+                # precip_skew,
+                # #KURTOSIS
+                # temp_kurt,
+                # precip_kurt
+  )
 
 
-# PCA for temp/precip jointly ---------------------------------------------
+cor(tt_mean_year_season_color)
+mysc_pca <- dplyr::select(tt_mean_year_season_color, -cell_id, -lon, -lat) %>%
+  prcomp(center = TRUE, scale. = TRUE)
 
-# t1 <- dplyr::filter(env_mrg, var == 'temp')
-# str(t1)
-# plot(t1$spectral_exp, t1$spectral_beta)
-# range(t1$spectral_beta, na.rm = TRUE)
-# 
-# #make wide rather than long
-# #also look at correlation betwee
-# tenv <- dplyr::filter(env_mrg, valid == TRUE, var == 'precip')
-# tcor <- round(cor(cbind(tenv$sd_resid, tenv$sd_season, tenv$mean)), 3)
-# 
-# hist(sqrt(tenv$mean))
-# hist(tenv$sd_resid)
-# hist(tenv$sd_season)
-# 
-# tcov <- tenv[,c('sd_resid', 'sd_season', 'mean')]
-# colnames(tcov) <- c('Inter-annual sd', 'Intra-annual sd', 'Mean')
-# covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
-# 
-# #extract PCs and merge with data
-# tenv$PC1 <- covs_pca$x[,1]
-# tenv$PC2 <- covs_pca$x[,2]
-# tenv$PC3 <- covs_pca$x[,3]
-# 
-# tlist <- list(cor = tcor, covs_pca = covs_pca, mrg_out = tenv)
+# factoextra::fviz_pca_var(mysc_pca,
+#                          axes = c(2,3),
+#                          #geom = 'arrow',
+#                          col.var = "contrib", # Color by contributions to the PC
+#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                          repel = FALSE,
+#                          title = 'PCA - Temp and Precip')
+
+#Interpretation with mean, sd_year, sd_season, sp_color_year:
+#+ PC1 = + mean (temp and precip), + sp_color (temp and precip), + precip var (intra and inter), - temp var (intra and inter)
+#+ PC2 = + var (intra, inter, temp, and precip), + precip mean, - temp mean, - sp_color (temp and precip)
+#+ PC3 = - sp_color (temp and precip), - temp var (intra and inter), ~0 precip var (intra and inter), 0 precip mean, - temp mean
+#+ PC4 = + sp_color (temp), - sp_color (precip), - temp var (inter)
+
+#positive effect of PC2 says var is important, negative effect of PC3 says var and sp_color is important
+tt_mean_year_season_color$mysc_pc1 <- mysc_pca$x[,1]
+tt_mean_year_season_color$mysc_pc2 <- mysc_pca$x[,2]
+tt_mean_year_season_color$mysc_pc3 <- mysc_pca$x[,3]
+tt_mean_year_season_color$mysc_pc4 <- mysc_pca$x[,4]
 
 
-# write out merged data -----------------------------------------------------
+# visualize ---------------------------------------------------------------
 
-write.csv(env_main, paste0(dir, 'Data/L2/climate/era5/Env-main.csv'))
+# plt <- dplyr::select(tt_mean_year_season_color, lon, lat, pc4) %>%
+#   # dplyr::mutate(tt = scale(temp_sd_resid, scale = TRUE)) %>%
+#   # dplyr::mutate(tt = log(temp_sd_resid)) %>%
+#   dplyr::mutate(tt = pc4) %>%
+#   dplyr::select(lon, lat, tt) %>%
+#   terra::rast(crs = "epsg:4326")
+# rv <- range(terra::values(plt$tt), na.rm = TRUE)
+# pal <- leaflet::colorNumeric(palette = "RdBu", 
+#                              domain = rv, 
+#                              reverse = T)
+# plot(plt, range = rv, col = pal(seq(rv[1], rv[2], by = 0.1)))
+
+
+# merge and write out -----------------------------------------------------
+
+#only relevant fields from pca
+mys_f <- dplyr::select(tt_mean_year_season, cell_id, 
+                        mys_pc1, mys_pc2)
+mysc_f <- dplyr::select(tt_mean_year_season_color, cell_id, 
+              mysc_pc1, mysc_pc2, mysc_pc3, mysc_pc4)
+
+#merge with merge data
+tt_mrg2 <- dplyr::left_join(tt_mrg, mys_f, by = 'cell_id') %>%
+  dplyr::left_join(mysc_f, by = 'cell_id') %>%
+  #reorder
+  dplyr::select(cell_id, lon, lat, 
+                temp_mean, precip_mean, 
+                temp_sd_year, precip_sd_year,
+                temp_sd_season, precip_sd_season,
+                temp_slope, precip_slope,
+                temp_se_slope, precip_se_slope,
+                temp_rel_slope, precip_rel_slope,
+                temp_kurt, precip_kurt,
+                temp_skew, precip_skew,
+                temp_sp_color_year, precip_sp_color_year,
+                temp_sp_color_month, precip_sp_color_month,
+                temp_rho_l1, precip_rho_l1,
+                temp_rho_l2, precip_rho_l2,
+                temp_rho_l3, precip_rho_l3,
+                temp_rho_l4, precip_rho_l4,
+                temp_rho_l5, precip_rho_l5,
+                mys_pc1, mys_pc2,
+                mysc_pc1, mysc_pc2, mysc_pc3, mysc_pc4,
+                valid)
+
+#write to csv
+write.csv(tt_mrg2, paste0(dir, 'data/L2/climate/era5/Env-main.csv'))
