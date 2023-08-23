@@ -46,10 +46,6 @@ cn <- c('ID', names(env.dat.rast), 'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
 
-# to avoid some 'duplciate vertex' errors (this might prevent centroid from being calculated):
-# https://github.com/r-spatial/sf/issues/1762
-# sf::sf_use_s2(FALSE)
-
 counter <- 1
 for (i in 1:length(ids)) {
   #i <- 1
@@ -57,6 +53,10 @@ for (i in 1:length(ids)) {
   curr.sp <- ids[i]  
   curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'),
                             quiet = TRUE)
+  
+  # to avoid some 'duplciate vertex' errors:
+  # https://github.com/r-spatial/sf/issues/1762
+  sf::sf_use_s2(FALSE)
   
   #if more than one polygon, merge them
   if (NROW(curr.range) > 1)
@@ -72,6 +72,9 @@ for (i in 1:length(ids)) {
                  touches = TRUE,
                  fun = function(x) mean(x, na.rm = TRUE))
 
+  #switch back to get centroid
+  sf::sf_use_s2(TRUE)
+  
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
   # get centroid - ignore warning
