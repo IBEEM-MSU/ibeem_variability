@@ -18,12 +18,13 @@
 #SBATCH --mail-type=FAIL,END
 #
 # Mail user:
-#SBATCH --mail-user=doserjef@msu.edu
+# #SBATCH --mail-user=doserjef@msu.edu
+#SBATCH --mail-user=ccy@msu.edu
 #SBATCH --account plzbuyin #Space lab node
 
 module load GCC/8.3.0
 module load OpenMPI/3.1.4
 module load R/4.1.0
 
-Rscript /mnt/research/ibeem/Scripts/4-extract-species-env/4-extract-avg-within-range.R $fileName 
+Rscript /mnt/home/ccy/variability/Scripts/4-extract-species-env/4b-extract-avg-within-range.R $fileName 
 

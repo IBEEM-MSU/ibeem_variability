@@ -1,4 +1,4 @@
-# 4-example-species-extract.R: a script to start thinking about how we'll want
+# 4b-example-species-extract.R: a script to start thinking about how we'll want
 #                              to calculate metrics within each species range
 #                              and output all the associated information for 
 #                              running models of the form trait ~ climate
