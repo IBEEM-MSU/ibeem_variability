@@ -54,21 +54,16 @@ for (i in 1:length(ids)) {
   curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
-  #if more than one polygon, merge them
+  #if more than one polygon (resident + breeding ranges), merge them
   if (NROW(curr.range) > 1)
   {
+    #to address 'duplciate vertex' errors:
+    # https://github.com/r-spatial/sf/issues/1762
     curr.range2 <- try(sf::st_union(curr.range))
     
     if (inherits(curr.range2, "try-error"))
     {
-      # to avoid some 'duplciate vertex' errors:
-      # https://github.com/r-spatial/sf/issues/1762
-      sf::sf_use_s2(FALSE)
-      
-      curr.range2 <- sf::st_union(curr.range)
-      
-      #switch back to get centroid
-      sf::sf_use_s2(TRUE)
+      curr.range2 <- sf::st_union(sf::st_make_valid(curr.range))
     }
   } else {
     curr.range2 <- curr.range
@@ -90,7 +85,8 @@ for (i in 1:length(ids)) {
   # get range size - km^2
   rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
   
-  # #TO DO: RASTERIZE SHP FILE
+  
+  # #TO DO: RASTERIZE SHP FILES
   # #create empty rast
   # er <- temp.dat.rast[[1]]
   # er[] <- NA
@@ -99,6 +95,7 @@ for (i in 1:length(ids)) {
   #
   # REPLACE RASTER VALUES (1'S) WITH GENERATION LENGTH (WILL NEED TO READ IN GEN LENGTH DATA FROM 4C...)
   # save out as single-species tifs
+  # will stack individual .tifs in another script to get median gen length, etc. 
   
   
   #fill df - current id, env vals, centroid, range size

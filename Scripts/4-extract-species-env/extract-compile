@@ -1,5 +1,5 @@
 #!/bin/bash
-n="extractSpecies" # job name
+n="es" # job name
 
 # Note that 110 is the number of pieces the BL IDs were split up into. 
 # Should probably not hardcode this...

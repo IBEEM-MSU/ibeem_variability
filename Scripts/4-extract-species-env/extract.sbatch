@@ -12,7 +12,7 @@
 #SBATCH --mem=40G
 #
 # Wall time (e.g. "minutes", "hours:minutes:seconds", "days-hours", "days-hours:minutes"):
-#SBATCH --time=00:59:00
+#SBATCH --time=3:59:00
 #
 # Mail type:
 #SBATCH --mail-type=FAIL,END
