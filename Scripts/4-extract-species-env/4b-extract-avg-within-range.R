@@ -15,7 +15,7 @@ out.dir <- '/mnt/research/ibeem/variability/data/L2/range-env-pieces/'
 # Get the current file to process -----------------------------------------
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BLIDsPiece-14.rda'
+# file.name <- 'BLIDsPiece-101.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
@@ -63,7 +63,16 @@ for (i in 1:length(ids)) {
     
     if (inherits(curr.range2, "try-error"))
     {
-      curr.range2 <- sf::st_union(sf::st_make_valid(curr.range))
+      curr.range2 <- try(sf::st_union(sf::st_make_valid(curr.range)))
+      
+      if (inherits(curr.range2, "try-error"))
+      {
+        # to avoid some 'duplciate vertex' errors:
+        # https://github.com/r-spatial/sf/issues/1762
+        sf::sf_use_s2(FALSE)
+        curr.range2 <- sf::st_union(curr.range)
+        sf::sf_use_s2(TRUE)
+      }
     }
   } else {
     curr.range2 <- curr.range
