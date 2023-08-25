@@ -41,6 +41,9 @@ se$var[which(se$var == 'spectral_beta_precip')] <- 'precip'
 lm <- sf::st_read(paste0(dir, 'data/L0/landmask/ne_10m_land.shp')) %>%
   dplyr::filter(featurecla == 'Land')
 
+#read in DHI rast
+dhi_rast <- terra::rast(paste0(dir, 'data/L1/DHI/DHI_rast.tif'))
+
 
 # apply land mask -------------------------------------------------------------
 
@@ -64,6 +67,18 @@ t_cval <- cbind(t_crds, t_vals) %>%
   dplyr::filter(lat > -60) %>%
   #dplyr::filter(lat > -66.5, lat < 66.5) %>%
   dplyr::mutate(valid = TRUE)
+
+
+# process DHI -------------------------------------------------------------
+
+#resample DHI raster to env.dat.rast
+dhi_rast_rs <- terra::resample(dhi_rast, frast, method = 'average')
+
+
+
+dhi_df <- data.frame(terra::crds(dhi_rast_rs), 
+                     terra::values(dhi_rast_rs)) %>%
+  dplyr::rename(lat = y, lon = x)
 
 
 # merge env data ----------------------------------------------------------
@@ -273,7 +288,7 @@ mys_f <- dplyr::select(tt_mean_year_season, cell_id,
 mysc_f <- dplyr::select(tt_mean_year_season_color, cell_id, 
               mysc_pc1, mysc_pc2, mysc_pc3, mysc_pc4)
 
-#merge with merge data
+#merge with pca data
 tt_mrg2 <- dplyr::left_join(tt_mrg, mys_f, by = 'cell_id') %>%
   dplyr::left_join(mysc_f, by = 'cell_id') %>%
   #reorder
