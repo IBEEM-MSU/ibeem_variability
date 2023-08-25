@@ -11,9 +11,10 @@
 # get args fed to script --------------------------------------------------
 
 args <- commandArgs(trailingOnly = TRUE)
-#args[1] = in directory (that contains both temp and precip data) - '/mnt/research/ibeem/L0/climate/era5/'
-#args[2] = out directory - where to write file - '/mnt/research/ibeem/L1/climate/era5/'
-#args[3] = months to average over - 1,2,3,4,5,6,7,8,9,10,11,12
+# args <- rep(NA, 3)
+# args[1] = '/mnt/research/ibeem/variability/data/L0/climate/era5/'
+# args[2] = '/mnt/research/ibeem/variability/data/L1/climate/era5/'
+# args[3] = '1,2,3,4,5,6,7,8,9,10,11,12'
 
 #convert to numeric
 MONTHS <- as.numeric(strsplit(args[3], ',')[[1]])
@@ -43,8 +44,10 @@ proc_fun <- function(startvallat = 500,
                      months = 1)
 {
   #list full file paths - corresponding to var of interest
-  files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), full.names = TRUE), value = TRUE)
-  files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), full.names = TRUE), value = TRUE)
+  files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), 
+                                        full.names = TRUE), value = TRUE)
+  files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), 
+                                          full.names = TRUE), value = TRUE)
 
   #loop through files
   counter <- 1 #where to slot in data into df
@@ -75,7 +78,8 @@ proc_fun <- function(startvallat = 500,
     #Replace missing vals in array with NA
     #temp
     var_array_temp <- ncdf4::ncvar_get(tt_temp, "VAR_2T", 
-                                       start = c(startvallon, startvallat, min(months)), 
+                                       start = c(startvallon, startvallat, 
+                                                 min(months)), 
                                        count = c(lenlon, lenlat, length(months))) # 3dim array
     fillvalue_temp <- ncdf4::ncatt_get(tt_temp, "VAR_2T","_FillValue")
     var_array_temp[var_array_temp == fillvalue_temp$value] <- NA
@@ -85,7 +89,8 @@ proc_fun <- function(startvallat = 500,
     
     #precip
     var_array_precip <- ncdf4::ncvar_get(tt_precip, "TCRW", 
-                                  start = c(startvallon, startvallat, min(months)),
+                                  start = c(startvallon, startvallat, 
+                                            min(months)),
                                   count = c(lenlon, lenlat, length(months))) # 3dim array
     fillvalue_precip <- ncdf4::ncatt_get(tt_precip, "TCRW","_FillValue")
     var_array_precip[var_array_precip == fillvalue_precip$value] <- NA
@@ -111,17 +116,28 @@ proc_fun <- function(startvallat = 500,
     #collapse date into single measure
     if (length(months) > 1)
     {
+      #mean across months
       var_array_temp3 <- apply(var_array_temp2, c(1, 2), mean)
       var_array_precip3 <- apply(var_array_precip2, c(1, 2), mean)
       
+      #sd acros months
       season_array_temp3 <- apply(var_array_temp2, c(1, 2), sd)
       season_array_precip3 <- apply(var_array_precip2, c(1, 2), sd)
+      
+      #range across months
+      rng_array_temp3 <- apply(var_array_temp2, c(1, 2), 
+                               function(x) diff(range(x)))
+      rng_array_precip3 <- apply(var_array_precip2, c(1, 2), 
+                                 function(x) diff(range(x)))
     } else {
       var_array_temp3 <- var_array_temp2
       var_array_precip3 <- var_array_precip2
       
       season_array_temp3 <- NA
       season_array_precip3 <- NA
+      
+      rng_array_temp3 <- NA
+      rng_array_precip3 <- NA
     }
     
     # reshape temp array into vector
@@ -131,13 +147,19 @@ proc_fun <- function(startvallat = 500,
     season_array_temp3_long <- round(as.vector(season_array_temp3), 3)
     season_array_precip3_long <- round(as.vector(season_array_precip3), 3)
     
+    rng_array_temp3_long <- round(as.vector(rng_array_temp3), 3)
+    rng_array_precip3_long <- round(as.vector(rng_array_precip3), 3)
+    
     # create a dataframe
     llt <- expand.grid(lon, lat, lubridate::year(ymd_dates)[1])
     tmp_df <- data.frame(llt, var_array_temp3_long, var_array_precip3_long,
-                         season_array_temp3_long, season_array_precip3_long)
+                         season_array_temp3_long, season_array_precip3_long,
+                         rng_array_temp3_long, rng_array_precip3_long)
     
-    colnames(tmp_df) <- c('lon', 'lat', 'year', 'mean_temp', 'mean_precip', 
-                          'season_temp', 'season_precip')
+    colnames(tmp_df) <- c('lon', 'lat', 'year', 
+                          'mean_temp', 'mean_precip', 
+                          'season_temp', 'season_precip',
+                          'rng_season_temp', 'rng_season_precip')
     
     ######
     # #Check - turn df into rast
@@ -156,7 +178,9 @@ proc_fun <- function(startvallat = 500,
                         mean_temp = NA,
                         mean_precip = NA,
                         season_temp = NA,
-                        season_precip = NA)
+                        season_precip = NA,
+                        rng_season_temp = NA,
+                        rng_season_precip = NA)
     }
 
     #fill df
@@ -180,7 +204,7 @@ proc_fun <- function(startvallat = 500,
 
 # run function ------------------------------------------------------------
 
-#writes out data.frame with lat, lon, year, month, temp and precip
+#writes out data.frame
 env_out <- proc_fun(startvallat = 1, 
                      startvallon = 1,
                      lenlon = 1440, #entire world
