@@ -27,7 +27,8 @@
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
-    * `2c-env-merge.R` - merge env metrics
+    * `2c-DHI.R` - process DHI data
+    * `2d-env-merge.R` - merge env metrics
   * `3-explore-env-var.R` - explore environmental variability metrics
   * `4-extract-species-env/` - extract env var data from species range
     * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
@@ -45,10 +46,12 @@
 * `Sample_output/` - small data objects from env variable processing (to work with data and avoid reprocessing)
 * `Data/` (ignored)
   * `L0/` - raw data
+    * `DHI/` - Dynamic Habitati Index data
     * `climate/era5/` - raw ERA5 reanalysis data
     * `ranges/BOTW.gdb` - BirdLife range maps
     * `trait/` - raw trait data
   * `L1/` - 
+    * `DHI/` - processed DHI data (cv year and cv season)
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
       * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - yearly average over all months and sd across months (seasonality) for temp and (sqrt root transform of) precip
       * `Env-spectral-exp-monthly.csv` - spectral exponent of monthly env variables

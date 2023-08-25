@@ -65,6 +65,10 @@ main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
   dplyr::full_join(climate.df, trait.dat, by = c('ID')) %>%
   dplyr::filter(!is.na(temp_mean))
 
+#XXXX
+#mutate precip_cv_space
+
+
 #write to file
 write.csv(main.dat, file = paste0(out.dir, 'main-bird-data.csv'), 
           row.names = FALSE)

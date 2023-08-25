@@ -1,8 +1,9 @@
-# 4b-example-species-extract.R: a script to start thinking about how we'll want
-#                              to calculate metrics within each species range
-#                              and output all the associated information for 
-#                              running models of the form trait ~ climate
+# 4b-example-species-extract.R: extract env metrics across species ranges
+
 rm(list = ls())
+
+# load packages -----------------------------------------------------------
+
 library(tidyverse)
 library(sf)
 library(terra)
@@ -13,6 +14,7 @@ dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
 # Get the current file to process -----------------------------------------
+
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
 # file.name <- 'BLIDsPiece-14.rda'
@@ -20,6 +22,7 @@ if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
 # Read in data ------------------------------------------------------------
+
 # Loads in current set of ids (a vector called ids)
 load(paste0(dir, 'data/L1/range/bird-breeding/', file.name))
 
@@ -34,8 +37,12 @@ env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
 env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
                                grep('precip', colnames(env.dat), value = TRUE),
-                              grep('mys', colnames(env.dat), value = TRUE)) %>%
+                              grep('mys', colnames(env.dat), value = TRUE),
+                              grep('dhi', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
+
+#just mean temp and precip for each cell
+tp.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
 
 
 # Loop through all the species in the current file ------------------------
@@ -49,7 +56,8 @@ env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
 
 counter <- 1
-for (i in 1:length(ids)) {
+for (i in 1:length(ids))
+{
   #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
@@ -81,19 +89,18 @@ for (i in 1:length(ids)) {
     curr.range2 <- curr.range
   }
   
-  # Extract mean env value across range from raster
+  # Extract median env value across range from raster
   env.vals <- terra::extract(env.dat.rast,
                  terra::vect(curr.range2),
                  touches = TRUE,
-                 fun = function(x) mean(x, na.rm = TRUE))
+                 fun = function(x) median(x, na.rm = TRUE))
   
-  #just mean temp and precip for each cell
-  tp.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
   #range of mean values across space
   rng.vals <- terra::extract(tp.dat.rast,
                              terra::vect(curr.range2),
                              touches = TRUE,
                              fun = function(x) diff(range(x, na.rm = TRUE)))
+  
   #sd of mean values across space
   sd.vals <- terra::extract(tp.dat.rast,
                              terra::vect(curr.range2),
@@ -132,7 +139,7 @@ for (i in 1:length(ids)) {
   counter <- counter + 1
   
   #clean up memory
-  rm(curr.range, curr.range2, curr.range.tr, env.vals)
+  rm(curr.range, curr.range2, curr.range.tr, env.vals, rng.vals, sd.vals)
   gc()
 }
 

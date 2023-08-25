@@ -74,22 +74,36 @@ t_cval <- cbind(t_crds, t_vals) %>%
 #resample DHI raster to env.dat.rast
 dhi_rast_rs <- terra::resample(dhi_rast, frast, method = 'average')
 
-
-
+#df format
 dhi_df <- data.frame(terra::crds(dhi_rast_rs), 
-                     terra::values(dhi_rast_rs)) %>%
+                     terra::values(dhi_rast_rs, na.rm = TRUE)) %>%
   dplyr::rename(lat = y, lon = x)
+
+#plot
+# dplyr::select(dhi_df, lon, lat, dhi_cum_mean) %>% 
+#   terra::rast() %>% 
+#   plot()
+
+#where NDVI is very low, insert NA into CV year
+dhi_df$dhi_cv_year[which(dhi_df$dhi_cum_mean < 0.01)] <- NA
+
+# dplyr::select(dhi_df, lon, lat, dhi_cv_year) %>%
+#   terra::rast() %>%
+#   plot()
 
 
 # merge env data ----------------------------------------------------------
 
-#merge masked df with actual data
-#set all ocean and land < 60 S lat to FALSE for field valid
+#merge masked env var with spectral exp
 env_mrg <- dplyr::left_join(env_var, se, 
                           by = c('var', 'lon', 'lat')) %>%
+  #land mask
   dplyr::left_join(t_cval, by = c('cell_id', 'lon', 'lat')) %>%
+  #DHI
+  dplyr::left_join(dhi_df, by = c('lon', 'lat')) %>%
   dplyr::rename(sp_color_month = spectral_exp)
 na_idx <- which(is.na(env_mrg$valid))
+#set all ocean and land < 60 S lat to FALSE for field valid
 env_mrg$valid[na_idx] <- FALSE
 
 # saveRDS(env_mrg, '~/tt.rds')
@@ -152,14 +166,18 @@ env_mrg$valid[na_idx] <- FALSE
 
 # joint temp and precip ---------------------------------------------------
 
-#both temp and precip together
-tt_temp <- dplyr::filter(env_mrg, var == 'temp')
+#temp, precip, and DHI together
+tt_temp <- dplyr::filter(env_mrg, var == 'temp') %>%
+  dplyr::select(-dhi_cum_mean, -dhi_cv_year, -dhi_cv_season)
 names(tt_temp) <- c('cell_id', 'var', 'lon', 'lat', 
                     paste0('temp_', names(tt_temp)[-c(1:4)]))
 tt_precip <- dplyr::filter(env_mrg, var == 'precip') %>%
-  dplyr::select(-c(var, valid, cell_id, lon, lat))
+  dplyr::select(-c(var, valid, cell_id, lon, lat,
+                   -dhi_cum_mean, -dhi_cv_year, -dhi_cv_season))
 names(tt_precip) <- paste0('precip_', names(tt_precip))
-tt_mrg <- cbind(tt_temp, tt_precip) %>%
+tt_dhi <- dplyr::filter(env_mrg, var == 'temp') %>%
+  dplyr::select(dhi_cum_mean, dhi_cv_year, dhi_cv_season)
+tt_mrg <- cbind(tt_temp, tt_precip, tt_dhi) %>%
   dplyr::rename(valid = temp_valid) %>%
   dplyr::select(-var)
 
@@ -187,7 +205,12 @@ tt_mean_year_season <- dplyr::filter(tt_mrg, valid == TRUE) %>%
     # # #KURTOSIS
     # temp_kurt,
     # precip_kurt
-    )
+    # #DHI
+    # dhi_cum_mean,
+    # dhi_cv_year,
+    # dhi_cv_season
+    ) %>%
+  dplyr::filter(!is.na(dhi_cv_year))
 
 cor(tt_mean_year_season)
 mys_pca <- dplyr::select(tt_mean_year_season, -cell_id, -lon, -lat) %>%
@@ -211,20 +234,20 @@ tt_mean_year_season$mys_pc1 <- mys_pca$x[,1]
 tt_mean_year_season$mys_pc2 <- mys_pca$x[,2]
 
 
-#mean, yearly sd, season sd, spectral color
+#yearly sd, season sd, spectral color
 #need to remove sp color invalid (no variation in values)
 tt_mean_year_season_color <- dplyr::filter(tt_mrg, valid == TRUE, 
                                      !is.na(precip_sp_color_year)) %>%
   dplyr::select(cell_id, lon, lat, 
                 # #TEMP
-                temp_mean,
-                precip_mean,
+                # temp_mean,
+                # precip_mean,
                 # #INTER-ANNUAL SD
                 temp_sd_year,
-                precip_cv_year,
+                precip_sd_year,
                 # #INTRA-ANNUAL SD
                 temp_sd_season,
-                precip_cv_season,
+                precip_sd_season,
                 # #YEAR SPECTRAL COLOR
                 temp_sp_color_year,
                 precip_sp_color_year,
@@ -237,6 +260,10 @@ tt_mean_year_season_color <- dplyr::filter(tt_mrg, valid == TRUE,
                 # #KURTOSIS
                 # temp_kurt,
                 # precip_kurt
+                # #DHI
+                # dhi_cum_mean,
+                # dhi_cv_year,
+                # dhi_cv_season
   )
 
 
@@ -245,7 +272,7 @@ mysc_pca <- dplyr::select(tt_mean_year_season_color, -cell_id, -lon, -lat) %>%
   prcomp(center = TRUE, scale. = TRUE)
 
 # factoextra::fviz_pca_var(mysc_pca,
-#                          axes = c(2,3),
+#                          axes = c(3,4),
 #                          #geom = 'arrow',
 #                          col.var = "contrib", # Color by contributions to the PC
 #                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
@@ -311,6 +338,7 @@ tt_mrg2 <- dplyr::left_join(tt_mrg, mys_f, by = 'cell_id') %>%
                 temp_rho_l3, precip_rho_l3,
                 temp_rho_l4, precip_rho_l4,
                 temp_rho_l5, precip_rho_l5,
+                dhi_cum_mean, dhi_cv_year, dhi_cv_season,
                 mys_pc1, mys_pc2,
                 mysc_pc1, mysc_pc2, mysc_pc3, mysc_pc4,
                 valid)
