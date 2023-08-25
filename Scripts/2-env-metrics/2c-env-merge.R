@@ -156,10 +156,10 @@ tt_mean_year_season <- dplyr::filter(tt_mrg, valid == TRUE) %>%
     precip_mean,
     # #INTER-ANNUAL SD
     temp_sd_year,
-    precip_sd_year,
+    precip_cv_year,
     # #INTRA-ANNUAL SD
     temp_sd_season,
-    precip_sd_season,
+    precip_cv_season,
     # #YEAR SPECTRAL COLOR
     # temp_sp_color_year,
     # precip_sp_color_year,
@@ -206,10 +206,10 @@ tt_mean_year_season_color <- dplyr::filter(tt_mrg, valid == TRUE,
                 precip_mean,
                 # #INTER-ANNUAL SD
                 temp_sd_year,
-                precip_sd_year,
+                precip_cv_year,
                 # #INTRA-ANNUAL SD
                 temp_sd_season,
-                precip_sd_season,
+                precip_cv_season,
                 # #YEAR SPECTRAL COLOR
                 temp_sp_color_year,
                 precip_sp_color_year,
@@ -280,10 +280,13 @@ tt_mrg2 <- dplyr::left_join(tt_mrg, mys_f, by = 'cell_id') %>%
   dplyr::select(cell_id, lon, lat, 
                 temp_mean, precip_mean, 
                 temp_sd_year, precip_sd_year,
+                temp_cv_year, precip_cv_year,
                 temp_sd_season, precip_sd_season,
+                temp_cv_season, precip_cv_season,
                 temp_slope, precip_slope,
                 temp_se_slope, precip_se_slope,
                 temp_rel_slope, precip_rel_slope,
+                temp_rng_season, precip_rng_season,
                 temp_kurt, precip_kurt,
                 temp_skew, precip_skew,
                 temp_sp_color_year, precip_sp_color_year,
