@@ -42,28 +42,30 @@ sum(apply(climate.df, 1, function(a) sum(is.na(a))) > 0)
 # AVONET data - keep only necessary fields
 avonet.dat <- read.csv(paste0(trait.dir, 'avonet-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
-  dplyr::select(-Sequence, -Family1, -Order1, -Avibase.ID1,
+  dplyr::select(-Sequence, -Avibase.ID1,
                 -Total.individuals, -Female, -Male, -Unknown, 
                 -Complete.measures, -Inference, -Traits.inferred, 
                 -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
                 -Range.Size, -Notes, -Mass.Source, -Mass.Refs.Other) %>%
-  dplyr::rename(ID = BirdLife_ID, accepted_name = Species1)
+  dplyr::rename(ID = BirdLife_ID, Accepted_name = Species1,
+                Family = Family1, Order = Order1)
 
 # Bird et al data
 gen.time.dat <- read.csv(paste0(trait.dir, 'bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
   dplyr::select(BirdLife_ID, Sci_name, GenLength) %>%
-  dplyr::rename(ID = BirdLife_ID, accepted_name = Sci_name)
+  dplyr::rename(ID = BirdLife_ID, Accepted_name = Sci_name)
 
 
 # combine trait and climate data-----------------------------------------------
 
 #only species with values for mean temp
-main.dat <- dplyr::full_join(gen.time.dat, avonet.dat, 
-                             by = c('ID', 'accepted_name')) %>%
+main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
+                             by = c('ID', 'Accepted_name')) %>%
   dplyr::full_join(climate.df, trait.dat, by = c('ID')) %>%
   dplyr::filter(!is.na(temp_mean))
 
 #write to file
-write.csv(main.dat, file = paste0(out.dir, 'main-bird-data.csv'), row.names = FALSE)
+write.csv(main.dat, file = paste0(out.dir, 'main-bird-data.csv'), 
+          row.names = FALSE)
 
