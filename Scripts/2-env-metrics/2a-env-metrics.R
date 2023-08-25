@@ -62,6 +62,7 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      cv_year = NA,
                      sd_season = NA, #mean yearly sd across months
                      cv_season = NA,
+                     rng_season = NA,
                      kurt = NA, #kurtosis
                      skew = NA, #skewness
                      sp_color_year = NA, #spectral exponent
@@ -135,6 +136,8 @@ for (i in 1:length(uci))
                                                mean(te$season_precip))
   env_df$cv_season[counter:(counter + 1)] <- c(mean(te$season_temp) / mean(te$mean_temp), 
                                                mean(te$season_precip) / mean(te$mean_precip))
+  env_df$rng_season[counter:(counter + 1)] <- c(mean(te$rng_season_temp), 
+                                                     mean(te$rng_season_precip))
   env_df$kurt[counter:(counter + 1)] <- c(moments::kurtosis(temp_resid), 
                                           moments::kurtosis(precip_resid))
   env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
