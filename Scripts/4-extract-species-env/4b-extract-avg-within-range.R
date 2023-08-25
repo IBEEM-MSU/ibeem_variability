@@ -7,26 +7,25 @@ library(tidyverse)
 library(sf)
 library(terra)
 
-# Specify directory -------------------------------------------------------
-BL.dir <- '/mnt/research/ibeem/variability/data/L1/range/bird-breeding/'
-env.dir <- '/mnt/research/ibeem/variability/data/L2/climate/era5/'
-out.dir <- '/mnt/research/ibeem/variability/data/L2/range-env-pieces/'
+# Specify top-level directory -------------------------------------------------------
+
+dir <- '/mnt/research/ibeem/variability/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
 # Get the current file to process -----------------------------------------
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BLIDsPiece-101.rda'
+# file.name <- 'BLIDsPiece-14.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
 # Read in data ------------------------------------------------------------
 # Loads in current set of ids (a vector called ids)
-load(paste0(BL.dir, file.name))
-# Climate data (takes a couple of minutes to load
-# NOTE: can change this to the GAM stuff if that's what we want.
+load(paste0(dir, 'data/L1/range/bird-breeding/', file.name))
 
-#only valid cells (land and N of -60S lat)
-env.dat <- read.csv(paste0(env.dir, 'Env-main.csv')) %>%
+# Climate data (takes a couple of minutes to load
+# only valid cells (land and N of -60S lat)
+env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
   #only 'valid' cells (those over land and > -60S lat)
   dplyr::filter(valid == TRUE) %>%
   dplyr::select(-valid)
@@ -42,7 +41,10 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 # Loop through all the species in the current file ------------------------
 
 # Make data frame to hold everything
-cn <- c('ID', names(env.dat.rast), 'cen_lon', 'cen_lat', 'range_size_km2')
+cn <- c('ID', names(env.dat.rast), 
+        'temp_rng_space', 'precip_rng_space',
+        'temp_sd_space', 'precip_sd_space',
+        'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
 
@@ -51,7 +53,8 @@ for (i in 1:length(ids)) {
   #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
-  curr.range <- sf::st_read(paste0(BL.dir, curr.sp, '-breeding.shp'),
+  curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/', 
+                                   curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
   #if more than one polygon (resident + breeding ranges), merge them
@@ -84,6 +87,19 @@ for (i in 1:length(ids)) {
                  touches = TRUE,
                  fun = function(x) mean(x, na.rm = TRUE))
   
+  #just mean temp and precip for each cell
+  tp.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
+  #range of mean values across space
+  rng.vals <- terra::extract(tp.dat.rast,
+                             terra::vect(curr.range2),
+                             touches = TRUE,
+                             fun = function(x) diff(range(x, na.rm = TRUE)))
+  #sd of mean values across space
+  sd.vals <- terra::extract(tp.dat.rast,
+                             terra::vect(curr.range2),
+                             touches = TRUE,
+                             fun = function(x) sd(x, na.rm = TRUE))
+  
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
   # get centroid - ignore warning
@@ -108,7 +124,9 @@ for (i in 1:length(ids)) {
   
   
   #fill df - current id, env vals, centroid, range size
-  env.out[counter,] <- c(curr.sp, env.vals[-1], cen_ll, rsize_km2)
+  env.out[counter,] <- c(curr.sp, env.vals[-1], 
+                         rng.vals[-1], sd.vals[-1],
+                         cen_ll, rsize_km2)
   
   #advance counter
   counter <- counter + 1
@@ -119,5 +137,5 @@ for (i in 1:length(ids)) {
 }
 
 #write out file
-save(env.out, file = paste0(out.dir, 'summarized-data-piece-', 
+save(env.out, file = paste0(dir, 'data/L2/range-env-pieces/summarized-data-piece-', 
 				stringr::str_extract(file.name, '\\d+')))
