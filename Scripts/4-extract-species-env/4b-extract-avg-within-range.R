@@ -8,6 +8,7 @@ library(tidyverse)
 library(sf)
 library(terra)
 
+
 # Specify top-level directory -------------------------------------------------------
 
 dir <- '/mnt/research/ibeem/variability/'
@@ -37,20 +38,21 @@ env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
 env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
                                grep('precip', colnames(env.dat), value = TRUE),
-                              grep('mys', colnames(env.dat), value = TRUE),
+                              grep('env1_pc', colnames(env.dat), value = TRUE),
+                              grep('env2_pc', colnames(env.dat), value = TRUE),
                               grep('dhi', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
 
-#just mean temp and precip for each cell
-tp.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
+#just mean temp precip, and cum DHI for each cell
+tpd.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean', 'dhi_cum_mean')]]
 
 
 # Loop through all the species in the current file ------------------------
 
 # Make data frame to hold everything
 cn <- c('ID', names(env.dat.rast), 
-        'temp_rng_space', 'precip_rng_space',
-        'temp_sd_space', 'precip_sd_space',
+        'temp_rng_space', 'precip_rng_space', 'dhi_cum_rng_space',
+        'temp_sd_space', 'precip_sd_space', 'dhi_cum_sd_space',
         'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
@@ -96,13 +98,13 @@ for (i in 1:length(ids))
                  fun = function(x) median(x, na.rm = TRUE))
   
   #range of mean values across space
-  rng.vals <- terra::extract(tp.dat.rast,
+  rng.vals <- terra::extract(tpd.dat.rast,
                              terra::vect(curr.range2),
                              touches = TRUE,
                              fun = function(x) diff(range(x, na.rm = TRUE)))
   
   #sd of mean values across space
-  sd.vals <- terra::extract(tp.dat.rast,
+  sd.vals <- terra::extract(tpd.dat.rast,
                              terra::vect(curr.range2),
                              touches = TRUE,
                              fun = function(x) sd(x, na.rm = TRUE))

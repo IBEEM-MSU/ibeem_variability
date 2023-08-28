@@ -10,8 +10,10 @@
 
 # args <- commandArgs(trailingOnly = TRUE)
 args <- rep(NA, 2)
-args[1] <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/data/L0/DHI/'
-args[2] <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/data/L1/DHI/'
+# args[1] <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/data/L0/DHI/'
+# args[2] <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/data/L1/DHI/'
+args[1] <- '/mnt/research/ibeem/variability/data/L0/DHI'
+args[2] <- '/mnt/research/ibeem/variability/data/L1/DHI'
 
 
 # load packages -----------------------------------------------------------
