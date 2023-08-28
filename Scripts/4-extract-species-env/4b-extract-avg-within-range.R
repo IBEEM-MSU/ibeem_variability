@@ -14,6 +14,7 @@ library(terra)
 dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
+
 # Get the current file to process -----------------------------------------
 
 file.name <- commandArgs(trailingOnly = TRUE)
