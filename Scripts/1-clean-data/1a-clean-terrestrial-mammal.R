@@ -7,7 +7,7 @@
 # specify dir -------------------------------------------------------------
 
 #path KK machine
-dir <- "./data/L0/range/MAMMALS_TERRESTRIAL_ONLY.shp"
+dir <- "/mnt/research/ibeem/data/L0/range/MAMMALS_TERRESTRIAL_ONLY.shp"
 
 # load packages -----------------------------------------------------------
 
