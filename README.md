@@ -29,19 +29,19 @@
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
     * `2c-DHI.R` - process DHI data
     * `2d-env-merge.R` - merge env metrics
-  * `3-explore-env-var.R` - explore environmental variability metrics
-  * `4-extract-species-env/` - extract env var data from species range
-    * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
-    * `4a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
-    * `4b-extract-avg-within-range.R` - extract environmental covariates from species ranges
-    * `4b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
-    * `4b-extract-compile.SB` - bash script to iterate through all pieces of data and run `4b-extract.SB`
-    * `4b-extract.SB` - bash script to load one piece of data and run `4b-extract-avg-within-range.R` on HPCC
-    * `4b-extract-compile-mammal.SB` - bash script to iterate through all pieces of data and run `4b-extract-mammal.SB`
-    * `4b-extract-mammal.SB` - bash script to load one piece of data and run `4b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
-    * `4c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
-    * `4c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
-  * `5-explore-bird.R` - explore joined bird life history/env data
+  * `3-extract-species-env/` - extract env var data from species range
+    * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
+    * `3a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
+    * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
+    * `3b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
+    * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
+    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
+    * `3b-extract-compile-mammal.sh` - bash script to iterate through all pieces of data and run `3b-extract-mammal.sbatch`
+    * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
+    * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
+    * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
+  * `4-explore-bird.R` - explore joined bird life history/env data
+  * `X-explore-env-var.R` - explore environmental variability metrics
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
