@@ -1,4 +1,4 @@
-# 4b-example-species-extract.R: extract env metrics across species ranges
+# 3b: extract env metrics across species ranges
 
 rm(list = ls())
 

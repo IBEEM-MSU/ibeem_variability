@@ -1,7 +1,4 @@
-# 4-example-species-extract.R: a script to start thinking about how we'll want
-#                              to calculate metrics within each species range
-#                              and output all the associated information for 
-#                              running models of the form trait ~ climate
+# 3b: extract env metrics across species ranges
 
 
 #SEE CHANGES/COMMENTS IN 4b-extract-avg-within-range.R (bird script)

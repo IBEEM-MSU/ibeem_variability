@@ -1,6 +1,7 @@
 ################
 # Explore env variability metrics
 #
+# NEEDS TO BE UPDATED
 ################
 
 
