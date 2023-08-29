@@ -41,6 +41,7 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('precip', colnames(env.dat), value = TRUE),
                               grep('env1_pc', colnames(env.dat), value = TRUE),
                               grep('env2_pc', colnames(env.dat), value = TRUE),
+                              grep('env3_pc', colnames(env.dat), value = TRUE),
                               grep('dhi', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
 
@@ -121,6 +122,7 @@ for (i in 1:length(ids))
   rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
   
   
+  ######################################
   # #TO DO: RASTERIZE SHP FILES
   # #create empty rast
   # er <- temp.dat.rast[[1]]
@@ -131,6 +133,7 @@ for (i in 1:length(ids))
   # REPLACE RASTER VALUES (1'S) WITH GENERATION LENGTH (WILL NEED TO READ IN GEN LENGTH DATA FROM 4C...)
   # save out as single-species tifs
   # will stack individual .tifs in another script to get median gen length, etc. 
+  ######################################
   
   
   #fill df - current id, env vals, centroid, range size
