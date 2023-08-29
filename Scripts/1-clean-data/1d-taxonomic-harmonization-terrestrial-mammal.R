@@ -14,8 +14,8 @@
 # specify dir -------------------------------------------------------------
 
 #path for data on KK machine - remember trailing slash
-range_map_data_dir <-"./data/L0/ranges/"
-life_history_dir <- "./data/L0/trait/"
+range_map_data_dir <-"/mnt/research/ibeem/data/L0/ranges/"
+life_history_dir <- "/mnt/research/ibeem/data/L0/trait/"
 
 # paths on HPCC
 # range_map_data_dir <- '/mnt/research/ibeem/data/L1/range-mammal-clean/'
@@ -24,7 +24,7 @@ life_history_dir <- "./data/L0/trait/"
 #directory to save out intermediate file
 # out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
 # out_dir <- '/mnt/research/ibeem/data/L1/'
-out_dir <- './data/L1/'
+out_dir <- '/mnt/research/ibeem/data/L1/'
 
 
 # load packages -----------------------------------------------------------
@@ -80,7 +80,7 @@ sum(!is.na(t_no_match$name_iucn))
 
 write.csv(t_no_match, file = paste0(out_dir, 'trait/mammal-names-full.csv'), row.names = FALSE)
 
-test <- read.csv('./data/L1/trait/mammal-names-full.csv')
+test <- read.csv('/mnt/research/ibeem/data/L1/trait/mammal-names-full.csv')
 
 # for loop on iucn species and then get list of synonyms....
 # see if those synonyms match 
