@@ -114,56 +114,6 @@ env_mrg$valid[na_idx] <- FALSE
 # plot(plt)
 
 
-# explore -----------------------------------------------------------------
-
-# tt <- dplyr::filter(env_mrg, var == 'temp', valid == TRUE,
-#                     !is.na(sp_color_year))
-# # plot(tt$sd_resid, tt$sd_season, col = rgb(0,0,0,0.1))
-# # plot(tt$sd_resid, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
-# # plot(tt$sd_resid, tt$sp_color_year, col = rgb(0,0,0,0.1))
-# # plot(tt$sd_season, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
-# # plot(tt$sd_season, tt$sp_color_yearly, col = rgb(0,0,0,0.1))
-# # plot(tt$sp_color_yearly, tt$sp_color_monthly, col = rgb(0,0,0,0.1))
-# 
-# #with temp sd_year, sd_season, and sp_color_year, + PC2 = + var, + spectral exp, - mean
-# 
-# cor(cbind(tt$mean, 
-#           tt$sd_year, 
-#           tt$sd_season, 
-#           tt$sp_color_year#, 
-#           # tt$sp_color_month
-#           ))
-# tcov <- tt[,c('mean', 
-#               'sd_year', 
-#               'sd_season', 
-#               'sp_color_year'#, 
-#               # 'sp_color_month'
-#               )]
-# colnames(tcov) <- c('Mean', 
-#                     'Inter-annual', 
-#                     'Intra-annual', 
-#                     'Spec (year)'#, 
-#                     # 'Spec (month)'
-#                     )
-# covs_pca <- prcomp(tcov, center = TRUE, scale. = TRUE)
-# 
-# factoextra::fviz_pca_var(covs_pca,
-#                          axes = c(1,2),
-#                          #geom = 'arrow',
-#                          col.var = "contrib", # Color by contributions to the PC
-#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-#                          repel = FALSE,
-#                          title = 'PCA - Temperature')
-# 
-# tt$pc1 <- covs_pca$x[,1]
-# tt$pc2 <- covs_pca$x[,2]
-# tt$pc3 <- covs_pca$x[,3]
-# 
-# plt <- dplyr::select(tt, lon, lat, XXXX) %>%
-#   terra::rast(crs = "epsg:4326")
-# plot(plt)
-
-
 # merge and write out -----------------------------------------------------
 
 #temp, precip, and DHI together
@@ -206,4 +156,5 @@ tt_mrg <- cbind(tt_temp, tt_precip, tt_dhi) %>%
                 valid)
 
 #write to csv
-write.csv(tt_mrg2, paste0(dir, 'data/L2/climate/era5/Env-main.csv'), row.names = FALSE)
+write.csv(tt_mrg, paste0(dir, 'data/L2/climate/era5/Env-main.csv'), 
+          row.names = FALSE)
