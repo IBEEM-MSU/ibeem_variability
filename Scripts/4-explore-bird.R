@@ -22,7 +22,9 @@ library(viridis)
 bird_df <- read.csv(paste0(dir, 'Data/L2/main-bird-data.csv')) %>%
   dplyr::filter(!is.na(GenLength)) %>%
   dplyr::mutate(fac_Family = factor(Family),
-                fac_Order = factor(Order))
+                fac_Order = factor(Order),
+                lMass = log(Mass),
+                lGL = log(GenLength))
 
 #filter - no marine/coastal, only residents
 '%ni%' <- Negate('%in%')
@@ -61,7 +63,7 @@ gen_pts_wo_seabirds_coastal <- base_plt +
   #plot pts
   geom_point(data = bird_df2,
              aes(cen_lon, cen_lat,
-                 col = log(GenLength)),
+                 col = lGL),
              alpha = 0.5,
              size = 1.1) +
   scale_color_viridis()
@@ -70,7 +72,7 @@ gen_pts_all <- base_plt +
   #plot pts
   geom_point(data = bird_df,
              aes(cen_lon, cen_lat,
-                 col = log(GenLength)),
+                 col = lGL),
              alpha = 0.5,
              size = 1.1) +
   scale_color_viridis()
@@ -86,7 +88,7 @@ hab_fun <- function(habitat)
   fun_plt <- base_plt +
     geom_point(data = bird_t,
                aes(cen_lon, cen_lat,
-                   col = log(GenLength)),
+                   col = lGL),
                alpha = 0.8,
                size = 1.1) +
     scale_color_viridis() +
@@ -124,7 +126,7 @@ hab_fun(habitat = 'Human Modified')
 
 # mass ~ env --------------------------------------------------------------
 
-f1 <- lme4::lmer(log(Mass) ~ env1_pc1 + 
+f1 <- lme4::lmer(lMass ~ env1_pc1 + 
                    env1_pc2 + 
                    env1_pc3 + 
                    (-1 + env1_pc1 | fac_Family) + 
@@ -190,49 +192,59 @@ abline(v = 0.3, lty = 2, col = 'red', lwd = 3)
 # raw temp -----------------------------------------------------------
 
 #candidate models
-f1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f1 <- lme4::lmer(lGL ~ lMass+ 
                    temp_sp_color_year + 
                    temp_sd_season + 
                    temp_sd_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sp_color_year | fac_Family) + 
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
-f2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f2 <- lme4::lmer(lGL ~ lMass + 
                    temp_sp_color_year + 
                    temp_sd_season + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sp_color_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family), 
                  data = bird_df2)
-f3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f3 <- lme4::lmer(lGL ~ lMass + 
                    temp_sp_color_year + 
                    temp_sd_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sp_color_year | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
-f4 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f4 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family), 
                  data = bird_df2)
-f5 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f5 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
-f6 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f6 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
-f7 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
-                   (1 + log(Mass) | fac_Family), 
+f7 <- lme4::lmer(lGL ~ lMass + 
+                   (1 + lMass | fac_Family), 
                  data = bird_df2)
+#model selection
+AIC(f1)
+AIC(f2)
+AIC(f3)
+AIC(f4)
+AIC(f5)
+AIC(f6) #best (no color)
+AIC(f7)
+MuMIn::r.squaredGLMM(f6)
+
 summary(f1)
 summary(f4)
 summary(f5)
@@ -252,44 +264,31 @@ summary(f6) #best (sd season and sd year and Mass)
 (exp(summary(f6)$coefficient[4,1] * 
        diff(range(bird_df2$temp_sd_year))) - 1) * 100
 
-#model selection
-AIC(f1)
-AIC(f2)
-AIC(f3)
-AIC(f4)
-AIC(f5)
-AIC(f6) #best (no color)
-AIC(f7)
-MuMIn::r.squaredGLMM(f1)
-MuMIn::r.squaredGLMM(f2)
-MuMIn::r.squaredGLMM(f3)
-MuMIn::r.squaredGLMM(f5)
-
 
 #VIF - looks good
 car::vif(f1)
-vif_1 <- lme4::lmer(log(Mass) ~
+vif_1 <- lme4::lmer(lMass ~
                       temp_sd_season + 
                       temp_sd_year + 
                       (1 + temp_sd_season | fac_Family) +
                       (-1 + temp_sd_year | fac_Family), 
                     data = bird_df2)
 vif_2 <- lme4::lmer(temp_sd_season ~
-                      log(Mass) + 
+                      lMass + 
                       temp_sd_year + 
-                      (1 + log(Mass) | fac_Family) +
+                      (1 + lMass | fac_Family) +
                       (-1 + temp_sd_year | fac_Family), 
                     data = bird_df2)
 vif_3 <- lme4::lmer(temp_sd_year ~
-                      log(Mass) +
+                      lMass +
                       temp_sd_season + 
-                      (1 + log(Mass) | fac_Family) +
+                      (1 + lMass | fac_Family) +
                       (-1 + temp_sd_season | fac_Family), 
                     data = bird_df2)
 
-vif_1 <- summary(lm(log(Mass) ~ temp_sd_year + temp_sd_season, data = bird_df2))
-vif_2 <- summary(lm(temp_sd_year ~ log(Mass) + temp_sd_season, data = bird_df2))
-vif_3 <- summary(lm(temp_sd_season ~ log(Mass) + temp_sd_year, data = bird_df2))
+vif_1 <- summary(lm(lMass ~ temp_sd_year + temp_sd_season, data = bird_df2))
+vif_2 <- summary(lm(temp_sd_year ~ lMass + temp_sd_season, data = bird_df2))
+vif_3 <- summary(lm(temp_sd_season ~ lMass + temp_sd_year, data = bird_df2))
 vif_4 <- summary(lm(temp_sd_year ~ temp_sd_season, data = bird_df2))
 1 / (1 - vif_1$adj.r.squared)
 1 / (1 - vif_2$adj.r.squared)
@@ -300,95 +299,108 @@ vif_4 <- summary(lm(temp_sd_year ~ temp_sd_season, data = bird_df2))
 1 / (1 - MuMIn::r.squaredGLMM(vif_3)[,1])
 
 
-#partial residual plots
+#partial residual plots function
 library(remef)
-#effect of Mass
-coef_fit <- coef(summary(f6))
-yp <- remef::remef(f6, fix = c('temp_sd_season', 
-                               'temp_sd_year'),
-                   ran = "all")
-plot(log(bird_df2$Mass), yp, col = rgb(0,0,0,0.1), pch = 19)
-abline(a = coef_fit[1,1], b = coef_fit[2,1], col = 'red')
-#effect of seasonality
-yp <- remef::remef(f6, fix = c('log(Mass)', 
-                               'temp_sd_year'),
-                   ran = "all")
-plot(bird_df2$temp_sd_season, yp, col = rgb(0,0,0,0.1), pch = 19)
-abline(a = coef_fit[1,1], b = coef_fit[3,1], col = 'red')
-#effect of inter-annual var
-yp <- remef::remef(f6, fix = c('log(Mass)', 
-                               'temp_sd_season'),
-                   ran = "all")
-plot(bird_df2$temp_sd_year, yp, col = rgb(0,0,0,0.1), pch = 19)
-abline(a = coef_fit[1,1], b = coef_fit[4,1], col = 'red')
-
-yp <- remef::remef(f6, fix = c('log(Mass)'),
-                   ran = "all")
-
-bird_df2$yp <- yp
-ggplot(bird_df2, aes(temp_sd_year, temp_sd_season, col = yp)) +
-  geom_point()
-summary(lm(yp ~ temp_sd_year + temp_sd_season, data = bird_df2))
+pr_fun <- function(model, data, var_interest, var_names)
+{
+  #get partial resids
+  yp <- remef::remef(model, 
+                     fix = var_names[-grep(var_interest, var_names)],
+                     ran = "all")
+  #get coefs
+  coef_fit <- coef(summary(model))
+  #plot resids
+  plot(bird_df2[,grep(var_interest, colnames(bird_df2))], 
+       yp, 
+       col = rgb(0,0,0,0.1), 
+       pch = 19,
+       main = var_interest,
+       xlab = var_interest,
+       ylab = 'Partial resid; log(GenLength)')
+  #plot model fit
+  abline(a = coef_fit[1,1], 
+         b = coef_fit[grep(var_interest, row.names(coef_fit)), 1], 
+         col = 'red',
+         lwd = 2)
+}
 
 
+#Mass
+pr_fun(model = f1, 
+       var_interest = 'lMass',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year'))
+#temp season
+pr_fun(model = f1, 
+       var_interest = 'temp_sd_season',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year'))
+#temp inter annual
+pr_fun(model = f1, 
+       var_interest = 'temp_sd_year',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year'))
 
 
 # raw temp and precip -----------------------------------------------------
 
 #candidate models
-f1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f1 <- lme4::lmer(lGL ~ lMass + 
                            temp_sd_season + 
                            temp_sd_year +
                            precip_cv_season + 
                            precip_cv_year +
-                           (1 + log(Mass) | fac_Family) +
+                           (1 + lMass | fac_Family) +
                            (-1 + temp_sd_season | fac_Family) +
                            (-1 + temp_sd_year | fac_Family) +
                            (-1 + precip_cv_season | fac_Family) +
                            (-1 + precip_cv_year | fac_Family), 
                          data = bird_df2)
-f2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f2 <- lme4::lmer(lGL ~ lMass + 
                    precip_cv_season + 
                    precip_cv_year +
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + precip_cv_season | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
                  data = bird_df2)
-f3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f3 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year +
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
-f4 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f4 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    precip_cv_season + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_season | fac_Family), 
                  data = bird_df2)
-f5 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f5 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    precip_cv_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
                  data = bird_df2)
-f6 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f6 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    temp_sd_season + 
                    precip_cv_year + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
                  data = bird_df2)
-f7 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+f7 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    temp_sd_season + 
                    precip_cv_season + 
-                   (1 + log(Mass) | fac_Family) +
+                   (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_season | fac_Family), 
@@ -406,8 +418,74 @@ AIC(f7)
 summary(f1)
 summary(f4)
 summary(f5)
-summary(f6) #best (sd season and sd year and Mass)
+summary(f6)
 
+#effect sizes
+# % increase in Gen Length for 1 unit change in sd season
+(exp(summary(f1)$coefficient[3,1]) - 1) * 100
+# % increase in Gen Length for 1 unit change in sd year
+(exp(summary(f1)$coefficient[4,1]) - 1) * 100
+# % increase in Gen Length for 1 unit change in cv precip season
+(exp(summary(f1)$coefficient[5,1]) - 1) * 100
+# % increase in Gen Length for 1 unit change in cv precip year
+(exp(summary(f1)$coefficient[6,1]) - 1) * 100
+
+
+# %increase in Gen Length over observed range of sd season
+(exp(summary(f1)$coefficient[3,1] * 
+       diff(range(bird_df2$temp_sd_season))) - 1) * 100
+# %increase in Gen Length over observed range of sd year
+(exp(summary(f1)$coefficient[4,1] * 
+       diff(range(bird_df2$temp_sd_year))) - 1) * 100
+# %increase in Gen Length over observed range of cv precip season
+(exp(summary(f1)$coefficient[5,1] * 
+       diff(range(bird_df2$precip_cv_season))) - 1) * 100
+# %increase in Gen Length over observed range of sd year
+(exp(summary(f1)$coefficient[6,1] * 
+       diff(range(bird_df2$precip_cv_year))) - 1) * 100
+
+
+
+#lMass
+pr_fun(model = f1, 
+       var_interest = 'lMass',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year',
+                     'precip_cv_season',
+                     'precip_cv_year'))
+#temp season
+pr_fun(model = f1, 
+       var_interest = 'temp_sd_season',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year',
+                     'precip_cv_season',
+                     'precip_cv_year'))
+#temp year
+pr_fun(model = f1, 
+       var_interest = 'temp_sd_year',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year',
+                     'precip_cv_season',
+                     'precip_cv_year'))
+#precip season
+pr_fun(model = f1, 
+       var_interest = 'precip_cv_season',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year',
+                     'precip_cv_season',
+                     'precip_cv_year'))
+#precip year
+pr_fun(model = f1, 
+       var_interest = 'precip_cv_year',
+       var_names = c('lMass',
+                     'temp_sd_season', 
+                     'temp_sd_year',
+                     'precip_cv_season',
+                     'precip_cv_year'))
 
 
 # PCA intra and inter -----------------------------------------------------
@@ -425,21 +503,21 @@ factoextra::fviz_pca_var(tt_pca,
                          #repel = FALSE,
                          title = 'PCA')
 
-t1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t1 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
                    tt_pca$x[,2] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_df2)
-t2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t2 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family), 
                  data = bird_df2)
-t3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t3 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,2] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_df2)
 summary(t1)
@@ -459,10 +537,10 @@ tt_pca$center + bt_fun(vals = cbind(1, 1),
                        pca_obj = tt_pca)
 
 
-c1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+c1 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + temp_sd_season | fac_Family) + 
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
@@ -473,7 +551,7 @@ summary(c1)
 
 #same results, essentially
 tt_pca <- dplyr::mutate(bird_df2, 
-                        lMass = log(Mass)) %>%
+                        lMass = lMass) %>%
   dplyr::select(lMass,
                 temp_sd_year, 
                 temp_sd_season) %>%
@@ -486,7 +564,7 @@ factoextra::fviz_pca_var(tt_pca,
                          #repel = FALSE,
                          title = 'PCA')
 
-t1 <- lme4::lmer(log(GenLength) ~ 
+t1 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    tt_pca$x[,2] + 
                    tt_pca$x[,3] + 
@@ -494,33 +572,33 @@ t1 <- lme4::lmer(log(GenLength) ~
                    (-1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
-t2 <- lme4::lmer(log(GenLength) ~ 
+t2 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    tt_pca$x[,2] + 
                    (1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_df2)
-t3 <- lme4::lmer(log(GenLength) ~ 
+t3 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    tt_pca$x[,3] + 
                    (1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
-t4 <- lme4::lmer(log(GenLength) ~ 
+t4 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,2] + 
                    tt_pca$x[,3] + + 
                    (1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
-t5 <- lme4::lmer(log(GenLength) ~ 
+t5 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    (1 + tt_pca$x[,1] | fac_Family), 
                  data = bird_df2)
-t6 <- lme4::lmer(log(GenLength) ~ 
+t6 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,2] +
                    (1 + tt_pca$x[,1] | fac_Family), 
                  data = bird_df2)
-t7 <- lme4::lmer(log(GenLength) ~ 
+t7 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,3] +
                    (1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
@@ -551,21 +629,21 @@ factoextra::fviz_pca_var(tt_pca,
                          #repel = FALSE,
                          title = 'PCA')
 
-t1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t1 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
                    tt_pca$x[,2] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_dft)
-t2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t2 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family), 
                  data = bird_dft)
-t3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t3 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,2] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_dft)
 summary(t1)
@@ -574,21 +652,21 @@ AIC(t2)
 AIC(t3)
 
 
-c1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+c1 <- lme4::lmer(lGL ~ lMass + 
                    dhi_cv_year + 
                    dhi_cv_season + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + dhi_cv_year | fac_Family) + 
                    (-1 + dhi_cv_season | fac_Family), 
                  data = bird_dft)
-c2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+c2 <- lme4::lmer(lGL ~ lMass + 
                    dhi_cv_year + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + dhi_cv_year | fac_Family), 
                  data = bird_dft)
-c3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+c3 <- lme4::lmer(lGL ~ lMass + 
                    dhi_cv_season + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + dhi_cv_season | fac_Family), 
                  data = bird_dft)
 
@@ -615,28 +693,28 @@ factoextra::fviz_pca_var(tt_pca,
                          #repel = FALSE,
                          title = 'PCA')
 
-t1 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t1 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
                    tt_pca$x[,2] + 
                    tt_pca$x[,3] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
-t2 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t2 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family), 
                  data = bird_df2)
-t3 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t3 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,2] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
                  data = bird_df2)
-t4 <- lme4::lmer(log(GenLength) ~ log(Mass) + 
+t4 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,3] + 
-                   (1 + log(Mass) | fac_Family) + 
+                   (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,3] | fac_Family), 
                  data = bird_df2)
 summary(t1)
@@ -657,8 +735,8 @@ semdata <- data.frame(bird_df2, pc1, pc2) %>%
                 pc1,
                 pc2,
                 GenLength) %>%
-  dplyr::mutate(lmass = log(Mass),
-                lgl = log(GenLength))
+  dplyr::mutate(lmass = lMass,
+                lgl = lGL)
 
 model1 <- '
   lmass ~ pc1 + pc2
