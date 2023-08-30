@@ -34,7 +34,7 @@ mbr_fun <- function(input, VAR)
   #rasterize
   trast <- dplyr::filter(input, var == VAR, valid == TRUE) %>%
     dplyr::select(lon, lat, mean, slope, sd_resid, sd_season, kurt, skew, 
-                  spectral_beta, rho_l1, rel_slope, PC1, PC2, PC3) %>%
+                  spectral_beta, rho_l1, rel_slope) %>%
     terra::rast(crs = "epsg:4326")
   return(trast)
 }
@@ -63,9 +63,6 @@ plot(ev_temp[[8]], main = 'Rho Lag 1')
 plot(ev_temp[[2]], main = 'Slope')
 plot(ev_temp[[9]], main = 'Relative slope')
 
-plot(ev_temp[[10]], main = 'PC1 (+ = v mean, ^ inter, ^ intra)')
-plot(ev_temp[[11]], main = 'PC2 (+ = ^ inter, v intra)')
-plot(ev_temp[[12]], main = 'PC3 (+ = ^ mean, ^ intra)')
 
 
 #Precip
@@ -81,10 +78,6 @@ plot(ev_precip[[8]], main = 'Rho Lag 1')
 plot(ev_precip[[2]], main = 'Slope')
 plot(ev_precip[[9]], main = 'Relative slope')
 
-#there are weird - is this bc precip data is less reliable?
-plot(ev_precip[[10]], main = 'PC1 (+ = v mean, ^ inter, ^ intra)')
-plot(ev_precip[[11]], main = 'PC2 (+ = ^ inter, v intra)')
-plot(ev_precip[[12]], main = 'PC3 (+ = ^ mean, ^ intra)')
 
 
 # stats -------------------------------------------------------------------

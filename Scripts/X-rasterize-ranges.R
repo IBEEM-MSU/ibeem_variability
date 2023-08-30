@@ -1,6 +1,8 @@
-#stack bird range rasters (with gen time) and make plots
-
-#rasterize range map
+#############################
+# Rasterize range maps
+#
+# Stack these later
+#############################
 
 
 # read in data ------------------------------------------------------------
@@ -62,6 +64,7 @@ for (i in 1:length(ids))
   # #rasterize range with same crs as temp raster
   # 
   # ADD RASTER VALUES (1'S) WITH GENERATION LENGTH (WILL NEED TO READ IN GEN LENGTH DATA FROM 4C...)
+  # COULD ALSO ADD RATE OF TEMP CHANGE IN TERMS OF SD DEGREES / GENERATION
   # tt represents values of interest (e.g., gen length)
   # curr.range.rast <- terra::rasterize(vect(curr.range), tt)
   #
