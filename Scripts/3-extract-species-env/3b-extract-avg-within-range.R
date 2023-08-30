@@ -39,9 +39,6 @@ env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
 env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
                                grep('precip', colnames(env.dat), value = TRUE),
-                              grep('env1_pc', colnames(env.dat), value = TRUE),
-                              grep('env2_pc', colnames(env.dat), value = TRUE),
-                              grep('env3_pc', colnames(env.dat), value = TRUE),
                               grep('dhi', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
 
