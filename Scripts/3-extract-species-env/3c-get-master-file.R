@@ -1,4 +1,4 @@
-# 4c-get-master-file.R: script to generate a single master file where each 
+# 3c-get-master-file.R: script to generate a single master file where each 
 #                       row is a species and the columns contain the traits, 
 #                       and climate variables
 
@@ -72,7 +72,7 @@ main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
   dplyr::relocate(precip_cv_space, .after = precip_sd_space) %>%
   dplyr::relocate(dhi_cum_cv_space, .after = dhi_cum_sd_space) #%>%
   # dplyr::filter(!is.na(range_size_km2))
- 
+
 # which species are missing?
 # Antarctic-only seabirds and remote island birds
 #dplyr::filter(main.dat, is.na(temp_mean))

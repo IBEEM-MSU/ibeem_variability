@@ -112,6 +112,62 @@ hab_fun(habitat = 'Riverine')
 hab_fun(habitat = 'Human Modified')
 
 
+
+# explore precip CV issues ------------------------------------------------
+
+env.dat.rast <- dplyr::select(env.dat, lon, lat,
+                          precip_mean, precip_sd_year, precip_cv_year) %>%
+  terra::rast(crs = "epsg:4326")
+
+plot(env.dat.rast)
+
+
+# bivariate map env var --------------------------------------------------
+
+#adapted from: https://stackoverflow.com/questions/48572744/plot-a-bivariate-map-in-r
+
+devtools::install_github("wmurphyrd/colorplaner")
+library(colorplaner)
+
+ty_q <- quantile(env.dat$temp_sd_year, seq(0, 1, by = 0.05))
+ts_q <- quantile(env.dat$temp_sd_season, seq(0, 1, by = 0.05))
+py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
+ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
+
+ggplot(data = env.dat2, 
+       aes(lon, lat, 
+           fill = temp_sd_year, 
+           fill2 = temp_sd_season))+
+  geom_tile() +
+  scale_fill_colourplane(name = "", 
+                         na.color = "white",
+                         color_projection = "interpolate", 
+                         vertical_color = "#FAE30C",
+                         horizontal_color = "#0E91BE", 
+                         zero_color = "#E8E6F2",
+                         limits_y = c(0, ts_q[20]),
+                         limits = c(0, ty_q[20])) +
+  theme_minimal()
+
+
+ggplot(data = env.dat2, 
+       aes(lon, lat, 
+           fill = precip_cv_year, 
+           fill2 = precip_cv_season))+
+  geom_tile() +
+  scale_fill_colourplane(name = "", 
+                         na.color = "white",
+                         color_projection = "interpolate", 
+                         vertical_color = "red",
+                         horizontal_color = "blue", 
+                         zero_color = "#E8E6F2",
+                         limits_y = c(0, ps_q[20]),
+                         limits = c(0, py_q[20])) +
+  theme_minimal()
+
+
+
+
 # quick and dirty GAM spatial model ---------------------------------------
 
 # #variation over space
@@ -122,19 +178,6 @@ hab_fun(habitat = 'Human Modified')
 #      main = 'GAM spatial - Red = short gen, Yellow = long gen',
 #      xlab = 'Longitude',
 #      ylab = 'Latitude')
-
-
-# mass ~ env --------------------------------------------------------------
-
-f1 <- lme4::lmer(lMass ~ env1_pc1 + 
-                   env1_pc2 + 
-                   env1_pc3 + 
-                   (-1 + env1_pc1 | fac_Family) + 
-                   (-1 + env1_pc2 | fac_Family) +
-                   (-1 + env1_pc3 | fac_Family), 
-                 data = bird_df2)
-
-summary(f1)
 
 
 # how long before temp trend exceeds 2 sd interannual ---------------------
@@ -152,11 +195,15 @@ plot(bird_df2$temp_sd_year, bird_df2$temp_slope,
 #n_gen = how many gens before temp will exceed 2 sd
 ex_df <- dplyr::mutate(bird_df2, 
                        ex = 2 * temp_sd_year / temp_slope,
+                       ex_season = 2 * temp_sd_season / temp_slope,
                        delta_t = temp_slope / temp_sd_year * GenLength,
+                       delta_t_season = temp_slope / temp_sd_year * GenLength,
                        #(degrees / year) * (sd / degrees) * (year / gen) = sd / gen
                        delta_haldane = (temp_slope / temp_sd_year) * GenLength,
+                       delta_haldane_season = (temp_slope / temp_sd_season) * GenLength,
                        n_gen = ex / GenLength)
 hist(ex_df$ex, xlim = c(0, 125), breaks = 10000)
+hist(ex_df$ex_season, xlim = c(0, 125), breaks = 100000)
 plot(ex_df$ex, ex_df$GenLength, xlim = c(0, 125),
      col = rgb(0,0,0,0.1),
      pch = 19)
@@ -169,12 +216,18 @@ hist(ex_df$delta_haldane,
      main = 'delta temp (sd / generation)')
 abline(v = 0.1, lty = 2, col = 'red', lwd = 3)
 abline(v = 0.3, lty = 2, col = 'red', lwd = 3)
+hist(ex_df$delta_haldane_season, 
+     xlim = c(0, 0.5), breaks = 100,
+     main = 'delta temp season (sd / generation)')
+abline(v = 0.1, lty = 2, col = 'red', lwd = 3)
+abline(v = 0.3, lty = 2, col = 'red', lwd = 3)
 
-#Bürger and Lynch 1995: considerably less than 10% per gen
-#Gingerich 2009: 0.1 to 0.3 SD per generation
+
+#Bürger and Lynch 1995: rate of phenotypic evolution is considerably less than 10% per gen
+#Gingerich 2009: rate of phenotypic evolution is 0.1 to 0.3 SD per generation
 
 
-# visualize ---------------------------------------------------------------
+# visualize var --------------------------------------------------------------
 
 # plt <- dplyr::select(tt_env3, lon, lat, env3_pc1) %>%
 #   # dplyr::mutate(tt = scale(temp_sd_resid, scale = TRUE)) %>%
@@ -405,7 +458,7 @@ f7 <- lme4::lmer(lGL ~ lMass +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_season | fac_Family), 
                  data = bird_df2)
-summary(f1)
+round(summary(f1)$coefficients, 2)
 
 AIC(f1) #best
 AIC(f2)
@@ -419,6 +472,119 @@ summary(f1)
 summary(f4)
 summary(f5)
 summary(f6)
+
+
+hist(coef(f1)$fac_Family$temp_sd_season)
+hist(coef(f1)$fac_Family$temp_sd_year)
+hist(coef(f1)$fac_Family$precip_cv_season)
+hist(coef(f1)$fac_Family$precip_cv_year)
+
+# tplt_end <- data.frame(param = c('lMass', 'temp_sd_season', 'temp_sd_year', 
+#                                  'precip_cv_season', 'precip_cv_year'),
+#                        # med = summary(f1)$coef[-1,1],
+#                        # lci = summary(f1)$coef[-1,1] - 1.96 * summary(f1)$coef[-1,2],
+#                        # uci = summary(f1)$coef[-1,1] + 1.96 * summary(f1)$coef[-1,2],
+#                        med = c((exp(summary(f1)$coef[2,1] * 
+#                                    diff(range(bird_df2$lMass))) - 1) * 100,
+#                                (exp(summary(f1)$coef[3,1] * 
+#                                       diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                                (exp(summary(f1)$coef[4,1] * 
+#                                       diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                                (exp(summary(f1)$coef[5,1] * 
+#                                       diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                                (exp(summary(f1)$coef[6,1] * 
+#                                       diff(range(bird_df2$precip_cv_year))) - 1) * 100),
+#                        lci = c((exp((summary(f1)$coef[2,1] - 1.96 * summary(f1)$coef[2,2]) * 
+#                                 diff(range(bird_df2$lMass))) - 1) * 100,
+#                          (exp((summary(f1)$coef[3,1] - 1.96 * summary(f1)$coef[3,2]) *
+#                                 diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                          (exp((summary(f1)$coef[4,1] - 1.96 * summary(f1)$coef[4,2]) *
+#                                 diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                          (exp((summary(f1)$coef[5,1] - 1.96 * summary(f1)$coef[5,2]) *
+#                                 diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                          (exp((summary(f1)$coef[6,1] - 1.96 * summary(f1)$coef[6,2]) *
+#                                 diff(range(bird_df2$precip_cv_year))) - 1) * 100),
+#                        uci = c((exp((summary(f1)$coef[2,1] + 1.96 * summary(f1)$coef[2,2]) * 
+#                                       diff(range(bird_df2$lMass))) - 1) * 100,
+#                                (exp((summary(f1)$coef[3,1] + 1.96 * summary(f1)$coef[3,2]) *
+#                                       diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                                (exp((summary(f1)$coef[4,1] + 1.96 * summary(f1)$coef[4,2]) *
+#                                       diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                                (exp((summary(f1)$coef[5,1] + 1.96 * summary(f1)$coef[5,2]) *
+#                                       diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                                (exp((summary(f1)$coef[6,1] + 1.96 * summary(f1)$coef[6,2]) *
+#                                       diff(range(bird_df2$precip_cv_year))) - 1) * 100))
+# 
+# 
+# tplt_ss_end <- data.frame(lmass = tplt_end[1,2] + 
+#                             (exp(coef(f1)$fac_Family$lMass) - 1) * 100,
+#                           temp_sd_season = tplt_end[2,2] + 
+#                             (exp(coef(f1)$fac_Family$temp_sd_season) - 1) * 100,
+#                           temp_sd_year = tplt_end[3,2] + 
+#                             (exp(coef(f1)$fac_Family$temp_sd_year) - 1) * 100,
+#                           precip_cv_season = tplt_end[4,2] + 
+#                             (exp(coef(f1)$fac_Family$precip_cv_season) - 1) * 100,
+#                           precip_cv_year = tplt_end[5,2] + 
+#                             (exp(coef(f1)$fac_Family$precip_cv_year) - 1) * 100)
+# 
+# pnt_plt <- ggplot(tplt_ss_end, aes(-1.5, temp_sd_season)) +
+#   geom_jitter(shape = 1, alpha = 0.2, size = 3) +
+#   geom_hline(yintercept = 0,
+#              linetype = 'dashed',
+#              linewidth = 1,
+#              alpha = 0.4) +
+#   geom_segment(aes(y = tplt_end$lci[2], yend = tplt_end$uci[2],
+#                    x = -1.5, xend = -1.5), 
+#                lineend = "round",
+#                linewidth = 3, alpha = 0.025) +
+#   geom_point(aes(-1.5, tplt_end$med[2]), 
+#              size = 8, alpha = 0.025) +
+#   #temp sd year
+#   geom_jitter(data = tplt_ss_end, aes(-0.5, temp_sd_year),
+#               shape = 1, alpha = 0.2, size = 3) +
+#   geom_segment(aes(y = tplt_end$lci[3], yend = tplt_end$uci[3],
+#                    x = -0.5, xend = -0.5), 
+#                lineend = "round",
+#                linewidth = 3, alpha = 0.025) +
+#   geom_point(aes(-0.5, tplt_end$med[3]), 
+#              size = 8, alpha = 0.025) +
+#   #precip_cv_season
+#   geom_jitter(data = tplt_ss_end, aes(0.5, precip_cv_season),
+#               shape = 1, alpha = 0.2, size = 3) +
+#   geom_segment(aes(y = tplt_end$lci[4], yend = tplt_end$uci[4],
+#                    x = 0.5, xend = 0.5), 
+#                lineend = "round",
+#                linewidth = 3, alpha = 0.025) +
+#   geom_point(aes(0.5, tplt_end$med[4]), 
+#              size = 8, alpha = 0.025) +
+#   #precip_cv_year
+#   geom_jitter(data = tplt_ss_end, aes(1.5, precip_cv_year),
+#               shape = 1, alpha = 0.2, size = 3) +
+#   geom_segment(aes(y = tplt_end$lci[5], yend = tplt_end$uci[5],
+#                    x = 1.5, xend = 1.5), 
+#                lineend = "round",
+#                linewidth = 3, alpha = 0.025) +
+#   geom_point(aes(1.5, tplt_end$med[5]), 
+#              size = 8, alpha = 0.025) +
+#   xlim(-2, 2) +
+#   # ylim(c(-0.28, 0.1)) +
+#   ylab('temp_sd_season') +
+#   xlab('') +
+#   theme_bw() +
+#   theme(legend.position = 'none',
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.border = element_rect(linewidth = 2),
+#         axis.ticks = element_line(size = 1.5),
+#         axis.text = element_text(size = 16),
+#         axis.text.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         axis.title = element_text(size = 18),
+#         axis.title.y = element_text(margin = margin(t = 0, r = 15, b = 0, l = 0)),
+#         axis.title.x = element_text(margin = margin(t = 15, r = 15, b = 0, l = 0)),
+#         axis.ticks.length = unit(0.2, 'cm')) #length of axis tick
+
+
 
 #effect sizes
 # % increase in Gen Length for 1 unit change in sd season
