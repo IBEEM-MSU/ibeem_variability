@@ -166,6 +166,23 @@ ggplot(data = env.dat2,
   theme_minimal()
 
 
+# py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
+# ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
+# ggplot(data = env.dat2, 
+#        aes(lon, lat, 
+#            fill = temp_sp_color_year, 
+#            fill2 = temp_rel_slope))+
+#   geom_tile() +
+#   scale_fill_colourplane(name = "", 
+#                          na.color = "white",
+#                          color_projection = "interpolate", 
+#                          vertical_color = "red",
+#                          horizontal_color = "blue", 
+#                          zero_color = "#E8E6F2"),
+#                          limits_y = c(0, ps_q[20]),
+#                          limits = c(0, py_q[20])) +
+#   theme_minimal()
+
 
 
 # quick and dirty GAM spatial model ---------------------------------------
@@ -402,15 +419,19 @@ pr_fun(model = f1,
 
 #candidate models
 f1 <- lme4::lmer(lGL ~ lMass + 
-                           temp_sd_season + 
-                           temp_sd_year +
-                           precip_cv_season + 
-                           precip_cv_year +
-                           (1 + lMass | fac_Family) +
-                           (-1 + temp_sd_season | fac_Family) +
-                           (-1 + temp_sd_year | fac_Family) +
-                           (-1 + precip_cv_season | fac_Family) +
-                           (-1 + precip_cv_year | fac_Family), 
+                   temp_sd_season + 
+                   temp_sd_year +
+                   # temp_sp_color_year +
+                   precip_cv_season + 
+                   precip_cv_year +
+                   # precip_sp_color_year +
+                   (1 + lMass | fac_Family) +
+                   (-1 + temp_sd_season | fac_Family) +
+                   (-1 + temp_sd_year | fac_Family) +
+                   # (-1 + temp_sp_color_year | fac_Family) +
+                   (-1 + precip_cv_season | fac_Family) +
+                   (-1 + precip_cv_year | fac_Family),
+                 # (-1 + precip_sp_color_year | fac_Family),
                          data = bird_df2)
 f2 <- lme4::lmer(lGL ~ lMass + 
                    precip_cv_season + 
