@@ -5,5 +5,5 @@ n="es" # job name
 # Should probably not hardcode this...
 for i in {1..52}
 do
-  sbatch --job-name=$n.$i --output=$n.$i.SLURMout --export=fileName=MAMIDsPiece-$i.rda 4b-extract-mammal.SB
+  sbatch --job-name=$n.$i --output=$n.$i.SLURMout --export=fileName=MAMIDsPiece-$i.rda 3b-extract-mammal.SB
 done

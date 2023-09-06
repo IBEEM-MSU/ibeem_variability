@@ -29,19 +29,19 @@
     * `2b-env-metrics-GAM.R` - calculate env variability metrics using GAM detrend
     * `2c-DHI.R` - process DHI data
     * `2d-env-merge.R` - merge env metrics
-  * `3-explore-env-var.R` - explore environmental variability metrics
-  * `4-extract-species-env/` - extract env var data from species range
-    * `4a-split-sp-ids.R` - generate sets of bird ids for parallel processing
-    * `4a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
-    * `4b-extract-avg-within-range.R` - extract environmental covariates from species ranges
-    * `4b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
-    * `4b-extract-compile.SB` - bash script to iterate through all pieces of data and run `4b-extract.SB`
-    * `4b-extract.SB` - bash script to load one piece of data and run `4b-extract-avg-within-range.R` on HPCC
-    * `4b-extract-compile-mammal.SB` - bash script to iterate through all pieces of data and run `4b-extract-mammal.SB`
-    * `4b-extract-mammal.SB` - bash script to load one piece of data and run `4b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
-    * `4c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
-    * `4c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
-  * `5-explore-bird.R` - explore joined bird life history/env data
+  * `3-extract-species-env/` - extract env var data from species range
+    * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
+    * `3a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
+    * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
+    * `3b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
+    * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
+    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
+    * `3b-extract-compile-mammal.sh` - bash script to iterate through all pieces of data and run `3b-extract-mammal.sbatch`
+    * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
+    * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
+    * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
+  * `4-explore-bird.R` - explore joined bird life history/env data
+  * `X-explore-env-var.R` - explore environmental variability metrics
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
@@ -76,7 +76,7 @@
 * [Elton Traits (Wilman et al. 2014) for birds and mammals](https://esajournals.onlinelibrary.wiley.com/doi/10.1890/13-1917.1)
 * [PanTHERIA (Jones et al. 2009) for mammals](https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1890/08-1494.1)
 * [AVONET (Tobias et al. 2022) for birds](https://onlinelibrary.wiley.com/doi/full/10.1111/ele.13898)
-* [Coonety et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
+* [Cooney et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
 
 ## Env time series (avg over specified months and sd across months [seasonality]):
 * `sbatch variability/Scripts/1-clean-data/1b-process-ncdf.slurm`
@@ -88,7 +88,7 @@
 * `sbatch variability/Scripts/2-env-metrics/2a-env-1_12.slurm`
 
 ## Extracting env and trait data for each species
-+ Code for initial processing for birds (breeding season) is in `Scripts/4-extract-species-env`
++ Code for initial processing for birds (breeding season) is in `Scripts/3-extract-species-env`
 + Currently using species with ITIS ids, did not resolve NAs. 
 + Generates a main file with each row a species (with associated ITIS ID and accepted name). Each column contains either the average of one of the environmental variables across the range of the species, or some trait value. 
 + Main file is stored in `/mnt/research/ibeem/data/L2/main-bird-data.csv` and is also in the [`L2` folder on Google drive](https://drive.google.com/drive/folders/1c4dF8AEgOf7zvVUd5GTUT7vzj5hoLuGj). 
