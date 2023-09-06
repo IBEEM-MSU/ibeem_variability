@@ -3,7 +3,7 @@
 rm(list = ls())
 
 # Specify directory -------------------------------------------------------
-# MAM.dir <- '/mnt/research/ibeem/data/L1/range/bird-breeding/'
+# MAM.dir <- "./data/L1/range-mammal/"
 MAM.dir <- "/mnt/research/ibeem/data/L1/range-mammal/"
 
 # Load in full set of current IDs -----------------------------------------
