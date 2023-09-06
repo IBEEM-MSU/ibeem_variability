@@ -17,21 +17,27 @@ MAM.dir <- '/mnt/research/ibeem/data/L1/range-mammal/'
 env.dir <- '/mnt/research/ibeem/data/L2/climate/era5/'
 out.dir <- '/mnt/research/ibeem/data/L2/range-env-pieces-mammal/'
 
+# KK machine dirs 
+# MAM.dir <- './data/L1/range-mammal/'
+# env.dir <- './data/L2/climate/era5/'
+# out.dir <- './data/L2/range-env-pieces-mammal/'
+
 
 # Get the current file to process -----------------------------------------
 file.name <- commandArgs(trailingOnly = TRUE)
-# Testing
-# file.name <- 'BLIDsPiece-14.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
+
+# Testing
+# file.name <- 'MAMIDsPiece-46.rda'
 
 # Read in data ------------------------------------------------------------
 # Loads in current set of ids (a vector called ids)
 load(paste0(MAM.dir, file.name))
 # Climate data (takes a couple of minutes to load
 # NOTE: can change this to the GAM stuff if that's what we want.
-env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) %>%
+env.dat <- read.csv(paste0(env.dir, 'Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv')) # %>%
   #only 'valid' cells (those over land and > -60S lat)
-  dplyr::filter(valid == TRUE)
+  # dplyr::filter(valid == TRUE)
 
 # Convert to sf
 env.dat.sf <- st_as_sf(env.dat, 
@@ -61,10 +67,11 @@ for (i in 1:length(ids)) {
   curr.sp <- ids[i]  
   curr.range <- st_read(paste0(MAM.dir, curr.sp, '.shp'))
   # Get pixels within current species range. Takes about 2 min per species
-  env.curr.range <- st_crop(env.dat.sf, curr.range)
+  curr.range.cells <- st_intersects(env.dat.sf, curr.range, sparse=FALSE)
+  env.curr.range <- env.dat.sf[curr.range.cells,]
   
   # Get average of all the environmental variables for the given species
-  bad.cols <- which(names(env.curr.range) %in% c('cell_id', 'geometry'))
+  # bad.cols <- which(names(env.curr.range) %in% c('cell_id', 'geometry'))
   avg.clim.vars <- env.curr.range %>%
     dplyr::select(-cell_id, -geometry) %>%
     st_drop_geometry() %>%
