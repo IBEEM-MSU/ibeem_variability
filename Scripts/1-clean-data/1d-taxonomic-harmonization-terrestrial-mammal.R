@@ -14,18 +14,14 @@
 # specify dir -------------------------------------------------------------
 
 #path for data on KK machine - remember trailing slash
-range_map_data_dir <-"/mnt/research/ibeem/data/L0/ranges/"
-life_history_dir <- "/mnt/research/ibeem/data/L0/trait/"
+range_map_data_dir <-"./data/L0/ranges/"
+life_history_dir <- "./data/L0/trait/"
+out_dir <- './data/L1/'
 
 # paths on HPCC
 # range_map_data_dir <- '/mnt/research/ibeem/data/L1/range-mammal-clean/'
 # life_history_dir <- '/mnt/research/ibeem/data/L0/trait-mammal/'
-
-#directory to save out intermediate file
-# out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
 # out_dir <- '/mnt/research/ibeem/data/L1/'
-out_dir <- '/mnt/research/ibeem/data/L1/'
-
 
 # load packages -----------------------------------------------------------
 
@@ -58,7 +54,7 @@ NM <- NM_data %>%
   select(-Genus.1.2, -Species.1.2,
          -IUCN.2016.3.Genus, -IUCN.2016.3.Species) %>% 
   mutate (name_iucn = gsub("000 Species not accepted 000 Species not accepted", "NA", name_iucn),
-          name_phylacine = gsub("000 Species not accepted 000 Species not accepted", "NA", name_pantheria)) %>% 
+          name_phylacine = gsub("000 Species not accepted 000 Species not accepted", "NA", name_phylacine)) %>% 
   select(name_phylacine)
 
 LH <- LH_data %>% 
@@ -110,11 +106,11 @@ LH <- LH_data %>%
 NM <- NM_data %>%
   dplyr::mutate(id = taxadb::get_ids(Binomial.1.2, db)) %>%
   dplyr::mutate(accepted_name = taxadb::get_names(id, db)) %>% 
-  dplyr:: mutate(itis_id = substr(id, 6,20))=
+  dplyr:: mutate(itis_id = substr(id, 6,20))
 
-MAM_usp <- unique(MAM_data$id) # 5161
-LH_usp <- unique(LH_data$id) # 5205
-NM_usp <- unique(NM_data$id) # 5304
+MAM_usp <- unique(MAM$id) # 5161
+LH_usp <- unique(LH$id) # 5205
+NM_usp <- unique(NM$id) # 5304
 
 sum(LH_usp %in% MAM_usp)/length(MAM_usp)*100 # 91.6% of mammal species have life history info
 sum(NM_usp %in% MAM_usp)/length(MAM_usp)*100 # 94.6% of mammal species have phylogenetic info
@@ -128,18 +124,18 @@ sum(NM_usp %in% MAM_usp)/length(MAM_usp)*100 # 94.6% of mammal species have phyl
 # write.csv(LH_data, file = paste0(out_dir, 'trait-mammal/pacifici-traits-with-id.csv'),
 # 	  row.names = FALSE)
 # 
-# # Mammal range data one by one ----------
-# 
-# # Save out MAM species names in case you want them without reading in the whole thing.
-# MAM.unique <- MAM_data %>% filter(!is.na(itis_id)) 
-# MAM.unique.ids <- unique(MAM.unique$itis_id)
-# save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
-# # Takes a 40 min or so
-# for (i in 1:length(MAM.unique.ids)) {
-#   print(paste0("Currently on ", i, " out of ", length(MAM.unique.ids)))
-#   tmp <- MAM_data %>%
-#     filter(itis_id == MAM.unique.ids[i])
-#   st_write(tmp, paste0(out_dir, 'range-mammal/', MAM.unique.ids[i], '.shp'), 
-#            driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
-# }
-# 	
+# Mammal range data one by one ----------
+
+# Save out MAM species names in case you want them without reading in the whole thing.
+MAM.unique <- MAM %>% filter(!is.na(itis_id))
+MAM.unique.ids <- unique(MAM.unique$itis_id)
+save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
+# Takes a 40 min or so
+for (i in 1:length(MAM.unique.ids)) {
+  print(paste0("Currently on ", i, " out of ", length(MAM.unique.ids)))
+  tmp <- MAM %>%
+    filter(itis_id == MAM.unique.ids[i])
+  st_write(tmp, paste0(out_dir, 'range-mammal/', MAM.unique.ids[i], '.shp'),
+           driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
+}
+
