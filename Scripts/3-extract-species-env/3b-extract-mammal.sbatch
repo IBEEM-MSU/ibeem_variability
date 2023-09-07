@@ -19,6 +19,7 @@
 #
 # Mail user:
 #SBATCH --mail-user=kapsarke@msu.edu
+#SBATCH --account plzbuyin #Space lab node
 
 module load GCC/8.3.0
 module load OpenMPI/3.1.4
