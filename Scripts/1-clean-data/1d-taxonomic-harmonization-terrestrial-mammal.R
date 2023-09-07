@@ -41,16 +41,20 @@ library(progress)
 # Mammal range maps 
 #data location: https://drive.google.com/drive/u/1/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ
 # Get all species
-MAM_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'terrestrial-mammals-clean.shp'))
+MAM_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'terrestrial-mammals-clean.shp')) %>% 
+  rename(name_iucn = sci_name) 
 
 
 #mammal life history data
 #data location: https://drive.google.com/drive/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ?usp=drive_link
-LH_data <- read.csv(paste0(life_history_dir, 'Generation Length for Mammals.csv'))
+LH_data <- read.csv(paste0(life_history_dir, 'Generation Length for Mammals.csv')) %>% 
+  rename(name_pacifici = Scientific_name)
 
 NM_data <- read.csv(paste0(life_history_dir, 'phylacine_data/Synonymy_table_valid_species_only.csv'))
 
-PH_data <- read.csv(paste0(life_history_dir, 'phylacine_data/Trait_data.csv'))
+PH_data <- read.csv(paste0(life_history_dir, 'phylacine_data/Trait_data.csv')) %>% 
+  mutate(name_phylacine = gsub("_", " ", Binomial.1.2)) %>% select(-Binomial.1.2)
+
 
 NM <- NM_data %>% 
   mutate(name_phylacine = paste(Genus.1.2, Species.1.2),
@@ -70,14 +74,12 @@ NM <- NM_data %>%
          name_iucn_2016)
 
 LH <- LH_data %>% 
-  select(Scientific_name) %>% 
-  rename(name_pacifici = Scientific_name)
+  select(name_pacifici) 
 
 MAM <- MAM_data %>% 
   st_drop_geometry() %>% 
-  select(sci_name) %>% 
-  mutate(id = 1:n_distinct(sci_name)) %>% 
-  rename(name_iucn = sci_name) 
+  select(name_iucn) %>% 
+  mutate(id = 1:n_distinct(name_iucn)) 
 
 # Join data, use Phylacine synonyms to match names
 t <- MAM %>% mutate("name_phylacine" = NA,
@@ -150,85 +152,40 @@ write.csv(t_no_match, file = paste0(out_dir, 'mammal-names-no-match.csv'), row.n
 write.csv(NM, file = paste0(out_dir, 'mammal-names-phylacine.csv'), row.names = FALSE)
 write.csv(LH, file = paste0(out_dir, 'mammal-names-pacifici.csv'), row.names = FALSE)
 
-#
-#
-#
-#
-#
-#
 
+# Create master names list and join to spatial data ------------------------------------
 
+# Load in taxonomy lists 
+full_names <- read.csv('./data/L1/trait/mammal-names-matched.csv') # Names with no problems (5146)
+matched_names <- read.csv('./data/L1/trait/mammal-names-fixed.csv') %>% # Names Peter manually matched 
+  select(name_iucn, name_pacifici, name_phylacine)
 
+# Join and remove incomplete data (i.e., spp not present in >= 1 of the DBs)
+master_names <- rbind(full_names, matched_names) 
+master_names[master_names == ""] <- NA
+master_names <- master_names[complete.cases(master_names),]
 
+# Eval number of unique iucn species lumped together as one in pacifici/phylacine
+lumps <- master_names %>% group_by(name_pacifici) %>% summarize(n = n()) %>% filter(n > 1) # 209
+lumps2 <- master_names %>% group_by(name_phylacine) %>% summarize(n = n()) %>% filter(n > 1) # 173
 
-# test <- read.csv('./data/L1/trait/mammal-names-full.csv')
+# Join range polys to names list 
+# (right join keeps spatial attributes while removing polys that we have range info, but no traits)
+master_names_sf <- right_join(MAM_data, master_names, by = "name_iucn")
 
-
-##################################
-##################################
-##################################
-
-
-
-##################################
-# for loop on iucn species and then get list of synonyms....
-# see if those synonyms match 
-
-
-###################################################################################
-
-# Process data to get consistent names ------------------------------------
-
-#taxadb tutorial: https://docs.ropensci.org/taxadb/articles/intro.html
-#paper: https://besjournals-onlinelibrary-wiley-com.libproxy.lib.unc.edu/doi/full/10.1111/2041-210X.13440
-# 
-# # Using itis for now, but need to consider this more thoroughly
-# db <- 'itis' #see: https://docs.ropensci.org/taxadb/articles/data-sources.html
-# # Get associated db ids for bird-life species
-# MAM <- MAM_data %>%
-#   dplyr::mutate(id = taxadb::get_ids(sci_name, db)) %>%
-#   dplyr::mutate(accepted_name = taxadb::get_names(id, db)) %>% 
-#   dplyr:: mutate(itis_id = substr(id, 6,20)) 
-# sum(is.na(MAM_data$id))
-# # Get associated db ids for Pacifici et al. data
-# LH <- LH_data %>%
-#   dplyr::mutate(id = taxadb::get_ids(Scientific_name, db)) %>%
-#   dplyr::mutate(accepted_name = taxadb::get_names(id, db)) %>% 
-#   dplyr:: mutate(itis_id = substr(id, 6,20))
-# 
-# NM <- NM_data %>%
-#   dplyr::mutate(id = taxadb::get_ids(Binomial.1.2, db)) %>%
-#   dplyr::mutate(accepted_name = taxadb::get_names(id, db)) %>% 
-#   dplyr:: mutate(itis_id = substr(id, 6,20))
-# 
-# MAM_usp <- unique(MAM_data$id) # 5161
-# LH_usp <- unique(LH_data$id) # 5205
-# NM_usp <- unique(NM_data$id) # 5304
-# 
-# sum(LH_usp %in% MAM_usp)/length(MAM_usp)*100 # 91.6% of mammal species have life history info
-# sum(NM_usp %in% MAM_usp)/length(MAM_usp)*100 # 94.6% of mammal species have phylogenetic info
-# 
-
-# Temporary processing ----------------------------------------------------
-# Just save the data set with the ITIS ids to them, for easy linking across
-# data sources. Leaving the missing values as missing values for now just 
-# so we have something to work with. 
-# Trait data
-# write.csv(LH_data, file = paste0(out_dir, 'trait-mammal/pacifici-traits-with-id.csv'),
-# 	  row.names = FALSE)
-# 
 # # Mammal range data one by one ----------
-# 
-# # Save out MAM species names in case you want them without reading in the whole thing.
-# MAM.unique <- MAM_data %>% filter(!is.na(itis_id)) 
-# MAM.unique.ids <- unique(MAM.unique$itis_id)
-# save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
-# # Takes a 40 min or so
-# for (i in 1:length(MAM.unique.ids)) {
-#   print(paste0("Currently on ", i, " out of ", length(MAM.unique.ids)))
-#   tmp <- MAM_data %>%
-#     filter(itis_id == MAM.unique.ids[i])
-#   st_write(tmp, paste0(out_dir, 'range-mammal/', MAM.unique.ids[i], '.shp'), 
-#            driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
-# }
-# 	
+
+# Save out MAM species names in case you want them without reading in the whole thing.
+MAM.unique.ids <- unique(master_df$id_no)
+
+save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
+
+# Takes a 40 min or so
+for (i in 1:length(MAM.unique.ids)) {
+  print(paste0("Currently on ", i, " out of ", length(MAM.unique.ids)))
+  tmp <- MAM_data %>%
+    filter(id_no == MAM.unique.ids[i])
+  st_write(tmp, paste0(out_dir, 'range-mammal/', MAM.unique.ids[i], '.shp'),
+           driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
+}
+
