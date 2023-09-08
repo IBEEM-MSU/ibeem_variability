@@ -170,8 +170,6 @@ master_names <- rbind(full_names, matched_names)
 master_names[master_names == ""] <- NA
 master_names <- master_names[complete.cases(master_names),]
 
-write.csv(master_names, "./data/L1/trait/mammal-names-master.csv")
-
 # Eval number of unique iucn species lumped together as one in pacifici/phylacine
 lumps <- master_names %>% group_by(name_pacifici) %>% summarize(n = n()) %>% filter(n > 1) # 209
 lumps2 <- master_names %>% group_by(name_phylacine) %>% summarize(n = n()) %>% filter(n > 1) # 173
