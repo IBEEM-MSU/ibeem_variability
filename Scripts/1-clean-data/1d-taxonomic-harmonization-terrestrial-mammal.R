@@ -170,6 +170,8 @@ master_names <- rbind(full_names, matched_names)
 master_names[master_names == ""] <- NA
 master_names <- master_names[complete.cases(master_names),]
 
+write.csv(master_names, "./data/L1/trait/mammal-names-master.csv")
+
 # Eval number of unique iucn species lumped together as one in pacifici/phylacine
 lumps <- master_names %>% group_by(name_pacifici) %>% summarize(n = n()) %>% filter(n > 1) # 209
 lumps2 <- master_names %>% group_by(name_phylacine) %>% summarize(n = n()) %>% filter(n > 1) # 173
@@ -177,6 +179,12 @@ lumps2 <- master_names %>% group_by(name_phylacine) %>% summarize(n = n()) %>% f
 # Join range polys to names list 
 # (right join keeps spatial attributes while removing polys that we have range info, but no traits)
 master_names_sf <- right_join(MAM_data, master_names, by = "name_iucn")
+
+# Save master file with all matched names and iucn id numbers 
+master_names <- master_names_sf %>% 
+  st_drop_geometry() %>% 
+  select(id_no, name_iucn, name_phylacine, name_pacifici, kingdom, phylum, class, order, family, genus)
+write.csv(master_names, "./data/L1/trait/mammal-names-master.csv")
 
 # # Mammal range data one by one ----------
 
