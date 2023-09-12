@@ -21,5 +21,5 @@ module load R/4.1.0
 #manually specify R lib
 export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
 
-Rscript /mnt/research/ibeem/variability/Scripts/1-clean-data/1c-process-ncdf-monthly.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 18
+Rscript /mnt/home/ccy/variability/Scripts/1-clean-data/1c-process-ncdf-monthly.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 18
 
