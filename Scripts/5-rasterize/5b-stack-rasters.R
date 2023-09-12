@@ -17,6 +17,14 @@ dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
 
+# read in bird data -------------------------------------------------------
+
+# #read in life history and other traits
+# #use to filter species of interest (e.g., no seabirds)
+# bird_df <- read.csv(paste0(dir, 'Data/L2/main-bird-data.csv')) %>%
+#   dplyr::filter(!is.na(GenLength))
+
+
 # read in rasters ---------------------------------------------------------
 
 #list files of interest

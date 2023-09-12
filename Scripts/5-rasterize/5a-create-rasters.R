@@ -1,7 +1,7 @@
 #############################
 # Create rasterized range maps for birds
 #
-# One raster for GenLegnth, one for delata haldane
+# One raster for GenLength, one for delata haldane
 #############################
 
 
