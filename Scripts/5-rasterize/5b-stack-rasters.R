@@ -21,7 +21,7 @@ dir <- '/mnt/research/ibeem/variability/'
 
 # #read in life history and other traits
 # #use to filter species of interest (e.g., no seabirds)
-# bird_df <- read.csv(paste0(dir, 'Data/L2/main-bird-data.csv')) %>%
+# bird_df <- read.csv(paste0(dir, 'data/L2/main-bird-data.csv')) %>%
 #   dplyr::filter(!is.na(GenLength))
 
 
