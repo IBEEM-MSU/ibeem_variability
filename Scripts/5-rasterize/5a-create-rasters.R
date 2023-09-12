@@ -125,7 +125,7 @@ for (i in 1:length(ids))
     terra::writeRaster(curr.range.rast2[['delta_haldane']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.range2$sci_nam),
-                                       '-breeding-delta_haldane.tif').
+                                       '-breeding-delta_haldane.tif'),
                        overwrite = TRUE)
   }
 }
