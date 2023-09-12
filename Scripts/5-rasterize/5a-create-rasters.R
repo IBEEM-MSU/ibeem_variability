@@ -68,7 +68,7 @@ bird_df <- read.csv(paste0(dir, 'data/L2/main-bird-data.csv')) %>%
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 1
+  #i <- 3
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/', 
@@ -76,7 +76,7 @@ for (i in 1:length(ids))
                             quiet = TRUE)
   
   #filter trait for species of interest (Accepted name is BirdLife name)
-  tdf <- dplyr::filter(bird_df, Accepted_name == curr.range$sci_nam)
+  tdf <- dplyr::filter(bird_df, Accepted_name == curr.range$sci_nam[1])
   
   #only proceed if species was part of final df
   if (NROW(tdf) > 0)
@@ -120,11 +120,13 @@ for (i in 1:length(ids))
     terra::writeRaster(curr.range.rast2[['GenLength']], 
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.range2$sci_nam),
-                                         '-breeding-GenLength.tif'))
+                                         '-breeding-GenLength.tif'),
+                       overwrite = TRUE)
     terra::writeRaster(curr.range.rast2[['delta_haldane']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.range2$sci_nam),
-                                       '-breeding-delta_haldane.tif'))
+                                       '-breeding-delta_haldane.tif').
+                       overwrite = TRUE)
   }
 }
 
