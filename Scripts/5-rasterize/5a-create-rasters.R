@@ -76,7 +76,7 @@ for (i in 1:length(ids))
                             quiet = TRUE)
   
   #filter trait for species of interest (Accepted name is BirdLife name)
-  tdf <- dplyr::filter(bird_df, Accepted_name == curr.range2$sci_nam)
+  tdf <- dplyr::filter(bird_df, Accepted_name == curr.range$sci_nam)
   
   #only proceed if species was part of final df
   if (NROW(tdf) > 0)
