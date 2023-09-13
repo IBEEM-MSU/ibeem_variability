@@ -20,18 +20,28 @@ library(viridis)
 # read in data -------------------------------------------------
 
 bird_df <- read.csv(paste0(dir, 'Data/L2/main-bird-data.csv')) %>%
-  dplyr::filter(!is.na(GenLength)) %>%
   dplyr::mutate(fac_Family = factor(Family),
                 fac_Order = factor(Order),
                 lMass = log(Mass),
                 lGL = log(GenLength))
 
-#filter - no marine/coastal, only residents
-'%ni%' <- Negate('%in%')
-bird_df2 <- dplyr::filter(bird_df, 
-                          Habitat %ni% c('Marine', 'Coastal'),
-                          Primary.Lifestyle %ni% ('Aquatic'),
-                          Migration == 1)
+or_excl <- c('Sphenisciformes', #penguins 
+             'Procellariiformes', #tubenoses
+             'Pelecaniformes', #pelicans
+             'Suliformes', #gannets/boobies
+             'Phaethontiformes', #tropicbirds
+             'Charadriiformes', #skuas, gulls, terns, skimmers, auks
+             'Anseriformes', #waterfowl
+             'Ciconiiformes', #storks
+             'Gaviiformes', #aquatic birds (loons and divers)
+             'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
+             'Phoenicopteriformes', #flamingos and relatives
+             'Podicipediformes') #grebes
+
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
+  dplyr::arrange(Accepted_name) %>%
+  dplyr::filter(Order %ni% or_excl,
+                Migration == 1)
 
 
 # plot gen length on map ----------------------------------------------
@@ -263,11 +273,11 @@ abline(v = 0.3, lty = 2, col = 'red', lwd = 3)
 
 #candidate models
 f1 <- lme4::lmer(lGL ~ lMass+ 
-                   temp_sp_color_year + 
+                   temp_sp_color_month + 
                    temp_sd_season + 
                    temp_sd_year + 
                    (1 + lMass | fac_Family) +
-                   (-1 + temp_sp_color_year | fac_Family) + 
+                   (-1 + temp_sp_color_month | fac_Family) + 
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
                  data = bird_df2)
@@ -421,17 +431,17 @@ pr_fun(model = f1,
 f1 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year +
-                   # temp_sp_color_year +
+                   #temp_sp_color_month +
                    precip_cv_season + 
                    precip_cv_year +
-                   # precip_sp_color_year +
+                   # precip_sp_color_month +
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
-                   # (-1 + temp_sp_color_year | fac_Family) +
+                   #(-1 + temp_sp_color_month | fac_Family) +
                    (-1 + precip_cv_season | fac_Family) +
-                   (-1 + precip_cv_year | fac_Family),
-                 # (-1 + precip_sp_color_year | fac_Family),
+                   (-1 + precip_cv_year | fac_Family), #+
+                 # (-1 + precip_sp_color_month | fac_Family),
                          data = bird_df2)
 f2 <- lme4::lmer(lGL ~ lMass + 
                    precip_cv_season + 
