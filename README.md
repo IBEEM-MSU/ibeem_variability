@@ -40,7 +40,13 @@
     * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
     * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
     * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
-  * `4-explore-bird.R` - explore joined bird life history/env data
+  * `4-rasterize` - rasterize ranges
+    * `4a-create-rasters.R` - create .tif files birds
+    * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
+    * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
+    * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
+  * `5a-explore-bird.R` - explore joined bird life history/env data
+  * `5b-explore-mammals.R` - explore joined bird life history/env data
   * `X-explore-env-var.R` - explore environmental variability metrics
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
