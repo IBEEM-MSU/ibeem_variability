@@ -22,7 +22,7 @@ dir <- '/mnt/research/ibeem/variability/'
 
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BLIDsPiece-14.rda'
+# file.name <- 'BLIDsPiece-9.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
@@ -68,7 +68,7 @@ bird_df <- read.csv(paste0(dir, 'data/L2/main-bird-data.csv')) %>%
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 3
+  #i <- 42
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]  
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/', 
@@ -119,12 +119,12 @@ for (i in 1:length(ids))
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
                        filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.range2$sci_nam),
+                                         gsub(' ', '_', curr.range$sci_nam[1]),
                                          '-breeding-GenLength.tif'),
                        overwrite = TRUE)
     terra::writeRaster(curr.range.rast2[['delta_haldane']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.range2$sci_nam),
+                                         gsub(' ', '_', curr.range$sci_nam[1]),
                                        '-breeding-delta_haldane.tif'),
                        overwrite = TRUE)
   }
