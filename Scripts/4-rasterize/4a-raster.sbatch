@@ -26,5 +26,5 @@ module load GCC/8.3.0
 module load OpenMPI/3.1.4
 module load R/4.1.0
 
-Rscript /mnt/home/ccy/variability/Scripts/5-rasterize/5a-create-rasters.R $fileName 
+Rscript /mnt/home/ccy/variability/Scripts/4-rasterize/4a-create-rasters.R $fileName 
 
