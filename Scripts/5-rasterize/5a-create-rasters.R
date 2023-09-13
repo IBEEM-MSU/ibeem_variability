@@ -44,7 +44,6 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 
 #read in life history and other traits
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
-  dplyr::filter(!is.na(GenLength)) %>%
   #ex = number of years before temp exceeds 2 sd
   #AND
   #delta_t = how much temp will change in 1 generation (in sds)
@@ -75,8 +74,8 @@ for (i in 1:length(ids))
                                    curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
-  #filter trait for species of interest (Accepted name is BirdLife name)
-  tdf <- dplyr::filter(bird_df, Accepted_name == curr.range$sci_nam[1])
+  #filter trait for species of interest (use ID)
+  tdf <- dplyr::filter(bird_df, ID == curr.sp)
   
   #only proceed if species was part of final df
   if (NROW(tdf) > 0)
@@ -119,12 +118,13 @@ for (i in 1:length(ids))
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
                        filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.range$sci_nam[1]),
+                                         gsub(' ', '_', curr.sp),
                                          '-breeding-GenLength.tif'),
                        overwrite = TRUE)
+    
     terra::writeRaster(curr.range.rast2[['delta_haldane']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.range$sci_nam[1]),
+                                         gsub(' ', '_', curr.sp),
                                        '-breeding-delta_haldane.tif'),
                        overwrite = TRUE)
   }
