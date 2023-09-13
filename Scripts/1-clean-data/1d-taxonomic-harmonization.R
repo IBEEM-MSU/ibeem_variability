@@ -30,7 +30,6 @@ out_dir <- '/mnt/research/ibeem/variability/data/L1/'
 
 library(tidyverse)
 library(sf)
-library(taxadb)
 
 
 # read in data -------------------------------------------------
@@ -94,12 +93,14 @@ full.name.dat <- read.csv(paste0(out_dir, 'trait/bird-names-full-matched.csv'))
 LH_data <- LH_data %>%
   dplyr::mutate(Sci_name = tolower(Sci_name)) %>%
   dplyr::left_join(full.name.dat, by = c('Sci_name' = 'name'))
+
 write.csv(LH_data, file = paste0(out_dir, 'trait/bird-et-al-data-with-id.csv'), 
 	  row.names = FALSE)
 
 AV_data <- AV_data %>%
   dplyr::mutate(Species1 = tolower(Species1)) %>%
   dplyr::left_join(full.name.dat, by = c('Species1' = 'name'))
+
 write.csv(AV_data, file = paste0(out_dir, 'trait/avonet-with-id.csv'), 
 	  row.names = FALSE)
 
@@ -118,7 +119,7 @@ BL_data_breeding <- BL_data %>%
 BL.unique.ids <- unique(BL_data_breeding$BirdLife_ID)
 save(BL.unique.ids, file = paste0(out_dir, 'range/bird-breeding/BL-ids.rda'))
 
-# Takes a 40 min or so
+# Takes 40 min or so
 for (i in 1:length(BL.unique.ids)) {
   print(paste0("Currently on ", i, " out of ", length(BL.unique.ids)))
   
