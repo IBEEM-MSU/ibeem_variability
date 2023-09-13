@@ -43,7 +43,7 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
   terra::rast(crs = "epsg:4326")
 
 #read in life history and other traits
-bird_df <- read.csv(paste0(dir, 'data/L2/main-bird-data.csv')) %>%
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
   dplyr::filter(!is.na(GenLength)) %>%
   #ex = number of years before temp exceeds 2 sd
   #AND

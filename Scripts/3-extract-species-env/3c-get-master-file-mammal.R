@@ -93,6 +93,8 @@ main.dat <- climate.df %>%
 
 
 # Save output -----------------------------------------------------
-write.csv(main.dat, file = paste0(dir, 'data/L2/main-mammal-data.csv'), row.names = FALSE)
+
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-mammal-data.csv'), 
+          row.names = FALSE)
 
 

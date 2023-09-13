@@ -78,7 +78,7 @@ main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
 #dplyr::filter(main.dat, is.na(temp_mean))
 
 #write to file
-write.csv(main.dat, file = paste0(dir, 'data/L2/main-bird-data.csv'), 
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data.csv'), 
           row.names = FALSE)
 
 # write.csv(main.dat, file = paste0('~/main-bird-data.csv'),
