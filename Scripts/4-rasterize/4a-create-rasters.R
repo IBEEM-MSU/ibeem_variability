@@ -1,7 +1,7 @@
 #############################
 # Create rasterized range maps for birds
 #
-# One raster for GenLength, one for delata haldane
+# One raster for GenLength, one for delta haldane
 #############################
 
 
@@ -105,7 +105,9 @@ for (i in 1:length(ids))
     }
   
     #rasterize range with same crs as temp raster
-    curr.range.rast <- terra::rasterize(terra::vect(curr.range2), env.dat.rast)
+    curr.range.rast <- terra::rasterize(terra::vect(curr.range2), 
+                                        env.dat.rast, 
+                                        touches = TRUE)
     #two layers
     curr.range.rast2 <- c(curr.range.rast, curr.range.rast)
     

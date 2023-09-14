@@ -43,6 +43,15 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
 
 ids <- bird_df$ID
 
+#copy rasters to local
+# scp -r 'ccy@rsync.hpcc.msu.edu:/mnt/home/ccy/ibeem/variability/data/L2/range-raster' /Users/caseyyoungflesh/Desktop/
+# #filter rasters by valid species (no seabirds/migrants)
+# for (i in 1:length(ids))
+# {
+#   #i <- 1
+#   print(paste0(i, ' of ', length(ids)))
+#   system(paste0('cp ~/Desktop/range-raster/', ids[i], '-breeding-GenLength.tif ~/Desktop/range-raster-filtered/'))
+# }
 
 # read in env data for landmask -----------------------------------------------
 
