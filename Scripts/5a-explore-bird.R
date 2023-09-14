@@ -19,12 +19,6 @@ library(viridis)
 
 # read in data -------------------------------------------------
 
-bird_df <- read.csv(paste0(dir, 'Data/L2/main-bird-data.csv')) %>%
-  dplyr::mutate(fac_Family = factor(Family),
-                fac_Order = factor(Order),
-                lMass = log(Mass),
-                lGL = log(GenLength))
-
 or_excl <- c('Sphenisciformes', #penguins 
              'Procellariiformes', #tubenoses
              'Pelecaniformes', #pelicans
@@ -41,175 +35,68 @@ or_excl <- c('Sphenisciformes', #penguins
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
   dplyr::arrange(Accepted_name) %>%
   dplyr::filter(Order %ni% or_excl,
-                Migration == 1)
+                Migration == 1) %>%
+  dplyr::mutate(fac_Family = factor(Family),
+                fac_Order = factor(Order),
+                lMass = log(Mass),
+                lGL = log(GenLength))
 
 
-# plot gen length on map ----------------------------------------------
+# map gen length (median lat/lon) ---------------------------------------------------
 
-#should replace this with rasterized gen length on map
-
-#map
-world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
-
-#base plot
-base_plt <- ggplot() + 
-  #plot map
-  geom_sf(data = world,
-          #fill = 'grey89') +
-          fill = 'aliceblue') +
-  # theme_bw()
-  #graticles
-  theme(panel.grid.major = #element_line(color = black,
-                            #            linetype = 'dashed', 
-                             #           linewidth = 0.1),
-          element_blank(),
-        panel.ontop = TRUE,
-        panel.background = element_rect(fill = 'NA')) +
-  scale_x_continuous(breaks = seq(-180, 180, by = 15))+
-  scale_y_continuous(breaks = seq(-80, 80, by = 20))
-
-#pts
-gen_pts_wo_seabirds_coastal <- base_plt +
-  #plot pts
-  geom_point(data = bird_df2,
-             aes(cen_lon, cen_lat,
-                 col = lGL),
-             alpha = 0.5,
-             size = 1.1) +
-  scale_color_viridis()
-
-gen_pts_all <- base_plt +
-  #plot pts
-  geom_point(data = bird_df,
-             aes(cen_lon, cen_lat,
-                 col = lGL),
-             alpha = 0.5,
-             size = 1.1) +
-  scale_color_viridis()
-
-gen_pts_wo_seabirds_coastal
-gen_pts_all
-
-#plot by habitat type
-(uhab <- unique(bird_df$Habitat))
-hab_fun <- function(habitat)
-{
-  bird_t <- dplyr::filter(bird_df, Habitat == habitat)
-  fun_plt <- base_plt +
-    geom_point(data = bird_t,
-               aes(cen_lon, cen_lat,
-                   col = lGL),
-               alpha = 0.8,
-               size = 1.1) +
-    scale_color_viridis() +
-    ggtitle(habitat) +
-    xlab('Longitude') +
-    ylab('Latitude')
-
-    print(fun_plt)
-}
-
-hab_fun(habitat = 'Forest')
-hab_fun(habitat = 'Woodland')
-hab_fun(habitat = 'Wetland')
-hab_fun(habitat = 'Shrubland')
-hab_fun(habitat = 'Grassland')
-hab_fun(habitat = 'Rock')
-hab_fun(habitat = 'Desert')
-hab_fun(habitat = 'Coastal')
-hab_fun(habitat = 'Marine')
-hab_fun(habitat = 'Riverine')
-hab_fun(habitat = 'Human Modified')
-
-
-
-# explore precip CV issues ------------------------------------------------
-
-env.dat.rast <- dplyr::select(env.dat, lon, lat,
-                          precip_mean, precip_sd_year, precip_cv_year) %>%
-  terra::rast(crs = "epsg:4326")
-
-plot(env.dat.rast)
-
-
-# bivariate map env var --------------------------------------------------
-
-#adapted from: https://stackoverflow.com/questions/48572744/plot-a-bivariate-map-in-r
-
-devtools::install_github("wmurphyrd/colorplaner")
-library(colorplaner)
-
-ty_q <- quantile(env.dat$temp_sd_year, seq(0, 1, by = 0.05))
-ts_q <- quantile(env.dat$temp_sd_season, seq(0, 1, by = 0.05))
-py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
-ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
-
-ggplot(data = env.dat2, 
-       aes(lon, lat, 
-           fill = temp_sd_year, 
-           fill2 = temp_sd_season))+
-  geom_tile() +
-  scale_fill_colourplane(name = "", 
-                         na.color = "white",
-                         color_projection = "interpolate", 
-                         vertical_color = "#FAE30C",
-                         horizontal_color = "#0E91BE", 
-                         zero_color = "#E8E6F2",
-                         limits_y = c(0, ts_q[20]),
-                         limits = c(0, ty_q[20])) +
-  theme_minimal()
-
-
-ggplot(data = env.dat2, 
-       aes(lon, lat, 
-           fill = precip_cv_year, 
-           fill2 = precip_cv_season))+
-  geom_tile() +
-  scale_fill_colourplane(name = "", 
-                         na.color = "white",
-                         color_projection = "interpolate", 
-                         vertical_color = "red",
-                         horizontal_color = "blue", 
-                         zero_color = "#E8E6F2",
-                         limits_y = c(0, ps_q[20]),
-                         limits = c(0, py_q[20])) +
-  theme_minimal()
-
-
-# py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
-# ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
-# ggplot(data = env.dat2, 
-#        aes(lon, lat, 
-#            fill = temp_sp_color_year, 
-#            fill2 = temp_rel_slope))+
-#   geom_tile() +
-#   scale_fill_colourplane(name = "", 
-#                          na.color = "white",
-#                          color_projection = "interpolate", 
-#                          vertical_color = "red",
-#                          horizontal_color = "blue", 
-#                          zero_color = "#E8E6F2"),
-#                          limits_y = c(0, ps_q[20]),
-#                          limits = c(0, py_q[20])) +
-#   theme_minimal()
-
-
-
-# quick and dirty GAM spatial model ---------------------------------------
-
-# #variation over space
-# sg_fit <- mgcv::gam(log(bird_df2$GenLength) ~ s(bird_df2$cen_lon, 
-#                                                            bird_df2$cen_lat))
+#USE RASTER INSTEAD
+# #map
+# world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf")
 # 
-# plot(sg_fit, contour.col = 'black', too.far = 0.2, scheme = 2, rug = TRUE,
-#      main = 'GAM spatial - Red = short gen, Yellow = long gen',
-#      xlab = 'Longitude',
-#      ylab = 'Latitude')
+# #base plot
+# base_plt <- ggplot() + 
+#   #plot map
+#   geom_sf(data = world,
+#           #fill = 'grey89') +
+#           fill = 'aliceblue') +
+#   # theme_bw()
+#   #graticles
+#   theme(panel.grid.major = #element_line(color = black,
+#           #            linetype = 'dashed', 
+#           #           linewidth = 0.1),
+#           element_blank(),
+#         panel.ontop = TRUE,
+#         panel.background = element_rect(fill = 'NA')) +
+#   scale_x_continuous(breaks = seq(-180, 180, by = 15))+
+#   scale_y_continuous(breaks = seq(-80, 80, by = 20))
+# 
+# #pts
+# gen_pts_wo_seabirds_coastal <- base_plt +
+#   #plot pts
+#   geom_point(data = bird_df,
+#              aes(cen_lon, cen_lat,
+#                  col = lGL),
+#              alpha = 0.5,
+#              size = 1.1) +
+#   scale_color_viridis()
+# 
+# gen_pts_all <- base_plt +
+#   #plot pts
+#   geom_point(data = bird_df,
+#              aes(cen_lon, cen_lat,
+#                  col = lGL),
+#              alpha = 0.5,
+#              size = 1.1) +
+#   scale_color_viridis()
+# 
+# gen_pts_wo_seabirds_coastal
+# gen_pts_all
+
+
+# map gen length raster ---------------------------------------------------
+
+
+
 
 
 # how long before temp trend exceeds 2 sd interannual ---------------------
 
-plot(bird_df2$temp_sd_year, bird_df2$temp_slope, 
+plot(bird_df$temp_sd_year, bird_df$temp_slope, 
      col = rgb(0,0,0,0.1),
      pch = 19)
 
@@ -220,7 +107,7 @@ plot(bird_df2$temp_sd_year, bird_df2$temp_slope,
 #delta_haldane = how much change (in sd) per generation
 #AND
 #n_gen = how many gens before temp will exceed 2 sd
-ex_df <- dplyr::mutate(bird_df2, 
+ex_df <- dplyr::mutate(bird_df, 
                        ex = 2 * temp_sd_year / temp_slope,
                        ex_season = 2 * temp_sd_season / temp_slope,
                        delta_t = temp_slope / temp_sd_year * GenLength,
@@ -254,21 +141,6 @@ abline(v = 0.3, lty = 2, col = 'red', lwd = 3)
 #Gingerich 2009: rate of phenotypic evolution is 0.1 to 0.3 SD per generation
 
 
-# visualize var --------------------------------------------------------------
-
-# plt <- dplyr::select(tt_env3, lon, lat, env3_pc1) %>%
-#   # dplyr::mutate(tt = scale(temp_sd_resid, scale = TRUE)) %>%
-#   # dplyr::mutate(tt = log(temp_sd_resid)) %>%
-#   dplyr::mutate(tt = env3_pc1) %>%
-#   dplyr::select(lon, lat, tt) %>%
-#   terra::rast(crs = "epsg:4326")
-# rv <- range(terra::values(plt$tt), na.rm = TRUE)
-# pal <- leaflet::colorNumeric(palette = "RdBu",
-#                              domain = rv,
-#                              reverse = T)
-# plot(plt, range = rv, col = pal(seq(rv[1], rv[2], by = 0.1)))
-
-
 # raw temp -----------------------------------------------------------
 
 #candidate models
@@ -280,55 +152,55 @@ f1 <- lme4::lmer(lGL ~ lMass+
                    (-1 + temp_sp_color_month | fac_Family) + 
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f2 <- lme4::lmer(lGL ~ lMass + 
                    temp_sp_color_year + 
                    temp_sd_season + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sp_color_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f3 <- lme4::lmer(lGL ~ lMass + 
                    temp_sp_color_year + 
                    temp_sd_year + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sp_color_year | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f4 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f5 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f6 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f7 <- lme4::lmer(lGL ~ lMass + 
                    (1 + lMass | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 #model selection
-AIC(f1)
+AIC(f1) #tie best (color)
 AIC(f2)
 AIC(f3)
 AIC(f4)
 AIC(f5)
-AIC(f6) #best (no color)
+AIC(f6) #tie best (no color)
 AIC(f7)
 MuMIn::r.squaredGLMM(f6)
 
 summary(f1)
 summary(f4)
 summary(f5)
-summary(f6) #best (sd season and sd year and Mass)
+summary(f6)
 
 #INTERPRETATION
 #((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
@@ -339,37 +211,37 @@ summary(f6) #best (sd season and sd year and Mass)
 (exp(summary(f6)$coefficient[4,1]) - 1) * 100
 # %increase in Gen Length over observed range of sd season
 (exp(summary(f6)$coefficient[3,1] * 
-       diff(range(bird_df2$temp_sd_season))) - 1) * 100
+       diff(range(bird_df$temp_sd_season))) - 1) * 100
 # %increase in Gen Length over observed range of sd year
 (exp(summary(f6)$coefficient[4,1] * 
-       diff(range(bird_df2$temp_sd_year))) - 1) * 100
+       diff(range(bird_df$temp_sd_year))) - 1) * 100
 
 
-#VIF - looks good
+#VIF - looks good (VIF < 5 is OK)
 car::vif(f1)
 vif_1 <- lme4::lmer(lMass ~
                       temp_sd_season + 
                       temp_sd_year + 
                       (1 + temp_sd_season | fac_Family) +
                       (-1 + temp_sd_year | fac_Family), 
-                    data = bird_df2)
+                    data = bird_df)
 vif_2 <- lme4::lmer(temp_sd_season ~
                       lMass + 
                       temp_sd_year + 
                       (1 + lMass | fac_Family) +
                       (-1 + temp_sd_year | fac_Family), 
-                    data = bird_df2)
+                    data = bird_df)
 vif_3 <- lme4::lmer(temp_sd_year ~
                       lMass +
                       temp_sd_season + 
                       (1 + lMass | fac_Family) +
                       (-1 + temp_sd_season | fac_Family), 
-                    data = bird_df2)
+                    data = bird_df)
 
-vif_1 <- summary(lm(lMass ~ temp_sd_year + temp_sd_season, data = bird_df2))
-vif_2 <- summary(lm(temp_sd_year ~ lMass + temp_sd_season, data = bird_df2))
-vif_3 <- summary(lm(temp_sd_season ~ lMass + temp_sd_year, data = bird_df2))
-vif_4 <- summary(lm(temp_sd_year ~ temp_sd_season, data = bird_df2))
+vif_1 <- summary(lm(lMass ~ temp_sd_year + temp_sd_season, data = bird_df))
+vif_2 <- summary(lm(temp_sd_year ~ lMass + temp_sd_season, data = bird_df))
+vif_3 <- summary(lm(temp_sd_season ~ lMass + temp_sd_year, data = bird_df))
+vif_4 <- summary(lm(temp_sd_year ~ temp_sd_season, data = bird_df))
 1 / (1 - vif_1$adj.r.squared)
 1 / (1 - vif_2$adj.r.squared)
 1 / (1 - vif_3$adj.r.squared)
@@ -390,7 +262,7 @@ pr_fun <- function(model, data, var_interest, var_names)
   #get coefs
   coef_fit <- coef(summary(model))
   #plot resids
-  plot(bird_df2[,grep(var_interest, colnames(bird_df2))], 
+  plot(bird_df[,grep(var_interest, colnames(bird_df))], 
        yp, 
        col = rgb(0,0,0,0.1), 
        pch = 19,
@@ -434,43 +306,43 @@ f1 <- lme4::lmer(lGL ~ lMass +
                    #temp_sp_color_month +
                    precip_cv_season + 
                    precip_cv_year +
-                   # precip_sp_color_month +
+                   #precip_sp_color_month +
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
                    #(-1 + temp_sp_color_month | fac_Family) +
                    (-1 + precip_cv_season | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), #+
-                 # (-1 + precip_sp_color_month | fac_Family),
-                         data = bird_df2)
+                 #(-1 + precip_sp_color_month | fac_Family),
+                         data = bird_df)
 f2 <- lme4::lmer(lGL ~ lMass + 
                    precip_cv_season + 
                    precip_cv_year +
                    (1 + lMass | fac_Family) +
                    (-1 + precip_cv_season | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f3 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year +
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f4 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    precip_cv_season + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_season | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f5 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    precip_cv_year + 
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f6 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    temp_sd_season + 
@@ -479,7 +351,7 @@ f6 <- lme4::lmer(lGL ~ lMass +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 f7 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_year + 
                    temp_sd_season + 
@@ -488,10 +360,10 @@ f7 <- lme4::lmer(lGL ~ lMass +
                    (-1 + temp_sd_year | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + precip_cv_season | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 round(summary(f1)$coefficients, 2)
 
-AIC(f1) #best
+AIC(f1) #best (sp color temp is within 3)
 AIC(f2)
 AIC(f3)
 AIC(f4)
@@ -516,35 +388,35 @@ hist(coef(f1)$fac_Family$precip_cv_year)
 #                        # lci = summary(f1)$coef[-1,1] - 1.96 * summary(f1)$coef[-1,2],
 #                        # uci = summary(f1)$coef[-1,1] + 1.96 * summary(f1)$coef[-1,2],
 #                        med = c((exp(summary(f1)$coef[2,1] * 
-#                                    diff(range(bird_df2$lMass))) - 1) * 100,
+#                                    diff(range(bird_df$lMass))) - 1) * 100,
 #                                (exp(summary(f1)$coef[3,1] * 
-#                                       diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                                       diff(range(bird_df$temp_sd_season))) - 1) * 100,
 #                                (exp(summary(f1)$coef[4,1] * 
-#                                       diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                                       diff(range(bird_df$temp_sd_year))) - 1) * 100,
 #                                (exp(summary(f1)$coef[5,1] * 
-#                                       diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                                       diff(range(bird_df$precip_cv_season))) - 1) * 100,
 #                                (exp(summary(f1)$coef[6,1] * 
-#                                       diff(range(bird_df2$precip_cv_year))) - 1) * 100),
+#                                       diff(range(bird_df$precip_cv_year))) - 1) * 100),
 #                        lci = c((exp((summary(f1)$coef[2,1] - 1.96 * summary(f1)$coef[2,2]) * 
-#                                 diff(range(bird_df2$lMass))) - 1) * 100,
+#                                 diff(range(bird_df$lMass))) - 1) * 100,
 #                          (exp((summary(f1)$coef[3,1] - 1.96 * summary(f1)$coef[3,2]) *
-#                                 diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                                 diff(range(bird_df$temp_sd_season))) - 1) * 100,
 #                          (exp((summary(f1)$coef[4,1] - 1.96 * summary(f1)$coef[4,2]) *
-#                                 diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                                 diff(range(bird_df$temp_sd_year))) - 1) * 100,
 #                          (exp((summary(f1)$coef[5,1] - 1.96 * summary(f1)$coef[5,2]) *
-#                                 diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                                 diff(range(bird_df$precip_cv_season))) - 1) * 100,
 #                          (exp((summary(f1)$coef[6,1] - 1.96 * summary(f1)$coef[6,2]) *
-#                                 diff(range(bird_df2$precip_cv_year))) - 1) * 100),
+#                                 diff(range(bird_df$precip_cv_year))) - 1) * 100),
 #                        uci = c((exp((summary(f1)$coef[2,1] + 1.96 * summary(f1)$coef[2,2]) * 
-#                                       diff(range(bird_df2$lMass))) - 1) * 100,
+#                                       diff(range(bird_df$lMass))) - 1) * 100,
 #                                (exp((summary(f1)$coef[3,1] + 1.96 * summary(f1)$coef[3,2]) *
-#                                       diff(range(bird_df2$temp_sd_season))) - 1) * 100,
+#                                       diff(range(bird_df$temp_sd_season))) - 1) * 100,
 #                                (exp((summary(f1)$coef[4,1] + 1.96 * summary(f1)$coef[4,2]) *
-#                                       diff(range(bird_df2$temp_sd_year))) - 1) * 100,
+#                                       diff(range(bird_df$temp_sd_year))) - 1) * 100,
 #                                (exp((summary(f1)$coef[5,1] + 1.96 * summary(f1)$coef[5,2]) *
-#                                       diff(range(bird_df2$precip_cv_season))) - 1) * 100,
+#                                       diff(range(bird_df$precip_cv_season))) - 1) * 100,
 #                                (exp((summary(f1)$coef[6,1] + 1.96 * summary(f1)$coef[6,2]) *
-#                                       diff(range(bird_df2$precip_cv_year))) - 1) * 100))
+#                                       diff(range(bird_df$precip_cv_year))) - 1) * 100))
 # 
 # 
 # tplt_ss_end <- data.frame(lmass = tplt_end[1,2] + 
@@ -630,16 +502,16 @@ hist(coef(f1)$fac_Family$precip_cv_year)
 
 # %increase in Gen Length over observed range of sd season
 (exp(summary(f1)$coefficient[3,1] * 
-       diff(range(bird_df2$temp_sd_season))) - 1) * 100
+       diff(range(bird_df$temp_sd_season))) - 1) * 100
 # %increase in Gen Length over observed range of sd year
 (exp(summary(f1)$coefficient[4,1] * 
-       diff(range(bird_df2$temp_sd_year))) - 1) * 100
+       diff(range(bird_df$temp_sd_year))) - 1) * 100
 # %increase in Gen Length over observed range of cv precip season
 (exp(summary(f1)$coefficient[5,1] * 
-       diff(range(bird_df2$precip_cv_season))) - 1) * 100
+       diff(range(bird_df$precip_cv_season))) - 1) * 100
 # %increase in Gen Length over observed range of sd year
 (exp(summary(f1)$coefficient[6,1] * 
-       diff(range(bird_df2$precip_cv_year))) - 1) * 100
+       diff(range(bird_df$precip_cv_year))) - 1) * 100
 
 
 
@@ -688,7 +560,7 @@ pr_fun(model = f1,
 # PCA intra and inter -----------------------------------------------------
 
 #same results as raw, essentially
-tt_pca <- dplyr::select(bird_df2, 
+tt_pca <- dplyr::select(bird_df, 
                         temp_sd_year, 
                         temp_sd_season) %>%
   prcomp(center = TRUE, scale. = TRUE)
@@ -706,17 +578,17 @@ t1 <- lme4::lmer(lGL ~ lMass +
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t2 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t3 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,2] + 
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 summary(t1)
 AIC(t1)
 AIC(t2)
@@ -740,14 +612,14 @@ c1 <- lme4::lmer(lGL ~ lMass +
                    (1 + lMass | fac_Family) + 
                    (-1 + temp_sd_season | fac_Family) + 
                    (-1 + temp_sd_year | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 summary(c1)
 
 
 # PCA intra, inter, Mass -----------------------------------------------------
 
 #same results, essentially
-tt_pca <- dplyr::mutate(bird_df2, 
+tt_pca <- dplyr::mutate(bird_df, 
                         lMass = lMass) %>%
   dplyr::select(lMass,
                 temp_sd_year, 
@@ -768,37 +640,37 @@ t1 <- lme4::lmer(lGL ~
                    (1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t2 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    tt_pca$x[,2] + 
                    (1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t3 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    tt_pca$x[,3] + 
                    (1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t4 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,2] + 
                    tt_pca$x[,3] + + 
                    (1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t5 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,1] +
                    (1 + tt_pca$x[,1] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t6 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,2] +
                    (1 + tt_pca$x[,1] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t7 <- lme4::lmer(lGL ~ 
                    tt_pca$x[,3] +
                    (1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 
 summary(t1)
 AIC(t1) #best
@@ -813,7 +685,7 @@ AIC(t7)
 # PCA DHI intra inter -----------------------------------------------------
 
 #lower var both within and across years -> longer gen time
-bird_dft <- dplyr::filter(bird_df2, !is.na(dhi_cv_year))
+bird_dft <- dplyr::filter(bird_df, !is.na(dhi_cv_year))
 tt_pca <- dplyr::select(bird_dft,
                         dhi_cv_year, 
                         dhi_cv_season) %>%
@@ -877,7 +749,7 @@ summary(c3)
 
 # PCA intra, inter, color -------------------------------------------------
 
-tt_pca <- dplyr::select(bird_df2, 
+tt_pca <- dplyr::select(bird_df, 
                         temp_sd_year, 
                         temp_sd_season, 
                         temp_sp_color_year) %>%
@@ -898,22 +770,22 @@ t1 <- lme4::lmer(lGL ~ lMass +
                    (-1 + tt_pca$x[,1] | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family) +
                    (-1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t2 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,1] + 
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,1] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t3 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,2] + 
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,2] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 t4 <- lme4::lmer(lGL ~ lMass + 
                    tt_pca$x[,3] + 
                    (1 + lMass | fac_Family) + 
                    (-1 + tt_pca$x[,3] | fac_Family), 
-                 data = bird_df2)
+                 data = bird_df)
 summary(t1)
 AIC(t1) #best
 AIC(t2)
@@ -923,7 +795,7 @@ AIC(t4)
 
 # SEM explore -------------------------------------------------------------
 
-semdata <- data.frame(bird_df2, pc1, pc2) %>%
+semdata <- data.frame(bird_df, pc1, pc2) %>%
   dplyr::select(Mass, 
                 temp_sd_season, 
                 temp_sd_year,
