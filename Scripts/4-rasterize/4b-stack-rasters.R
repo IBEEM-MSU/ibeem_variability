@@ -28,13 +28,13 @@ or_excl <- c('Sphenisciformes', #penguins
              'Pelecaniformes', #pelicans
              'Suliformes', #gannets/boobies
              'Phaethontiformes', #tropicbirds
-             'Charadriiformes', #skuas, gulls, terns, skimmers, auks
-             'Anseriformes', #waterfowl
-             'Ciconiiformes', #storks
-             'Gaviiformes', #aquatic birds (loons and divers)
-             'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-             'Phoenicopteriformes', #flamingos and relatives
-             'Podicipediformes') #grebes
+             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
+             #'Anseriformes', #waterfowl
+             #'Ciconiiformes', #storks
+             #'Gaviiformes', #aquatic birds (loons and divers)
+             #'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
+             #'Phoenicopteriformes', #flamingos and relatives
+             #'Podicipediformes') #grebes
 
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
   dplyr::arrange(Accepted_name) %>%
