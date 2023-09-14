@@ -46,7 +46,7 @@
     * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
     * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
   * `5a-explore-bird.R` - explore joined bird life history/env data
-  * `5b-explore-mammals.R` - explore joined bird life history/env data
+  * `5b-explore-mammals.R` - explore joined mammal life history/env data
   * `X-explore-env-var.R` - explore environmental variability metrics
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
