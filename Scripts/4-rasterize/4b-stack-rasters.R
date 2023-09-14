@@ -53,20 +53,6 @@ ids <- bird_df$ID
 #   system(paste0('cp ~/Desktop/range-raster/', ids[i], '-breeding-GenLength.tif ~/Desktop/range-raster-filtered/'))
 # }
 
-# read in env data for landmask -----------------------------------------------
-
-# # Climate data (takes a couple of minutes to load
-# # only valid cells (land and N of -60S lat)
-# env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
-#   #only 'valid' cells (those over land and > -60S lat)
-#   dplyr::filter(valid == TRUE) %>%
-#   dplyr::select(-valid)
-# 
-# #rasterize env data for land mask
-# env.dat.rast <- dplyr::select(env.dat, lon, lat,
-#                               grep('temp_mean', colnames(env.dat), value = TRUE)) %>%
-#   terra::rast(crs = "epsg:4326")
-
 
 # get file names ---------------------------------------------------------
 
@@ -140,6 +126,11 @@ mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, n_sp)
 
 # save out tifs -----------------------------------------------------------
 
+#species in Sahara (checked with QGIS):
+# 1107 - Scissor-tailed kite
+# 2018 - Nile Valley sunbird
+# 9268 - brown-necked raven
+# 10487 - common ostrich -> locations in Sahara where this is the only species
 terra::writeRaster(mrg_ras,
                    filename = paste0(dir, 'data/L3/raster-gl-dh-nsp.tif'),
                    overwrite = TRUE)
