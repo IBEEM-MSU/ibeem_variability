@@ -71,11 +71,19 @@ for (i in 1:length(ids))
   {
     #to address 'duplciate vertex' errors:
     # https://github.com/r-spatial/sf/issues/1762
+    #to address lines across globe for species that cross date line
+    # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
+    tcrs <- sf::st_crs(curr.range) # save crs for later
+    sf::st_crs(curr.range) <- NA  # set crs to missing
     curr.range2 <- try(sf::st_union(curr.range))
+    sf::st_crs(curr.range2) <- tcrs #reassign crs
     
     if (inherits(curr.range2, "try-error"))
     {
+      tcrs <- sf::st_crs(curr.range)
+      sf::st_crs(curr.range)
       curr.range2 <- try(sf::st_union(sf::st_make_valid(curr.range)))
+      sf::st_crs(curr.range2) <- tcrs
       
       if (inherits(curr.range2, "try-error"))
       {
