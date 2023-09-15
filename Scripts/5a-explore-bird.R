@@ -14,11 +14,13 @@ dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
+library(terra)
 library(viridis)
 
 
 # read in data -------------------------------------------------
 
+#bird df
 or_excl <- c('Sphenisciformes', #penguins 
              'Procellariiformes', #tubenoses
              'Pelecaniformes', #pelicans
@@ -32,6 +34,7 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Phoenicopteriformes', #flamingos and relatives
 #'Podicipediformes') #grebes
 
+'%ni%' <- Negate('%in%')
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
   dplyr::arrange(Accepted_name) %>%
   dplyr::filter(Order %ni% or_excl,
@@ -41,8 +44,19 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
                 lMass = log(Mass),
                 lGL = log(GenLength))
 
+#bird raster
+bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dh-nsp.tif'))
+bird_ras2 <- bird_ras[[c('median_gl', 'sd_gl', 
+                   'median_dh', 'sd_dh')]]
+#mask areas with fewer than 5 species
+msk <- ifel(bird_ras[['n_sp']] < 5, NA, 1)
+bird_ras3 <- terra::mask(bird_ras2, msk, 
+                         inverse = FALSE)
+plot(log(bird_ras3[[c('median_gl', 'median_dh')]]))
+plot(bird_ras[['n_sp']])
 
-# map gen length (median lat/lon) ---------------------------------------------------
+
+# map gen length (species median lat/lon) ---------------------------------------------------
 
 #USE RASTER INSTEAD
 # #map
