@@ -90,30 +90,27 @@ names(dh_stack) <- unique(mrg$id)
 # gl_stack2 <- terra::mask(tt, env.dat.rast)
 # dh_stack2 <- terra::mask(dh_stack, env.dat.rast)
 
-gl_stack2 <- gl_stack
-dh_stack2 <- dh_stack
-
 #calculate median - close to mean of logged values for gen length VVV
 #https://www.wikiwand.com/en/Log-normal_distribution
-med_gl <- terra::app(gl_stack2, fun = function(x) median(x, na.rm = TRUE))
-med_dh <- terra::app(dh_stack2, fun = function(x) median(x, na.rm = TRUE))
+med_gl <- terra::app(gl_stack, fun = function(x) median(x, na.rm = TRUE))
+med_dh <- terra::app(dh_stack, fun = function(x) median(x, na.rm = TRUE))
 names(med_gl) <- 'median_gl'
 names(med_dh) <- 'median_dh'
 
 # #calculate mean
-# mn_gl <- terra::app(gl_stack2, fun = function(x) mean(x, na.rm = TRUE))
-# mn_dh <- terra::app(dh_stack2, fun = function(x) mean(x, na.rm = TRUE))
+# mn_gl <- terra::app(gl_stack, fun = function(x) mean(x, na.rm = TRUE))
+# mn_dh <- terra::app(dh_stack, fun = function(x) mean(x, na.rm = TRUE))
 # names(med_gl) <- 'mean_gl'
 # names(med_dh) <- 'mean_dh'
 
 #calculate sd
-sd_gl <- terra::app(gl_stack2, fun = function(x) sd(x, na.rm = TRUE))
-sd_dh <- terra::app(dh_stack2, fun = function(x) sd(x, na.rm = TRUE))
+sd_gl <- terra::app(gl_stack, fun = function(x) sd(x, na.rm = TRUE))
+sd_dh <- terra::app(dh_stack, fun = function(x) sd(x, na.rm = TRUE))
 names(sd_gl) <- 'sd_gl'
 names(sd_dh) <- 'sd_dh'
 
 #calculate number of species in each grid cell
-n_sp <- terra::app(gl_stack2, fun = function(x) sum(!is.na(x)))
+n_sp <- terra::app(gl_stack, fun = function(x) sum(!is.na(x)))
 names(n_sp) <- 'n_sp'
 
 #plot
@@ -134,3 +131,4 @@ mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, n_sp)
 terra::writeRaster(mrg_ras,
                    filename = paste0(dir, 'data/L3/raster-gl-dh-nsp.tif'),
                    overwrite = TRUE)
+
