@@ -22,9 +22,9 @@
 # #SBATCH --mail-user=ccy@msu.edu
 #SBATCH --account plzbuyin #Space lab node
 
-module load GCC/8.3.0
-module load OpenMPI/3.1.4
-module load R/4.1.0
+module load GCC/11.2.0
+module load OpenMPI/4.1.1
+module load R/4.1.2
 
 # Rscript /mnt/home/ccy/variability/Scripts/3-extract-species-env/3b-extract-avg-within-range.R $fileName 
 Rscript /mnt/home/doserjef/ibeem_variability/Scripts/3-extract-species-env/3b-extract-avg-within-range-birdtree.R $fileName 
