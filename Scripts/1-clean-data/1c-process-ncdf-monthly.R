@@ -228,11 +228,12 @@ for (k in 1:20) #lon
     precip_resid <- residuals(fit_precip)
     
     #spectral analysis using Lomb-Scargle Periodogram
-    #between freq 2/(n*dt) and 1/(2*dt), where dt = 1 and n = 72; 0.0278 to 0.5
+    #between freq 2/(n*dt) and 1/(2*dt)
+    #where dt = 1 and n = 864 (12 months * 72 years); 0.002315 to 0.5
     #following Marshall and Burgess 2015 Eco Letters
     #see also Vasseur and Yodzis 2004 Ecology
-    #period = 1/freq; ~2 - 36 years
-    ll_freq <- 0.0278
+    #period = 1/freq; ~2 - 431 months
+    ll_freq <- 0.002315
     ul_freq <- 0.5
     temp_spec <- lomb::lsp(temp_resid, 
                            from = ll_freq, to = ul_freq, 

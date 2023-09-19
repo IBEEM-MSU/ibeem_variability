@@ -11,7 +11,6 @@ library(terra)
 
 # Specify top-level directory -------------------------------------------------------
 
-# dir <- "./"
 dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
@@ -20,16 +19,16 @@ dir <- '/mnt/research/ibeem/variability/'
 
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BLIDsPiece-14.rda'
+file.name <- 'BTIDsPiece-14.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
 # Read in data ------------------------------------------------------------
 
 # Loads in current set of ids (a vector called ids)
-load(paste0(dir, 'data/L1/range-mammal/', file.name))
+load(paste0(dir, 'data/L1/range/bird-breeding/', file.name))
 
-# Climate data (takes a couple of minutes to load
+# Climate data (takes a couple of minutes to load)
 # only valid cells (land and N of -60S lat)
 env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
   #only 'valid' cells (those over land and > -60S lat)
@@ -38,8 +37,8 @@ env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
 
 #rasterize env data for extraction (so ensure that ranges that don't intersect cell centers are captured)
 env.dat.rast <- dplyr::select(env.dat, lon, lat,
-                              grep('temp', colnames(env.dat), value = TRUE),
-                              grep('precip', colnames(env.dat), value = TRUE),
+                               grep('temp', colnames(env.dat), value = TRUE),
+                               grep('precip', colnames(env.dat), value = TRUE),
                               grep('dhi', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
 
@@ -63,20 +62,28 @@ for (i in 1:length(ids))
   #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
-  curr.range <- sf::st_read(paste0(dir, 'data/L1/range-mammal/', 
-                                   curr.sp, '.shp'),
+  curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/birdtree-', 
+                                   curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
-  #if more than one polygon, merge them
+  #if more than one polygon (resident + breeding ranges), merge them
   if (NROW(curr.range) > 1)
   {
     #to address 'duplciate vertex' errors:
     # https://github.com/r-spatial/sf/issues/1762
+    #to address lines across globe for species that cross date line
+    # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
+    tcrs <- sf::st_crs(curr.range) # save crs for later
+    sf::st_crs(curr.range) <- NA  # set crs to missing
     curr.range2 <- try(sf::st_union(curr.range))
+    sf::st_crs(curr.range2) <- tcrs #reassign crs
     
     if (inherits(curr.range2, "try-error"))
     {
+      tcrs <- sf::st_crs(curr.range)
+      sf::st_crs(curr.range)
       curr.range2 <- try(sf::st_union(sf::st_make_valid(curr.range)))
+      sf::st_crs(curr.range2) <- tcrs
       
       if (inherits(curr.range2, "try-error"))
       {
@@ -93,9 +100,9 @@ for (i in 1:length(ids))
   
   # Extract median env value across range from raster
   env.vals <- terra::extract(env.dat.rast,
-                             terra::vect(curr.range2),
-                             touches = TRUE,
-                             fun = function(x) median(x, na.rm = TRUE))
+                 terra::vect(curr.range2),
+                 touches = TRUE,
+                 fun = function(x) median(x, na.rm = TRUE))
   
   #range of mean values across space
   rng.vals <- terra::extract(tpd.dat.rast,
@@ -105,9 +112,9 @@ for (i in 1:length(ids))
   
   #sd of mean values across space
   sd.vals <- terra::extract(tpd.dat.rast,
-                            terra::vect(curr.range2),
-                            touches = TRUE,
-                            fun = function(x) sd(x, na.rm = TRUE))
+                             terra::vect(curr.range2),
+                             touches = TRUE,
+                             fun = function(x) sd(x, na.rm = TRUE))
   
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
@@ -133,5 +140,5 @@ for (i in 1:length(ids))
 }
 
 #write out file
-save(env.out, file = paste0(dir, 'data/L2/range-env-pieces-mammal/summarized-data-piece-', 
-                            stringr::str_extract(file.name, '\\d+')))
+save(env.out, file = paste0(dir, 'data/L2/range-env-pieces/summarized-data-piece-BT-', 
+				stringr::str_extract(file.name, '\\d+')))

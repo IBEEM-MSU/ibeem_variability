@@ -1,7 +1,6 @@
 ################
 # Explore env variability metrics
 #
-# NEEDS TO BE UPDATED
 ################
 
 
@@ -16,123 +15,121 @@ dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 library(tidyverse)
 library(terra)
 library(sf)
+# devtools::install_github("wmurphyrd/colorplaner")
+library(colorplaner)
 
 
 # read in data -------------------------------------------------
 
-#environmental variability
-env_main <- read.csv(paste0(dir, 'Data/L2/climate/era5/Env-main.csv'))
+# Climate data (takes a couple of minutes to load)
+# only valid cells (land and N of -60S lat)
+env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
+  #only 'valid' cells (those over land and > -60S lat)
+  dplyr::filter(valid == TRUE) %>%
+  dplyr::select(-valid)
+
+#rasterize env data for extraction (so ensure that ranges that don't intersect cell centers are captured)
+env.dat.rast <- dplyr::select(env.dat, lon, lat,
+                              grep('temp', colnames(env.dat), value = TRUE),
+                              grep('precip', colnames(env.dat), value = TRUE),
+                              grep('dhi', colnames(env.dat), value = TRUE)) %>%
+  terra::rast(crs = "epsg:4326")
 
 
-# rasterize ------------------------------------------------------------------
+# bivariate map (inter- and intra-annual var) -----------------------------------
 
-#multiband raster (each band different env metric)
-#var = temp or precip
-#function
-mbr_fun <- function(input, VAR)
-{
-  #rasterize
-  trast <- dplyr::filter(input, var == VAR, valid == TRUE) %>%
-    dplyr::select(lon, lat, mean, slope, sd_resid, sd_season, kurt, skew, 
-                  spectral_beta, rho_l1, rel_slope) %>%
-    terra::rast(crs = "epsg:4326")
-  return(trast)
-}
+#adapted from: https://stackoverflow.com/questions/48572744/plot-a-bivariate-map-in-r
+
+ty_q <- quantile(env.dat$temp_sd_year, seq(0, 1, by = 0.05))
+ts_q <- quantile(env.dat$temp_sd_season, seq(0, 1, by = 0.05))
+py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
+ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
+
+ggplot(data = env.dat, 
+       aes(lon, lat, 
+           fill = temp_sd_year, 
+           fill2 = temp_sd_season))+
+  geom_tile() +
+  scale_fill_colourplane(name = "", 
+                         na.color = "white",
+                         color_projection = "interpolate", 
+                         vertical_color = "#FAE30C",
+                         horizontal_color = "#0E91BE", 
+                         zero_color = "#E8E6F2",
+                         limits_y = c(0, ts_q[20]),
+                         limits = c(0, ty_q[20])) +
+  theme_minimal()
 
 
-#run function - putting some cells outside of lat/lon bounds for some reason
-ev_temp <- mbr_fun(input = env_main, VAR = 'temp')
-ev_precip <- mbr_fun(input = env_main, VAR = 'precip')
+ggplot(data = env.dat, 
+       aes(lon, lat, 
+           fill = precip_cv_year, 
+           fill2 = precip_cv_season))+
+  geom_tile() +
+  scale_fill_colourplane(name = "", 
+                         na.color = "white",
+                         color_projection = "interpolate", 
+                         vertical_color = "red",
+                         horizontal_color = "blue", 
+                         zero_color = "#E8E6F2",
+                         limits_y = c(0, ps_q[20]),
+                         limits = c(0, py_q[20])) +
+  theme_minimal()
 
-#bands
-names(ev_precip)
+
+# py_q <- quantile(env.dat$precip_cv_year, seq(0, 1, by = 0.05))
+# ps_q <- quantile(env.dat$precip_cv_season, seq(0, 1, by = 0.05))
+# ggplot(data = env.dat2, 
+#        aes(lon, lat, 
+#            fill = temp_sp_color_year, 
+#            fill2 = temp_rel_slope))+
+#   geom_tile() +
+#   scale_fill_colourplane(name = "", 
+#                          na.color = "white",
+#                          color_projection = "interpolate", 
+#                          vertical_color = "red",
+#                          horizontal_color = "blue", 
+#                          zero_color = "#E8E6F2"),
+#                          limits_y = c(0, ps_q[20]),
+#                          limits = c(0, py_q[20])) +
+#   theme_minimal()
 
 
 # plots -------------------------------------------------------------------
 
 #temperature
-plot(ev_temp[[1]], main = 'Mean')
-plot(ev_temp[[3]], main = 'Inter-annual sd')
-plot(ev_temp[[4]], main = 'Intra-annual sd')
+plot(env.dat.rast[['temp_mean']], main = 'Temp mean')
+plot(env.dat.rast[['temp_sd_year']], main = 'Temp inter-annual sd')
+plot(env.dat.rast[['temp_sd_season']], main = 'Temp intra-annual sd')
+plot(env.dat.rast[['temp_sp_color_month']], main = 'Temp color (month)')
 
-plot(ev_temp[[5]], main = 'Kurtosis')
-plot(ev_temp[[6]], main = 'Skew')
-plot(ev_temp[[7]], main = 'Spectral exponent')
-plot(ev_temp[[8]], main = 'Rho Lag 1')
+plot(env.dat.rast[['temp_slope']], main = 'Temp slope')
+plot(env.dat.rast[['temp_rel_slope']], main = 'Temp rel slope')
 
-plot(ev_temp[[2]], main = 'Slope')
-plot(ev_temp[[9]], main = 'Relative slope')
-
+plot(env.dat.rast[['temp_skew']], main = 'Temp skew')
+plot(env.dat.rast[['temp_kurt']], main = 'Temp kurtosis') #normal dist kurtosis is 3
 
 
-#Precip
-plot(ev_precip[[1]], main = 'Mean')
-plot(ev_precip[[3]], main = 'Inter-annual sd')
-plot(ev_precip[[4]], main = 'Intra-annual sd')
+#precip
+plot(env.dat.rast[['precip_mean']], main = 'Precip mean')
+plot(env.dat.rast[['precip_cv_year']], main = 'Precip inter-annual CV')
+plot(env.dat.rast[['precip_cv_season']], main = 'Precip intra-annual CV')
+plot(env.dat.rast[['precip_sp_color_month']], main = 'Precip color (month)')
 
-plot(ev_precip[[5]], main = 'Kurtosis')
-plot(ev_precip[[6]], main = 'Skew')
-plot(ev_precip[[7]], main = 'Spectral exponent')
-plot(ev_precip[[8]], main = 'Rho Lag 1')
+plot(env.dat.rast[['precip_slope']], main = 'Precip slope')
+plot(env.dat.rast[['precip_rel_slope']], main = 'Precip rel slope')
 
-plot(ev_precip[[2]], main = 'Slope')
-plot(ev_precip[[9]], main = 'Relative slope')
-
+plot(env.dat.rast[['precip_skew']], main = 'Precip skew')
+plot(env.dat.rast[['precip_kurt']], main = 'Precip kurtosis')
 
 
 # stats -------------------------------------------------------------------
 
 # #median over globe
-# terra::global(ev_temp[['slope']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['sd_resid']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['kurt']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['skew']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['spectral_beta']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['rho_l1']], fun = function(x) median(x, na.rm = TRUE))
-# terra::global(ev_temp[['rel_slope']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(env.dat.rast[['temp_kurt']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(env.dat.rast[['temp_skew']], fun = function(x) median(x, na.rm = TRUE))
+terra::global(env.dat.rast[['temp_sp_color_month']], fun = function(x) median(x, na.rm = TRUE))
 
-
-# compare lm and GAM -----------------------------------------------------------------
-
-#function to plot lm and gam
-gc_fun <- function(rast, rast_gam, var)
-{
-  par(mfrow = c(2,1))
-  
-  #get range of values  
-  rng <- range(terra::global(c(rast[[var]], rast_gam[[var]]), 
-                             fun = function(x) range(x, na.rm = TRUE)))
-  plot(rast[[var]], 
-       main = var,
-       range = rng)
-  plot(rast_gam[[var]], 
-       main = paste0(var, ' - GAM'),
-       range = rng)
-}
-
-#run fun
-#slope doesn't vary since calcated with lm for both
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'slope')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'sd_resid')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'kurt')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'skew')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'spectral_beta')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'rho_l1')
-gc_fun(rast = ev_temp, 
-       rast_gam = ev_temp_GAM,
-       var = 'rel_slope')
 
 
 #which areas are highly predictable (P; high temporal autocorrelation) on short time scales (S) and have low intrinsic variability (IV)?

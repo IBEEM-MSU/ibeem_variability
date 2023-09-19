@@ -40,7 +40,13 @@
     * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
     * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
     * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
-  * `4-explore-bird.R` - explore joined bird life history/env data
+  * `4-rasterize` - rasterize ranges
+    * `4a-create-rasters.R` - create .tif files birds
+    * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
+    * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
+    * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
+  * `5a-explore-bird.R` - explore joined bird life history/env data
+  * `5b-explore-mammals.R` - explore joined mammal life history/env data
   * `X-explore-env-var.R` - explore environmental variability metrics
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
@@ -49,7 +55,7 @@
     * `climate/era5/` - raw ERA5 reanalysis data
     * `ranges/BOTW.gdb` - BirdLife range maps
     * `trait/` - raw trait data
-  * `L1/` - 
+  * `L1/`
     * `DHI/` - processed DHI data (cv year and cv season)
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
       * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - yearly average over all months and sd across months (seasonality) for temp and (sqrt root transform of) precip
@@ -58,14 +64,18 @@
     * `range-mammal/` - mammal ranges
     * `trait/` - processed bird traits
     * `trait-mammal/` - processed mammal traits
-  * `L2/` - 
+  * `L2/`
     * `climate/era5/` - env variability metrics per cell (including seasonality)
       * `Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months
       * `Env-main.csv` - THIS IS THE MAIN MERGED ENV DATA TO USE DOWNSTREAM
-    * `main-bird-data.csv` - merged bird data
-    * `main-mammal-data.csv` - merged mammal data
     * `range-env-pieces/` - ??? birds
     * `range-env-pieces-mammal/` - ??? mammals
+    * `range-raster/` - rasterized ranges (tifs) with gen length and delta haldane (relative temp change) as layers
+  * `L3/` - main data files
+    * `main-bird-data.csv` - merged bird data
+    * `main-mammal-data.csv` - merged mammal data
+    * `raster-gl-dh-nsp.tif` - raster of median and sd of gen length and delta haldane (relative temp change), as well as number of species in each cell (5 layers)
+
 
 ## Data sources:
 * [ERA5 reanalysis data (temp and precipitation)](https://rda.ucar.edu/datasets/ds633.1/)

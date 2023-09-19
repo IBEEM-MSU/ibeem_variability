@@ -3,7 +3,7 @@
 rm(list = ls())
 
 # Specify directory -------------------------------------------------------
-BL.dir <- '/mnt/research/ibeem/data/L1/range/bird-breeding/'
+BL.dir <- '/mnt/research/ibeem/variability/data/L1/range/bird-breeding/'
 
 # Load in full set of current IDs -----------------------------------------
 load(paste0(BL.dir, 'BL-ids.rda'))

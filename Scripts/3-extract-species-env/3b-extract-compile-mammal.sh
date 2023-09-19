@@ -1,5 +1,5 @@
 #!/bin/bash
-n="es" # job name
+n="esm" # job name
 
 # Note that 54 is the number of pieces the MAM IDs were split up into. 
 # Should probably not hardcode this...

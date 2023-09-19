@@ -28,7 +28,7 @@ if(length(file.name) == 0) base::stop('Need to give the file name to process')
 # Loads in current set of ids (a vector called ids)
 load(paste0(dir, 'data/L1/range/bird-breeding/', file.name))
 
-# Climate data (takes a couple of minutes to load
+# Climate data (takes a couple of minutes to load)
 # only valid cells (land and N of -60S lat)
 env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
   #only 'valid' cells (those over land and > -60S lat)
@@ -71,11 +71,19 @@ for (i in 1:length(ids))
   {
     #to address 'duplciate vertex' errors:
     # https://github.com/r-spatial/sf/issues/1762
+    #to address lines across globe for species that cross date line
+    # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
+    tcrs <- sf::st_crs(curr.range) # save crs for later
+    sf::st_crs(curr.range) <- NA  # set crs to missing
     curr.range2 <- try(sf::st_union(curr.range))
+    sf::st_crs(curr.range2) <- tcrs #reassign crs
     
     if (inherits(curr.range2, "try-error"))
     {
+      tcrs <- sf::st_crs(curr.range)
+      sf::st_crs(curr.range)
       curr.range2 <- try(sf::st_union(sf::st_make_valid(curr.range)))
+      sf::st_crs(curr.range2) <- tcrs
       
       if (inherits(curr.range2, "try-error"))
       {

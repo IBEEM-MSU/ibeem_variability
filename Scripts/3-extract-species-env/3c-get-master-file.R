@@ -50,35 +50,48 @@ avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
                 -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
                 -Range.Size, -Notes, -Mass.Source, -Mass.Refs.Other) %>%
   dplyr::rename(ID = BirdLife_ID, Accepted_name = Species1,
-                Family = Family1, Order = Order1)
+                Family = Family1, Order = Order1) %>%
+  dplyr::group_by(ID) %>%
+  #only first row for those species that have duplicated IDs
+  dplyr::slice_head() %>%
+  dplyr::ungroup()
 
 # Bird et al data
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
-  dplyr::select(BirdLife_ID, Sci_name, GenLength) %>%
-  dplyr::rename(ID = BirdLife_ID, Accepted_name = Sci_name)
+  dplyr::select(BirdLife_ID, GenLength) %>%
+  dplyr::rename(ID = BirdLife_ID) %>%
+  #average genlength across dups
+  dplyr::group_by(ID) %>%
+  dplyr::summarize(GenLength = mean(GenLength)) %>%
+  dplyr::ungroup()
 
 
 # combine trait and climate data-----------------------------------------------
 
 #only species with values for mean temp
 main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
-                             by = c('ID', 'Accepted_name')) %>%
-  dplyr::full_join(climate.df, trait.dat, by = c('ID')) %>%
+                             by = 'ID') %>%
+  dplyr::full_join(climate.df, by = 'ID') %>%
   # add CV for precip and dhi over species range (spatial CV)
   dplyr::mutate(precip_cv_space = precip_sd_space / precip_mean,
                 dhi_cum_cv_space = dhi_cum_sd_space / dhi_cum_mean) %>%
-  dplyr::filter(!is.na(temp_mean)) %>%
+  # must have at least mean temp, gen length, and Migration
+  dplyr::filter(!is.na(temp_mean), !is.na(GenLength), !is.na(Migration)) %>%
   dplyr::relocate(precip_cv_space, .after = precip_sd_space) %>%
   dplyr::relocate(dhi_cum_cv_space, .after = dhi_cum_sd_space) #%>%
   # dplyr::filter(!is.na(range_size_km2))
 
-# which species are missing?
-# Antarctic-only seabirds and remote island birds
-#dplyr::filter(main.dat, is.na(temp_mean))
+
+# dplyr::filter(main.dat, is.na(GenLength) | 
+#                 is.na(temp_mean) | 
+#                 is.na(Migration)) %>%
+#   dplyr::select(Accepted_name, ID, 
+#                 GenLength, temp_mean, Migration)
+
 
 #write to file
-write.csv(main.dat, file = paste0(dir, 'data/L2/main-bird-data.csv'), 
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data.csv'), 
           row.names = FALSE)
 
 # write.csv(main.dat, file = paste0('~/main-bird-data.csv'),
