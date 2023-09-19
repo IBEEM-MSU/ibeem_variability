@@ -12,14 +12,13 @@
 #SBATCH --mem=25G
 #
 # Wall time (e.g. "minutes", "hours:minutes:seconds", "days-hours", "days-hours:minutes"):
-#SBATCH --time=10:00:00
+#SBATCH --time=3:59:00
 #
 # Mail type:
 #SBATCH --mail-type=FAIL,END
 #
 # Mail user:
 #SBATCH --mail-user=kapsarke@msu.edu
-#SBATCH --account plzbuyin #Space lab node
 
 module load GCC/8.3.0
 module load OpenMPI/3.1.4
