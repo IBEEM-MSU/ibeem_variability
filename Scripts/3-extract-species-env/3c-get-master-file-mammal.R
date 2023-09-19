@@ -11,12 +11,12 @@ library(tidyverse)
 
 # Specify directories -----------------------------------------------------
 
-dir <- '/mnt/research/ibeem/variability/'
+# dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-# dir <- "./"
+dir <- "./"
 
 #path for data on KK machine - remember trailing slash
-# life_history_dir <- "./data/L0/trait/"
+life_history_dir <- "./data/L0/mammal/"
 
 
 # Get the climate data ----------------------------------------------------
@@ -43,9 +43,20 @@ sum(apply(dplyr::select(climate.df, temp_sd_year),
           1, function(a) sum(is.na(a))) > 0)
 
 # Add names to climate data 
-master_names <- read.csv(paste0(dir, "data/L1/trait-mammal/mammal-names-master.csv"))
-climate.df <- dplyr::left_join(climate.df, master_names, by = c("ID" = "id_no"))
+# master_names <- read.csv(paste0(dir, "data/L1/trait-mammal/mammal-names-master.csv"))
+master_names <- read.csv(paste0(dir, "data/L1/trait/mammal-names-master.csv")) %>% dplyr::select(-name_iucn)
+master_names <- master_names[!duplicated(master_names),]
 
+climate.df <- dplyr::left_join(climate.df, master_names, by = c("ID" = "name_phylacine"), multiple="first") %>% 
+  rename(name_phylacine = ID)
+
+# 5089 unique spp in phylacine
+
+# test2 <- master_names %>% group_by(name_pacifici) %>% summarize(n=n()) %>% filter(n > 1)
+# 50 spp in Pacifici that are split in Phylacine (Will be repeated in final data)
+
+# test <- master_names %>% group_by(name_phylacine) %>% summarize(n=n()) %>% filter(n > 1)
+# 10 spp in Phylacine that are split in Pacifici (will take first value)
 
 # Load in the trait data and join ------------------------------------------
 
@@ -77,7 +88,10 @@ climate.df <- dplyr::left_join(climate.df, LH_data,
 
 climate.df <- dplyr::left_join(climate.df, PH_data, 
                         by = c("name_phylacine" = "PH_name_phylacine")) %>% 
-  dplyr::select(-PH_Order.1.2, -PH_Family.1.2, -PH_Genus.1.2, -PH_Species.1.2)
+  dplyr::rename(PH_Order = PH_Order.1.2, 
+                PH_Family = PH_Family.1.2, 
+                PH_Genus = PH_Genus.1.2, 
+                PH_Species = PH_Species.1.2)
 
 # 2. Do a spatial join of all the ranges to effectively re-lump the split up species together again. 
 # 3. Remove any species that's been lumped/split. (least favorite option)
@@ -85,9 +99,9 @@ climate.df <- dplyr::left_join(climate.df, PH_data,
 # Clean up data 
 # only species with values for mean temp
 main.dat <- climate.df %>% 
-  dplyr::select(-name_phylacine, -name_pacifici, -X) %>% 
-  dplyr::rename(Accepted_name = name_iucn) %>% 
-  dplyr::relocate(ID, Accepted_name) %>% 
+  dplyr::select(-name_pacifici) %>% 
+  dplyr::rename(Accepted_name = name_phylacine) %>% 
+  dplyr::relocate(Accepted_name) %>% 
   dplyr::mutate(precip_cv_space = precip_sd_space / precip_mean,
                 dhi_cum_cv_space = dhi_cum_sd_space / dhi_cum_mean) %>%
   dplyr::filter(!is.na(temp_mean)) %>%
