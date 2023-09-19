@@ -144,9 +144,9 @@ BL_data <- BL_data %>%
 BL_data_breeding <- BL_data %>%
   dplyr::filter(seasonal %in% 1:2, presence == 1, origin == 1)
 
-# NOTE: will need to be updated if using BirdTree names. 
+# BirdLife ----------------------------
 # Save out BL species names in case you want them without reading in the whole thing.
-BL.unique.ids <- unique(BL_data_breeding$BirdLife_ID)
+BL.unique.ids <- unique(BL_data_breeding$birdlifeID)
 save(BL.unique.ids, file = paste0(out_dir, 'range/bird-breeding/BL-ids.rda'))
 
 # Takes 40 min or so
@@ -154,9 +154,26 @@ for (i in 1:length(BL.unique.ids)) {
   print(paste0("Currently on ", i, " out of ", length(BL.unique.ids)))
   
   tmp <- BL_data_breeding %>%
-    dplyr::filter(BirdLife_ID == BL.unique.ids[i])
+    dplyr::filter(birdlifeID == BL.unique.ids[i])
   
   sf::st_write(tmp, paste0(out_dir, 'range/bird-breeding/', BL.unique.ids[i], 
+                           '-breeding.shp'), 
+               driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
+}
+
+# BirdTree ----------------------------
+# Save out BirdTree species names in case you want them without reading in the whole thing.
+birdTree.unique.ids <- unique(BL_data_breeding$birdtreeID)
+save(birdTree.unique.ids, file = paste0(out_dir, 'range/bird-breeding/birdTree-ids.rda'))
+
+# Takes 40 min or so
+for (i in 1:length(birdTree.unique.ids)) {
+  print(paste0("Currently on ", i, " out of ", length(birdTree.unique.ids)))
+  
+  tmp <- BL_data_breeding %>%
+    dplyr::filter(birdtreeID == birdTree.unique.ids[i])
+  
+  sf::st_write(tmp, paste0(out_dir, 'range/bird-breeding/birdtree-', birdTree.unique.ids[i], 
                            '-breeding.shp'), 
                driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
 }
