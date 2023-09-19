@@ -11,6 +11,7 @@ library(terra)
 
 # Specify top-level directory -------------------------------------------------------
 
+# dir <- "./"
 dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 

@@ -14,7 +14,7 @@
 # specify dir -------------------------------------------------------------
 
 #path for data on KK machine - remember trailing slash
-range_map_data_dir <-"./data/L0/ranges/"
+range_map_data_dir <-"./data/L0/range/"
 life_history_dir <- "./data/L0/trait/"
 
 # paths on HPCC
@@ -170,24 +170,24 @@ master_names <- rbind(full_names, matched_names)
 master_names[master_names == ""] <- NA
 master_names <- master_names[complete.cases(master_names),]
 
+# Save master file 
+write.csv(master_names, "./data/L1/trait/mammal-names-master.csv")
+
 # Eval number of unique iucn species lumped together as one in pacifici/phylacine
 lumps <- master_names %>% group_by(name_pacifici) %>% summarize(n = n()) %>% filter(n > 1) # 209
 lumps2 <- master_names %>% group_by(name_phylacine) %>% summarize(n = n()) %>% filter(n > 1) # 173
 
 # Join range polys to names list 
-# (right join keeps spatial attributes while removing polys that we have range info, but no traits)
-master_names_sf <- right_join(MAM_data, master_names, by = "name_iucn")
-
-# Save master file with all matched names and iucn id numbers 
-master_names <- master_names_sf %>% 
-  st_drop_geometry() %>% 
-  select(id_no, name_iucn, name_phylacine, name_pacifici, kingdom, phylum, class, order, family, genus)
-write.csv(master_names, "./data/L1/trait/mammal-names-master.csv")
+# removing polys not associated with a phylacine name since that's the master taxonomy
+master_names_sf <- left_join(MAM_data, master_names, by = "name_iucn") %>% 
+  filter(!is.na(name_phylacine)) %>% 
+  group_by(name_phylacine) %>% 
+  summarize(geometry = st_combine(geometry))
 
 # # Mammal range data one by one ----------
 
 # Save out MAM species names in case you want them without reading in the whole thing.
-MAM.unique.ids <- unique(master_names_sf$id_no)
+MAM.unique.ids <- unique(master_names_sf$name_phylacine)
 
 save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
 
@@ -195,7 +195,7 @@ save(MAM.unique.ids, file = paste0(out_dir, 'range-mammal/MAM-ids.rda'))
 for (i in 1:length(MAM.unique.ids)) {
   print(paste0("Currently on ", i, " out of ", length(MAM.unique.ids)))
   tmp <- master_names_sf %>%
-    filter(id_no == MAM.unique.ids[i])
+    filter(name_phylacine == MAM.unique.ids[i])
   st_write(tmp, paste0(out_dir, 'range-mammal/', MAM.unique.ids[i], '.shp'),
            driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
 }
