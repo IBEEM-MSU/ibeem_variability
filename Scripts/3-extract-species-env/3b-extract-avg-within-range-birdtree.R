@@ -19,7 +19,7 @@ dir <- '/mnt/research/ibeem/variability/'
 
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-file.name <- 'BTIDsPiece-14.rda'
+# file.name <- 'BTIDsPiece-14.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
