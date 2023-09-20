@@ -140,5 +140,5 @@ for (i in 1:length(ids))
 }
 
 #write out file
-save(env.out, file = paste0(dir, 'data/L2/range-env-pieces/summarized-data-piece-BT-', 
+save(env.out, file = paste0(dir, 'data/L2/range-env-pieces-birdtree/summarized-data-piece-BT-', 
 				stringr::str_extract(file.name, '\\d+')))

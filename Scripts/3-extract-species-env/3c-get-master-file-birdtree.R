@@ -22,11 +22,11 @@ dir <- '/mnt/research/ibeem/variability/'
 load(paste0(dir, 'data/L1/range/bird-breeding/birdTree-ids.rda'))
 # Load the first chunk of species and climate averages to get number of variables
 # Loads object called "env.out"
-load(paste0(dir, 'data/L2/range-env-pieces/summarized-data-piece-BT-1'))
+load(paste0(dir, 'data/L2/range-env-pieces-birdtree/summarized-data-piece-BT-1'))
 
 #build into list
 climate.list <- list()
-clim.files <- list.files(paste0(dir, 'data/L2/range-env-pieces/'), 
+clim.files <- list.files(paste0(dir, 'data/L2/range-env-pieces-birdtree/'), 
                          full.names = TRUE)
 for (i in 1:length(clim.files)) {
   print(i)
@@ -35,7 +35,7 @@ for (i in 1:length(clim.files)) {
 }
 # Put it in a data frame
 climate.df <- do.call("rbind", climate.list)
-# How many species have NA for temp_sd_year? Just 14
+# How many species have NA for temp_sd_year? Just 11
 sum(apply(dplyr::select(climate.df, temp_sd_year), 
           1, function(a) sum(is.na(a))) > 0)
 
@@ -44,19 +44,40 @@ sum(apply(dplyr::select(climate.df, temp_sd_year),
 
 # AVONET data - keep only necessary fields
 avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
-  dplyr::filter(!is.na(BirdLife_ID)) %>%
+  dplyr::filter(!is.na(birdtreeID)) %>%
   dplyr::select(-Sequence, -Avibase.ID1,
                 -Total.individuals, -Female, -Male, -Unknown, 
                 -Complete.measures, -Inference, -Traits.inferred, 
                 -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
-                -Range.Size, -Notes, -Mass.Source, -Mass.Refs.Other) %>%
-  dplyr::rename(ID = BirdLife_ID, Accepted_name = Species1,
+                -Range.Size, -birdlifeID, -notes, -Mass.Source, -Mass.Refs.Other, 
+		-matchType) %>%
+  dplyr::rename(ID = birdtreeID, Accepted_name = Species1,
                 Family = Family1, Order = Order1) %>%
   dplyr::group_by(ID) %>%
-  #only first row for those species that have duplicated IDs
-  dplyr::slice_head() %>%
+  # Get means of continuous variables and the unique categorical variable for those
+  # BirdTree species that are split into multiple BirdLife species.
+  dplyr::summarize(Beak.Length_Culmen = mean(Beak.Length_Culmen),
+		   Beak.Length_Nares = mean(Beak.Length_Nares),
+		   Beak.Width = mean(Beak.Width),
+		   Beak.Depth = mean(Beak.Depth),
+		   Tarsus.Length = mean(Tarsus.Length),
+		   Wing.Length = mean(Wing.Length),
+		   Kipps.Distance = mean(Kipps.Distance),
+		   Secondary1 = mean(Secondary1),
+		   Hand.Wing.Index = mean(Hand.Wing.Index),
+		   Tail.Length = mean(Tail.Length),
+		   Mass = mean(Mass),
+		   Habitat = unique(Habitat),
+		   Habitat.Density = unique(Habitat.Density),
+		   Migration = unique(Migration),
+		   Trophic.Level = unique(Trophic.Level),
+		   Trophic.Niche = unique(Trophic.Niche),
+		   Primary.Lifestyle = unique(Primary.Lifestyle),
+		   Min.Latitude = min(Min.Latitude),
+		   Max.Latitude = max(Max.Latitude)) %>%
   dplyr::ungroup()
 
+# TODO: 
 # Bird et al data
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(BirdLife_ID)) %>%
