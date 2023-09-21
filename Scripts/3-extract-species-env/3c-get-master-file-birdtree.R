@@ -43,7 +43,7 @@ sum(apply(dplyr::select(climate.df, temp_sd_year),
 # Load in trait data ------------------------------------------
 
 # AVONET data - keep only necessary fields
-avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
+avonet.dat1 <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
   dplyr::filter(!is.na(birdtreeID)) %>%
   dplyr::select(-Sequence, -Avibase.ID1,
                 -Total.individuals, -Female, -Male, -Unknown, 
@@ -51,9 +51,10 @@ avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
                 -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
                 -Range.Size, -birdlifeID, -notes, -Mass.Source, -Mass.Refs.Other, 
 		-matchType) %>%
-  dplyr::rename(ID = birdtreeID, Accepted_name = Species1,
-                Family = Family1, Order = Order1) %>%
-  dplyr::group_by(ID) %>%
+  dplyr::rename(ID = birdtreeID, Avonet_name = Species1, 
+                Birdtree_name = birdtreeName, Family = Family1, Order = Order1)
+
+avonet.dat2 <- dplyr::group_by(avonet.dat1, ID) %>%
   # Get means of continuous variables and the unique categorical variable for those
   # BirdTree species that are split into multiple BirdLife species.
   dplyr::summarize(Beak.Length_Culmen = mean(Beak.Length_Culmen),
@@ -75,7 +76,14 @@ avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
 		   Primary.Lifestyle = unique(Primary.Lifestyle),
 		   Min.Latitude = min(Min.Latitude),
 		   Max.Latitude = max(Max.Latitude)) %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  #first Family/Order of each ID group (should be the same across all sp ID)
+  dplyr::left_join(dplyr::select(avonet.dat1, ID, Avonet_name, Birdtree_name,
+                                 Family, Order) %>%
+                     dplyr::group_by(ID) %>%
+                     dplyr::slice_head()) %>%
+  dplyr::relocate(Birdtree_name, Avonet_name, Family, Order, .after = ID)
+  
 
 # Bird et al data
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
@@ -91,7 +99,7 @@ gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv'
 # combine trait and climate data-----------------------------------------------
 
 #only species with values for mean temp
-main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
+main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
                              by = 'ID') %>%
   dplyr::full_join(climate.df, by = 'ID') %>%
   # add CV for precip and dhi over species range (spatial CV)
