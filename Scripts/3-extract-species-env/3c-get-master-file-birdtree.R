@@ -77,12 +77,11 @@ avonet.dat <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
 		   Max.Latitude = max(Max.Latitude)) %>%
   dplyr::ungroup()
 
-# TODO: 
 # Bird et al data
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
-  dplyr::filter(!is.na(BirdLife_ID)) %>%
-  dplyr::select(BirdLife_ID, GenLength) %>%
-  dplyr::rename(ID = BirdLife_ID) %>%
+  dplyr::filter(!is.na(birdtreeID)) %>%
+  dplyr::select(birdtreeID, GenLength) %>%
+  dplyr::rename(ID = birdtreeID) %>%
   #average genlength across dups
   dplyr::group_by(ID) %>%
   dplyr::summarize(GenLength = mean(GenLength)) %>%
@@ -113,7 +112,7 @@ main.dat <- dplyr::full_join(avonet.dat, gen.time.dat,
 
 
 #write to file
-write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data.csv'), 
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree.csv'), 
           row.names = FALSE)
 
 # write.csv(main.dat, file = paste0('~/main-bird-data.csv'),
