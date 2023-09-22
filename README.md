@@ -30,29 +30,28 @@
     * `2c-DHI.R` - process DHI data
     * `2d-env-merge.R` - merge env metrics
   * `3-extract-species-env/` - extract env var data from species range
-    * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing using BirdLife taxonomy
-    * `3a-split-sp-ids-birdtree.R` - generate sets of bird ids for parallel processing using Bird Tree taxonomy
+    * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `3a-split-sp-ids-terrestrial-mammal.R` - generate sets of mammal ids for parallel processing
-    * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges using BirdLife taxonomy
-    * `3b-extract-avg-within-range-birdtree.R` - extract environmental covariates from species ranges using BirdTree taxonomy
+    * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
     * `3b-extract-avg-within-range-terrestrial-mammal.R` - extract environmental covariates from species ranges
     * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
     * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
-    * `3b-extract-compile-birdtree.sh` - bash script to iterate through all pieces of data and run `3b-extract-birdtree.sbatch`
-    * `3b-extract-birdtree.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-birdtree.R` on HPCC
     * `3b-extract-compile-mammal.sh` - bash script to iterate through all pieces of data and run `3b-extract-mammal.sbatch`
     * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
     * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
     * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
-    * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data for birds using Bird Tree taxonomy.
   * `4-rasterize` - rasterize ranges
     * `4a-create-rasters.R` - create .tif files birds
     * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
     * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
     * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
-  * `5a-explore-bird.R` - explore joined bird life history/env data
-  * `5b-explore-mammals.R` - explore joined mammal life history/env data
-  * `X-explore-env-var.R` - explore environmental variability metrics
+  * `6-models/`
+    * `6-novar.R` - simple regression (no varying intercepts/slopes)
+    * `6-vargam.R` - varying intercepts, varying slopes by family
+  * `X-explore/`
+    * `X-explore-bird.R` - exploratory analyses birds
+    * `X-explore-mammal.R` - exploratory analyses mammals
+    * `X-explore-env-var.R` - explore environmental variability
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
