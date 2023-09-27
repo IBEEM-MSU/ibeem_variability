@@ -920,3 +920,188 @@ model1.fit <- lavaan::sem(model1, data = semdata)
 summary(model1.fit)
 AIC(model1.fit)
 
+
+
+
+
+# pasted from 5-novar.R resids --------------------------------------------
+
+# fit <- readRDS(paste0(dir, '/Results/ge-bird-novar-', run_date, 
+#                       '/ge-bird-novar-fit-', run_date, '.rds'))
+
+mu_mn <- MCMCvis::MCMCpstr(fit, params = 'mu')[[1]]
+bird_df$resids <- DATA$y - mu_mn
+
+str(bird_df)
+ggplot(bird_df, aes(cen_lon, cen_lat, col = resids)) +
+  geom_point(size = 2) +
+  theme_bw()
+
+str(bird_df)
+plot(factor(bird_df$Order), bird_df$resids)
+plot(factor(bird_df$Family), bird_df$resids)
+plot(bird_df$Beak.Depth, bird_df$resids)
+summary(lm(bird_df$resids ~ bird_df$Beak.Depth))
+plot(factor(bird_df$Order), bird_df$Beak.Depth)
+plot(bird_df$Wing.Length, bird_df$resids)
+summary(lm(bird_df$resids ~ bird_df$Wing.Length))
+
+plot(factor(bird_df$Habitat), bird_df$resids)
+summary(lm(bird_df$resids ~ factor(bird_df$Habitat)))
+plot(factor(bird_df$Habitat.Density), bird_df$resids)
+summary(lm(bird_df$resids ~ factor(bird_df$Habitat.Density)))
+
+plot(factor(bird_df$Trophic.Level), bird_df$resids)
+summary(lm(bird_df$resids ~ factor(bird_df$Trophic.Level)))
+plot(factor(bird_df$Trophic.Niche), bird_df$resids)
+summary(lm(bird_df$resids ~ factor(bird_df$Trophic.Niche)))
+plot(factor(bird_df$Primary.Lifestyle), bird_df$resids)
+plot(bird_df$temp_rng_season, bird_df$resids)
+summary(lm(bird_df$resids ~ bird_df$temp_rng_season))
+
+
+dplyr::group_by(bird_df, Family) %>%
+  dplyr::summarize(mn_bd = mean(Beak.Depth)) %>%
+  dplyr::arrange(desc(mn_bd))
+
+dplyr::group_by(bird_df, Family) %>%
+  dplyr::summarize(mn_r = mean(resids), n = n()) %>%
+  dplyr::arrange(desc(mn_r)) %>%
+  tail() %>%
+  print(n = 50)
+
+plot(bird_df$temp_mean, bird_df$resids)
+summary(lm(bird_df$resids ~ bird_df$temp_mean))
+
+dplyr::filter(bird_df, Habitat == 'Coastal')
+dplyr::filter(bird_df, Trophic.Level == 'Scavenger')
+dplyr::filter(bird_df, Trophic.Niche == 'Nectarivore')
+
+ggplot(bird_df, aes(Wing.Length, resids, col = Order)) +
+  geom_point() +
+  theme_bw()
+
+ps <- dplyr::filter(bird_df, Order == 'Psittaciformes')
+
+ggplot(ps, aes(Beak.Depth, resids, color = Family)) +
+  geom_point() +
+  theme_bw()
+
+#Brain size from Griesser et al.
+bs <- read.csv(paste0(dir, 'data/L1/trait/Griesser_et_al_2023_PNAS.csv'))
+tt <- dplyr::mutate(bird_df, tip_label = stringr::str_to_title(gsub(' ' , '_', Birdtree_name))) %>%
+  dplyr::left_join(bs, by = 'tip_label') %>%
+  dplyr::filter(!is.na(brain))
+
+#Cooney - has clutch size but not as many as Bird et al.
+co <- read.csv(paste0(dir, 'data/L1/trait/Cooney_et_al_2020_Nat_comms.csv'))
+tt2 <- dplyr::mutate(bird_df, binomial = stringr::str_to_title(gsub(' ' , '_', Birdtree_name))) %>%
+  dplyr::left_join(co, by = 'binomial') %>%
+  dplyr::filter(!is.na(log_clutch_size))
+
+#clutch size from Bird et al.
+bb <- read.csv(paste0(dir, 'data/L1/trait/bird_et_al_clutch_size.csv'))
+
+#survival etc from Bird et al.
+bdat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
+  dplyr::select(-Order, -Family, -GenLength)
+
+tt4 <- dplyr::left_join(bird_df, bdat, by = c('Birdtree_name' = 'Sci_name')) %>%
+  dplyr::arrange(Birdtree_name) %>%
+  dplyr::mutate(Scientific.name = stringr::str_to_sentence(Birdtree_name)) %>%
+  dplyr::left_join(dplyr::select(bb, -Order, -Family, -Genus), 
+                   by = 'Scientific.name') %>%
+  dplyr::select(ID, Birdtree_name, Avonet_name, Family, Order, Trophic.Niche,
+                temp_mean, temp_sd_year, temp_sd_season, temp_sp_color_month,
+                precip_mean, precip_cv_year, precip_cv_season, precip_sp_color_month,
+                Mass, GenLength, lMass, lGL, Mean.clutch.size, Measured_survival, 
+                Measured_age_first_breeding, Measured_max_longevity, 
+                Modeled_survival, Modeled_age_first_breeding, Modeled_max_longevity)
+
+#PCA
+#105 species
+pdat <- dplyr::filter(tt4, 
+                      !is.na(Mean.clutch.size),
+                      !is.na(Measured_survival),
+                      !is.na(Measured_age_first_breeding),
+                      !is.na(Measured_max_longevity))
+NROW(pdat)
+
+#don't know why survival values are so high for measured (this is how it is in paper)
+plot(tt4$Measured_survival, tt4$Modeled_survival)
+plot(tt4$Measured_age_first_breeding, tt4$Modeled_age_first_breeding)
+plot(tt4$Measured_max_longevity, tt4$Modeled_max_longevity)
+
+#3011 species
+pdat <- dplyr::filter(tt4, 
+                      !is.na(Mean.clutch.size),
+                      !is.na(Modeled_survival),
+                      !is.na(Modeled_age_first_breeding),
+                      !is.na(Modeled_max_longevity))
+NROW(pdat)
+
+tt_pca <- pdat[,c(#'Mean.clutch.size', 
+                  'Modeled_survival',
+                  'Modeled_age_first_breeding',
+                  'Modeled_max_longevity')] %>% 
+  prcomp(center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(1,2),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+
+#essentially the same thing as GL
+plot(pdat$lGL, tt_pca$x[,1])
+
+f1 <- lm(lGL ~ lMass + 
+           temp_sd_season + 
+           temp_sd_year +
+           temp_sp_color_month +
+           precip_cv_season + 
+           precip_cv_year +
+         precip_sp_color_month,
+         #brain,
+         data = pdat)
+summary(f1)
+car::vif(f1)
+
+f1b <- lm(lGL ~ lMass + 
+           temp_sd_season + 
+           temp_sd_year +
+           temp_sp_color_month +
+           precip_cv_season + 
+           precip_cv_year +
+           precip_sp_color_month,
+         #brain,
+         data = tt4)
+summary(f1b)
+car::vif(f1b)
+
+f2 <- lm(log(Mean.clutch.size) ~ lMass + 
+           temp_sd_season + 
+           temp_sd_year +
+           temp_sp_color_month +
+           precip_cv_season + 
+           precip_cv_year +
+         precip_sp_color_month,
+         #brain,
+         data = pdat)
+summary(f2)
+car::vif(f2)
+
+
+str(bird_df)
+ggplot(bird_df, aes(temp_sd_season, lGL, color = factor(Trophic.Niche))) +
+  # ggplot(bird_df, aes(temp_sd_year, lGL, color = factor(Trophic.Niche))) +
+  # ggplot(bird_df, aes(temp_sp_color_month, lGL, color = factor(Trophic.Niche))) +
+  # ggplot(bird_df, aes(precip_cv_season, lGL, color = factor(Trophic.Niche))) +
+  # ggplot(bird_df, aes(precip_cv_year, lGL, color = factor(Trophic.Niche))) +
+  # ggplot(bird_df, aes(precip_sp_color_month, lGL, color = factor(Trophic.Niche))) +
+  geom_point(alpha = 0.5) + 
+  geom_line(stat = 'smooth', alpha = 0.5, linewidth = 2,
+            method = 'lm') +
+  theme_bw()
+

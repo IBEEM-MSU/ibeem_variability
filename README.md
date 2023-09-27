@@ -10,6 +10,8 @@
 
 [Proposal](https://drive.google.com/file/d/1K0jelDSM3ZlyHDlNI3SRYAbzlrS0hpiU/view?usp=share_link)
 
+[Annotated Bib](https://docs.google.com/document/d/1fn3lzU2IUtvY7Go_O7An_6JLgPk7Zc-OKLlNQYgOq48/edit)
+
 
 ## Repo structure:
 * `Scripts/`
@@ -45,9 +47,10 @@
     * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
     * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
     * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
-  * `6-models/`
-    * `6-novar.R` - simple regression (no varying intercepts/slopes)
-    * `6-vargam.R` - varying intercepts, varying slopes by family
+  * `5-model/`
+    * `5-novar.R` - simple regression (no varying intercepts/slopes)
+    * `5-varfam.R` - varying intercepts, varying slopes by family
+    * `5-varniche.R` - varying intercepts, varying slopes by niche
   * `X-explore/`
     * `X-explore-bird.R` - exploratory analyses birds
     * `X-explore-mammal.R` - exploratory analyses mammals

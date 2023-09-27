@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gen length ~ env (varying intercepts or slopes by family)
+# Fit Bayes model - gen length ~ env (varying intercepts or slopes by Trophic niche)
 # 
 ####################
 
@@ -7,7 +7,7 @@
 # specify dir -------------------------------------------------------------
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-run_date <- '2023-09-22'
+run_date <- '2023-09-25'
 
 
 # load packages -----------------------------------------------------------
@@ -39,27 +39,32 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
                 Migration == 1) %>%
+  #filter out precip outlier
+  dplyr::filter(precip_cv_season < 2.5) %>%
+  #filter out NA Trophic.Niche
+  dplyr::filter(!is.na(Trophic.Niche)) %>%
   #sample a subset of species
   # dplyr::slice_sample(n = 2000) %>%
   dplyr::mutate(fac_Family = factor(Family),
                 fac_Order = factor(Order),
+                fac_Niche = factor(Trophic.Niche),
                 lMass = log(Mass),
                 lGL = log(GenLength),
-                f_id = as.numeric(fac_Family)) %>%
+                f_id = as.numeric(fac_Niche)) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
   dplyr::ungroup()
 
-#how many species in each family
-dplyr::group_by(bird_df, Family) %>%
+#how many species in each group
+dplyr::group_by(bird_df, Trophic.Niche) %>%
   dplyr::count() %>%
   dplyr::arrange(desc(n))
 
-#just one Fam
-of <- dplyr::filter(bird_df, Family == 'Psittacidae')
-summary(lm(lGL ~ lMass + temp_sp_color_month + temp_sd_season + temp_sd_year, 
-           data = of))
+# ggplot(bird_df, aes(temp_sd_year, log(GenLength), color = Trophic.Niche)) +
+#   geom_point(alpha = 0.5) +
+#   geom_line(stat = 'smooth', method = 'lm', linewidth = 2, alpha = 0.5) +
+#   theme_bw()
 
 
 # # load mammal data --------------------------------------------------------
@@ -86,7 +91,7 @@ summary(lm(lGL ~ lMass + temp_sp_color_month + temp_sd_season + temp_sd_year,
 DATA <- list(N = NROW(bird_df),
              Nf = length(unique(bird_df$f_id)),
              y = bird_df$lGL,
-             f_id = bird_df$f_id, #family id for each data point
+             f_id = bird_df$f_id, #niche id for each data point
              lMass = bird_df$lMass,
              temp_sd_season = bird_df$temp_sd_season,
              temp_sd_year = bird_df$temp_sd_year,
@@ -105,7 +110,7 @@ STEP_SIZE <- 0.03
 CHAINS <- 4
 ITER <- 2000
 
-#varying intercepts or slopes
+#varying intercepts and slopes
 fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-varfam.stan'),
                    data = DATA,
                    chains = CHAINS,
@@ -131,11 +136,13 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-varfam.stan'),
                             'nu',
                             'sigma_abgt',
                             'Rho',
-                            'mu',
-                            'mu_nm'),
+                            'mu'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
                                   stepsize = STEP_SIZE))
+
+# fit <- readRDS(paste0(dir, '/Results/ge-bird-varniche-', run_date,
+#                       '/ge-bird-varniche-fit-', run_date, '.rds'))
 
 
 # save summary space ------------------------------------------------------------
@@ -143,19 +150,19 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-varfam.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('ge-bird-varfam-results-', run_date),
+                  file_name = paste0('ge-bird-varniche-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('ge-bird-varfam-', run_date),
+                  mkdir = paste0('ge-bird-varniche-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('ge-bird-varfam-fit-', run_date),
+                  obj_name = paste0('ge-bird-varniche-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('ge-bird-varfam-data-', run_date),
+                  add_obj_names = paste0('ge-bird-varniche-data-', run_date),
                   cp_file = c(paste0(dir, 'Scripts/Model_files/5-varfam.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-varfam.R')),
+                              paste0(dir, 'Scripts/5-model/5-varniche.R')),
                   cp_file_names = c(paste0('5-varfam-', run_date, '.stan'),
-                                    paste0('5-varfam-', run_date, '.R')))
+                                    paste0('5-varniche-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -191,7 +198,7 @@ out.df <- data.frame(K = rep(NA, length(pr_tr)),
                      PIC.var.P = NA)
 for (i in 1:100)
 {
-  #i <- 2
+  #i <- 1
   print(paste0('tree: ', i, ' of ', length(pr_tr)))
   tree_n <- pr_tr[[i]]
   
@@ -260,9 +267,12 @@ mu_theta3_rs_ch <- (exp(mu_theta3_ch * sd(DATA$precip_sp_color_month)) - 1) * 10
 
 # cat plots ---------------------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/ge-bird-varfam-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/ge-bird-varniche-', run_date, '/')
 
-#temp
+niche_names <- unique(bird_df[,c('f_id', 'Trophic.Niche')]) %>%
+  dplyr::arrange(f_id)
+
+#raw params
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 14, width = 5)
 MCMCvis::MCMCplot(fit,
@@ -280,14 +290,14 @@ dev.off()
 
 pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 14, width = 5)
-MCMCvis::MCMCplot(cbind(mu_beta_rs_ch, 
+MCMCvis::MCMCplot(cbind(#mu_beta_rs_ch, 
                         mu_gamma1_rs_ch,
                         mu_gamma2_rs_ch,
                         mu_gamma3_rs_ch,
                         mu_theta1_rs_ch,
                         mu_theta2_rs_ch,
                         mu_theta3_rs_ch),
-                  labels = c('log(Mass)',
+                  labels = c(#'log(Mass)',
                              'T season',
                              'T interannual var',
                              'T spectra',
@@ -298,9 +308,186 @@ MCMCvis::MCMCplot(cbind(mu_beta_rs_ch,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
+                  ref_ovl = TRUE,
                   main = '% change in Gen Length for 1 sd change in cov',
                   guide_lines = TRUE)
 dev.off()
+
+
+pdf(paste0(fig_dir, 'gamma1-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'gamma1',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Temp Seasonality',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'gamma2-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'gamma2',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Temp Interannual',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'gamma3-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'gamma3',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Temp Color',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'theta1-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'theta1',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Precip Seasonality',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'theta2-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'theta2',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Precip Interannual',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'theta3-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'theta3',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Precip Color',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'alpha-cat-', run_date, '.pdf'),
+    height = 14, width = 5)
+MCMCvis::MCMCplot(fit,
+                  params = 'alpha',
+                  labels = niche_names$Trophic.Niche,
+                  main = 'Intercepts (mean Gen)',
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+dev.off()
+
+#by group
+for (i in 1:NROW(niche_names))
+{
+  #i <- 10
+  pp <- paste0(c('gamma1', 'gamma2', 'gamma3', 'theta1', 'theta2', 'theta3'), 
+             '[', i, ']')
+  pdf(paste0(fig_dir, niche_names$Trophic.Niche[i], '-cat-', run_date, '.pdf'),
+      height = 14, width = 5)
+  MCMCvis::MCMCplot(fit,
+                    params = pp,
+                    exact = TRUE,
+                    ISB = FALSE,
+                    labels = c(#'log(Mass)',
+                      'T season',
+                      'T interannual var',
+                      'T spectra',
+                      'P seasonality',
+                      'P interannual var',
+                      'P spectra'),
+                    main = niche_names$Trophic.Niche[i],
+                    sz_labels = 1.5,
+                    ci = c(89, 89),
+                    ref_ovl = TRUE,
+                    sz_thick = 3,
+                    sz_thin = 3,
+                    guide_lines = TRUE)
+  dev.off()
+}
+
+
+pp <- c('gamma1', 'gamma2', 'gamma3', 'theta1', 'theta2', 'theta3')
+MCMCvis::MCMCplot(fit,
+                  params = pp,
+                  excl = 'mu',
+                  exact = FALSE,
+                  ISB = FALSE,
+                  # labels = c(#'log(Mass)',
+                  #   'T season',
+                  #   'T interannual var',
+                  #   'T spectra',
+                  #   'P seasonality',
+                  #   'P interannual var',
+                  #   'P spectra'),
+                  main = niche_names$Trophic.Niche[i],
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  ref_ovl = TRUE,
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  guide_lines = TRUE)
+
+
+# among group -------------------------------------------------------------
+
+#substantial multicolinearity among groups when taking means
+tt <- dplyr::group_by(bird_df, Trophic.Niche) %>%
+  dplyr::summarize(mn_lgl = mean(log(GenLength)),
+                   mn_lm = mean(log(Mass)),
+                   mn_temp_sd_season = mean(temp_sd_season),
+                   mn_temp_sd_year = mean(temp_sd_year),
+                   mn_precip_cv_season = mean(precip_cv_season),
+                   mn_precip_cv_year = mean(precip_cv_year)) %>%
+  dplyr::ungroup()
+ft <- lm(mn_lgl ~ mn_lm + 
+             mn_temp_sd_season + mn_temp_sd_year +
+             mn_precip_cv_season + mn_precip_cv_year,
+           data = tt)
+summary(ft)
+car::vif(ft)
+cor(as.matrix(tt[,-c(1, 2)]))
+
+#seems to be fine within groups 
+tdf <- dplyr::filter(bird_df, Trophic.Niche == niche_names$Trophic.Niche[10])
+tf1 <- lm(lGL ~ lMass + temp_sd_season + temp_sd_year +
+            precip_cv_season + precip_cv_year, data = tdf)
+car::vif(tf1)
 
 
 # PPC ---------------------------------------------------------------------
@@ -326,7 +513,7 @@ for (i in 1:length(sidx))
   }
 }
 
-pdf(paste0(fig_dir, 'varfam_PPC-', run_date, '.pdf'), height = 5, width = 5)
+pdf(paste0(fig_dir, 'varniche_PPC-', run_date, '.pdf'), height = 5, width = 5)
 plot(density(DATA$y), col = 'black', lwd = 3, xlim = c(0, 3.5), ylim = c(0, 1.5))
 for (i in 1:500)
 {
@@ -342,18 +529,51 @@ dev.off()
 #in other words:
 #explained var / (explained var + resid var)
 
-#with mass
+#with mass - 0.74
 var_pred <- apply(mu_ch, 1, var)
 var_resid <- apply(sweep(mu_ch, 2, DATA$y), 1, var)
 r2_ch <- var_pred / (var_pred + var_resid)
 hist(r2_ch)
 
-#no mass
-mu_nm_ch <- MCMCvis::MCMCchains(fit, params = 'mu_nm')
-var_pred_nm <- apply(mu_nm_ch, 1, var)
-var_resid_nm <- apply(sweep(mu_nm_ch, 2, DATA$y), 1, var)
-r2_ch_nm <- var_pred_nm / (var_pred_nm + var_resid_nm)
-hist(r2_ch_nm)
+#no mass - by group
+alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
+beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
+gamma1_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma1')[[1]]
+gamma2_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma2')[[1]]
+gamma3_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma3')[[1]]
+theta1_mn <- MCMCvis::MCMCpstr(fit, params = 'theta1')[[1]]
+theta2_mn <- MCMCvis::MCMCpstr(fit, params = 'theta2')[[1]]
+theta3_mn <- MCMCvis::MCMCpstr(fit, params = 'theta3')[[1]]
+
+#500 iterations
+pmu <- rep(NA, length(DATA$y))
+for (i in 1:length(DATA$y))
+{
+  #i <- 1
+  pmu[i] <- alpha_mn[DATA$f_id[i]] + 
+    #beta_mn[DATA$f_id[i]] * DATA$lMass +
+    gamma1_mn[DATA$f_id[i]] * DATA$temp_sd_season[i] +
+    gamma2_mn[DATA$f_id[i]] * DATA$temp_sd_year[i] +
+    gamma3_mn[DATA$f_id[i]] * DATA$temp_sp_color_month[i] +
+    theta1_mn[DATA$f_id[i]] * DATA$precip_cv_season[i] +
+    theta2_mn[DATA$f_id[i]] * DATA$precip_cv_year[i] +
+    theta3_mn[DATA$f_id[i]] * DATA$precip_sp_color_month[i]
+}
+
+ug <- unique(DATA$f_id)
+r2_vec <- rep(NA, length(ug))
+for (i in 1:length(ug))
+{
+  #i <- 1
+  tidx <- which(DATA$f_id == ug[i])
+  tres <- DATA$y[tidx] - pmu[tidx]
+  tpmu <- pmu[tidx]
+  r2_vec[i] <- var(tpmu) / (var(tpmu) + var(tres))
+}
+
+dplyr::left_join(niche_names, data.frame(f_id = ug,
+                                         r2 = round(r2_vec, 3)),
+                 by = 'f_id')
 
 
 # VIF ---------------------------------------------------------------------

@@ -21,6 +21,7 @@ vector[N] precip_sp_color_month;
 
 parameters {
 real<lower=0> sigma;
+real<lower=0> nu;
 real mu_alpha;
 real mu_beta;
 real mu_gamma1;
@@ -86,8 +87,3 @@ L_Rho ~ lkj_corr_cholesky(2);
 y ~ student_t(nu, mu, sigma);
 }
 
-generated quantities {
-vector[N] mu_nm;
-
-mu_nm = alpha + gamma1 * temp_sd_season + gamma2 * temp_sd_year + gamma3 * temp_sp_color_month + theta1 * precip_cv_season + theta2* precip_cv_year + theta3 * precip_sp_color_month;
-}

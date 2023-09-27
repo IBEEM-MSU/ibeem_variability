@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gen length ~ env (no varying intercepts or slopes)
+# Fit Bayes model - gen length ~ env (no varying intercepts or slopes) - mammals
 # 
 ####################
 
@@ -19,84 +19,41 @@ library(ape)
 library(picante)
 
 
-# load bird data ---------------------------------------------------------------
+# load mammal data --------------------------------------------------------
 
-or_excl <- c('Sphenisciformes', #penguins 
-             'Procellariiformes', #tubenoses
-             'Pelecaniformes', #pelicans
-             'Suliformes', #gannets/boobies
-             'Phaethontiformes', #tropicbirds
-             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
-#'Anseriformes', #waterfowl
-#'Ciconiiformes', #storks
-#'Gaviiformes', #aquatic birds (loons and divers)
-#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-#'Phoenicopteriformes', #flamingos and relatives
-#'Podicipediformes') #grebes
-
-'%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
-  dplyr::arrange(Birdtree_name) %>%
-  dplyr::filter(Order %ni% or_excl,
-                Migration == 1) %>%
-  #filter out precip outlier
-  dplyr::filter(precip_cv_season < 2.5) %>%
-  #sample a subset of species
-  # dplyr::slice_sample(n = 2000) %>%
-  dplyr::mutate(fac_Family = factor(Family),
+mam_df <- read.csv(paste0(dir, 'Data/L3/main-mammal-data.csv')) %>%
+  dplyr::mutate(Family = PH_Family,
+                Order = PH_Order,
+                # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
+                Mass = PH_Mass.g, #Phylacine mass
+                GenLength = LH_GenerationLength_d / 365,
+                lGL = log(GenLength),
+                lMass = log(Mass),
+                fac_Family = factor(Family),
                 fac_Order = factor(Order),
                 lMass = log(Mass),
-                lGL = log(GenLength),
-                f_id = as.numeric(fac_Family)) %>%
-  #drop duplicated species (for now)
-  dplyr::group_by(Birdtree_name) %>%
-  dplyr::slice_head() %>%
-  dplyr::ungroup()
+                lGL = log(GenLength))
 
-#how many species in each family
-dplyr::group_by(bird_df, Family) %>%
-  dplyr::count() %>%
-  dplyr::arrange(desc(n))
-
-#just one Fam
-of <- dplyr::filter(bird_df, Family == 'Psittacidae')
-summary(lm(lGL ~ lMass + temp_sp_color_month + temp_sd_season + temp_sd_year, 
-           data = of))
-
-
-# # load mammal data --------------------------------------------------------
-# 
-# mam_df <- read.csv(paste0(dir, 'Data/L3/main-mammal-data.csv')) %>%
-#   dplyr::mutate(Family = PH_Family,
-#                 Order = PH_Order,
-#                 # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
-#                 Mass = PH_Mass.g, #Phylacine mass
-#                 GenLength = LH_GenerationLength_d,
-#                 fac_Family = factor(Family),
-#                 fac_Order = factor(Order),
-#                 lMass = log(Mass),
-#                 lGL = log(GenLength))
-# 
-# #one species with Inf precip_cv_season (due to precip_mean = 0 and using median)
-# dplyr::filter(mam_df, !is.finite(precip_cv_season))
-# mam_df$precip_cv_season[which(!is.finite(mam_df$precip_cv_season))] <- 0
+#one species with Inf precip_cv_season (due to precip_mean = 0 and using median)
+dplyr::filter(mam_df, !is.finite(precip_cv_season))
+mam_df$precip_cv_season[which(!is.finite(mam_df$precip_cv_season))] <- 0
 
 
 # Run Stan model --------------------------------------------------------------
 
 #data for model
-DATA <- list(N = NROW(bird_df),
-             Nf = length(unique(bird_df$f_id)),
-             y = bird_df$lGL,
-             f_id = bird_df$f_id, #family id for each data point
-             lMass = bird_df$lMass,
-             temp_sd_season = bird_df$temp_sd_season,
-             temp_sd_year = bird_df$temp_sd_year,
-             temp_sp_color_month = bird_df$temp_sp_color_month,
-             precip_cv_season = bird_df$precip_cv_season,
-             precip_cv_year = bird_df$precip_cv_year,
-             precip_sp_color_month = bird_df$precip_sp_color_month,
-             pro_data = bird_df)
+DATA <- list(N = NROW(mam_df),
+             # Nf = length(unique(mam_df$f_id)),
+             y = mam_df$lGL,
+             # f_id = mam_df$f_id, #family id for each data point
+             lMass = mam_df$lMass,
+             temp_sd_season = mam_df$temp_sd_season,
+             temp_sd_year = mam_df$temp_sd_year,
+             temp_sp_color_month = mam_df$temp_sp_color_month,
+             precip_cv_season = mam_df$precip_cv_season,
+             precip_cv_year = mam_df$precip_cv_year,
+             precip_sp_color_month = mam_df$precip_sp_color_month,
+             pro_data = mam_df)
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
@@ -135,80 +92,80 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('ge-bird-novar-results-', run_date),
+                  file_name = paste0('ge-mam-novar-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('ge-bird-novar-', run_date),
+                  mkdir = paste0('ge-mam-novar-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('ge-bird-novar-fit-', run_date),
+                  obj_name = paste0('ge-mam-novar-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('ge-bird-novar-data-', run_date),
+                  add_obj_names = paste0('ge-mam-novar-data-', run_date),
                   cp_file = c(paste0(dir, 'Scripts/Model_files/5-novar.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-novar.R')),
+                              paste0(dir, 'Scripts/5-model/5-novar-mam.R')),
                   cp_file_names = c(paste0('5-novar-', run_date, '.stan'),
-                                    paste0('5-novar-', run_date, '.R')))
+                                    paste0('5-novar-mam-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
-# fit <- readRDS(paste0(dir, '/Results/ge-bird-novar-', run_date,
-#                       '/ge-bird-novar-fit-', run_date, '.rds'))
+# fit <- readRDS(paste0(dir, '/Results/ge-mam-novar-', run_date,
+#                       '/ge-mam-novar-fit-', run_date, '.rds'))
 
 
 # residuals ---------------------------------------------------------------
 
 #extract resids
 mu_mn <- MCMCvis::MCMCpstr(fit, params = 'mu')[[1]]
-bird_df$resids <- DATA$y - mu_mn
-resids <- bird_df$resids
+mam_df$resids <- DATA$y - mu_mn
+resids <- mam_df$resids
 
 
 # phylo signal in resids --------------------------------------------------
 
-#NOTE: picante::phylosignal is quite slow. At least 30min for one tree...
-#Seems to be some memory pressure
-#https://cran.r-project.org/web/packages/picante/vignettes/picante-intro.pdf
-#no strong phylo signal detected in tree 1 (K ~ 0.05). "K values closer to zero correspond to a random or convergent pattern of evolution, while K values greater than 1 indicate strong phylogenetic signal and conservatism of traits" (picante vignette)
-
-#read in phylo tree (birdtree.org - Ericson 0001-1000)
-tr <- ape::read.tree(paste0(dir, 'data/L1/trait/AllBirdsEricson1.tre'))
-
-#species not found in both datasets (species to drop from tree)
-nm <- setdiff(tr[[1]]$tip.label, idx_df$name)
-
-#prune specified tips from all trees
-pr_tr <- lapply(tr, drop.tip, tip = nm)
-class(pr_tr) <- "multiPhylo"
-
-#df with names and idx
-idx_df <- data.frame(idx = 1:NROW(bird_df), 
-                     name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
-
-#for each of 1000 trees, calculate phylo signal (Blomberg's K) in resids
-out.df <- data.frame(K = rep(NA, length(pr_tr)), 
-                             PIC.var.P = NA)
-for (i in 1:100)
-{
-  #i <- 2
-  print(paste0('tree: ', i, ' of ', length(pr_tr)))
-  tree_n <- pr_tr[[i]]
-  
-  #get index for name order on tips
-  j_idx <- dplyr::left_join(data.frame(name = tree_n$tip.label), idx_df, 
-                            by = 'name')
-  #apply to residuals
-  resid_srt <- resids[j_idx$idx]
-  phy_res <- picante::phylosignal(resid_srt, tree_n) #quite slow
-  out.df$K[i] <- phy_res$K
-  out.df$PIC.var.P[i] <- phy_res$PIC.variance.P
-}
-
-#summarize output
-hist(out.df$PIC.var.P)
-sum(out.df$PIC.var.P < 0.05)
-
-mean(out.df$K)
-sd(out.df$K)
+# #NOTE: picante::phylosignal is quite slow. At least 30min for one tree...
+# #Seems to be some memory pressure
+# #https://cran.r-project.org/web/packages/picante/vignettes/picante-intro.pdf
+# #no strong phylo signal detected in tree 1 (K ~ 0.05). "K values closer to zero correspond to a random or convergent pattern of evolution, while K values greater than 1 indicate strong phylogenetic signal and conservatism of traits" (picante vignette)
+# 
+# #read in phylo tree (birdtree.org - Ericson 0001-1000)
+# tr <- ape::read.tree(paste0(dir, 'data/L1/trait/AllBirdsEricson1.tre'))
+# 
+# #species not found in both datasets (species to drop from tree)
+# nm <- setdiff(tr[[1]]$tip.label, idx_df$name)
+# 
+# #prune specified tips from all trees
+# pr_tr <- lapply(tr, drop.tip, tip = nm)
+# class(pr_tr) <- "multiPhylo"
+# 
+# #df with names and idx
+# idx_df <- data.frame(idx = 1:NROW(bird_df), 
+#                      name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
+# 
+# #for each of 1000 trees, calculate phylo signal (Blomberg's K) in resids
+# out.df <- data.frame(K = rep(NA, length(pr_tr)), 
+#                      PIC.var.P = NA)
+# for (i in 1:100)
+# {
+#   #i <- 2
+#   print(paste0('tree: ', i, ' of ', length(pr_tr)))
+#   tree_n <- pr_tr[[i]]
+#   
+#   #get index for name order on tips
+#   j_idx <- dplyr::left_join(data.frame(name = tree_n$tip.label), idx_df, 
+#                             by = 'name')
+#   #apply to residuals
+#   resid_srt <- resids[j_idx$idx]
+#   phy_res <- picante::phylosignal(resid_srt, tree_n) #quite slow
+#   out.df$K[i] <- phy_res$K
+#   out.df$PIC.var.P[i] <- phy_res$PIC.variance.P
+# }
+# 
+# #summarize output
+# hist(out.df$PIC.var.P)
+# sum(out.df$PIC.var.P < 0.05)
+# 
+# mean(out.df$K)
+# sd(out.df$K)
 
 
 # Summary -----------------------------------------------------------------
@@ -258,7 +215,8 @@ theta3_rs_ch <- (exp(theta3_ch * sd(DATA$precip_sp_color_month)) - 1) * 100
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/ge-bird-novar-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/ge-mam-novar-', run_date, '/')
+
 
 #https://www.wikiwand.com/en/Partial_regression_plot
 #residuals regressing response
@@ -387,7 +345,7 @@ for (i in 1:length(sidx))
 }
 
 pdf(paste0(fig_dir, 'novar_PPC-', run_date, '.pdf'), height = 5, width = 5)
-plot(density(DATA$y), col = 'black', lwd = 3, xlim = c(0, 3.5), ylim = c(0, 1.5))
+plot(density(DATA$y), col = 'black', lwd = 3)#, xlim = c(0, 3.5), ylim = c(0, 1.5))
 for (i in 1:500)
 {
   lines(density(y_rep[i,]), col = rgb(1,0,0,0.2))
@@ -402,13 +360,13 @@ dev.off()
 #in other words:
 #explained var / (explained var + resid var)
 
-#with mass - ~0.716
+#with mass - ~0.26
 var_pred <- apply(mu_ch, 1, var)
 var_resid <- apply(sweep(mu_ch, 2, DATA$y), 1, var)
 r2_ch <- var_pred / (var_pred + var_resid)
 hist(r2_ch)
 
-#no mass - ~0.008
+#no mass - ~0.03
 mu_nm_ch <- MCMCvis::MCMCchains(fit, params = 'mu_nm')
 var_pred_nm <- apply(mu_nm_ch, 1, var)
 var_resid_nm <- apply(sweep(mu_nm_ch, 2, DATA$y), 1, var)
@@ -419,51 +377,53 @@ hist(r2_ch_nm)
 # VIF ---------------------------------------------------------------------
 
 #covariates as a function of other covariates
-tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season + temp_sp_color_month +
-            precip_cv_year + precip_cv_season + precip_sp_color_month, 
-          data = bird_df)
+tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season + #temp_sp_color_month +
+            precip_cv_year + precip_cv_season, #+ precip_sp_color_month, 
+          data = mam_df)
 stf1 <- summary(tf1)
 
-tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season + temp_sp_color_month +
-            precip_cv_year + precip_cv_season + precip_sp_color_month, data = 
-            bird_df)
+tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season + #temp_sp_color_month +
+            precip_cv_year + precip_cv_season,# + precip_sp_color_month, 
+            data = mam_df)
 stf2 <- summary(tf2)
 
-tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year + temp_sp_color_month +
-            precip_cv_year + precip_cv_season + precip_sp_color_month, 
-          data = bird_df)
+tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year + #temp_sp_color_month +
+            precip_cv_year + precip_cv_season, #+ precip_sp_color_month, 
+          data = mam_df)
 stf3 <- summary(tf3)
 
-tf4 <- lm(temp_sp_color_month ~ lMass + temp_sd_year + temp_sd_season +
-            precip_cv_year + precip_cv_season + precip_sp_color_month, 
-          data = bird_df)
-stf4 <- summary(tf4)
+# tf4 <- lm(temp_sp_color_month ~ lMass + temp_sd_year + temp_sd_season +
+#             precip_cv_year + precip_cv_season + precip_sp_color_month, 
+#           data = mam_df)
+# stf4 <- summary(tf4)
 
 tf5 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
-            temp_sp_color_month + precip_cv_season + precip_sp_color_month, 
-          data = bird_df)
+            #temp_sp_color_month + 
+            precip_cv_season, #+ precip_sp_color_month, 
+          data = mam_df)
 stf5 <- summary(tf5)
 
 tf6 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
-            temp_sp_color_month + precip_cv_year + precip_sp_color_month, 
-          data = bird_df)
+            #temp_sp_color_month + 
+            precip_cv_year, #+ precip_sp_color_month, 
+          data = mam_df)
 stf6 <- summary(tf6)
 
-tf7 <- lm(precip_sp_color_month ~ lMass + temp_sd_year + temp_sd_season + 
-            temp_sp_color_month + precip_cv_year + precip_cv_season, 
-          data = bird_df)
-stf7 <- summary(tf7)
+# tf7 <- lm(precip_sp_color_month ~ lMass + temp_sd_year + temp_sd_season + 
+#             temp_sp_color_month + precip_cv_year + precip_cv_season, 
+#           data = mam_df)
+# stf7 <- summary(tf7)
 
 #calc VIF per covariate
 1 / (1 - stf1$r.squared) #lMass
 1 / (1 - stf2$r.squared) #temp_sd_year
 1 / (1 - stf3$r.squared) #temp_sd_season
-1 / (1 - stf4$r.squared) #temp_sp_color_month
+# 1 / (1 - stf4$r.squared) #temp_sp_color_month
 1 / (1 - stf5$r.squared) #precip_cv_year
 1 / (1 - stf6$r.squared) #precip_cv_season
-1 / (1 - stf7$r.squared) #precip_sp_color_month
+# 1 / (1 - stf7$r.squared) #precip_sp_color_month
 
 #correlation
 cor(as.matrix(dplyr::select(bird_df,
-                         lMass, temp_sd_year, temp_sd_season, temp_sp_color_month,
-                         precip_cv_year, precip_cv_season, precip_sp_color_month)))
+                            lMass, temp_sd_year, temp_sd_season, temp_sp_color_month,
+                            precip_cv_year, precip_cv_season, precip_sp_color_month)))

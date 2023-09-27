@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gen length ~ env (no varying intercepts or slopes)
+# Fit Bayes model - gen length ~ env (varying intercepts)
 # 
 ####################
 
@@ -41,13 +41,16 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
                 Migration == 1) %>%
   #filter out precip outlier
   dplyr::filter(precip_cv_season < 2.5) %>%
+  #filter out NA Trophic.Niche
+  dplyr::filter(!is.na(Trophic.Niche)) %>%
   #sample a subset of species
   # dplyr::slice_sample(n = 2000) %>%
   dplyr::mutate(fac_Family = factor(Family),
                 fac_Order = factor(Order),
+                fac_Niche = factor(Trophic.Niche),
                 lMass = log(Mass),
                 lGL = log(GenLength),
-                f_id = as.numeric(fac_Family)) %>%
+                f_id = as.numeric(fac_Niche)) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
@@ -88,7 +91,7 @@ summary(lm(lGL ~ lMass + temp_sp_color_month + temp_sd_season + temp_sd_year,
 DATA <- list(N = NROW(bird_df),
              Nf = length(unique(bird_df$f_id)),
              y = bird_df$lGL,
-             f_id = bird_df$f_id, #family id for each data point
+             f_id = bird_df$f_id, #niche id for each data point
              lMass = bird_df$lMass,
              temp_sd_season = bird_df$temp_sd_season,
              temp_sd_year = bird_df$temp_sd_year,
@@ -107,13 +110,15 @@ STEP_SIZE <- 0.03
 CHAINS <- 4
 ITER <- 2000
 
-#no varying intercepts or slopes
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar.stan'),
+#varying intercepts
+fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-intvar.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
                    cores = CHAINS,
                    pars = c('alpha',
+                            'mu_alpha',
+                            'sigma_alpha',
                             'beta',
                             'gamma1',
                             'gamma2',
@@ -135,24 +140,24 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('ge-bird-novar-results-', run_date),
+                  file_name = paste0('ge-bird-intvar-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('ge-bird-novar-', run_date),
+                  mkdir = paste0('ge-bird-intvar-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('ge-bird-novar-fit-', run_date),
+                  obj_name = paste0('ge-bird-intvar-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('ge-bird-novar-data-', run_date),
-                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-novar.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-novar.R')),
-                  cp_file_names = c(paste0('5-novar-', run_date, '.stan'),
-                                    paste0('5-novar-', run_date, '.R')))
+                  add_obj_names = paste0('ge-bird-intvar-data-', run_date),
+                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-intvar.stan'), 
+                              paste0(dir, 'Scripts/5-model/5-intvar.R')),
+                  cp_file_names = c(paste0('5-intvar-', run_date, '.stan'),
+                                    paste0('5-intvar-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
-# fit <- readRDS(paste0(dir, '/Results/ge-bird-novar-', run_date,
-#                       '/ge-bird-novar-fit-', run_date, '.rds'))
+# fit <- readRDS(paste0(dir, '/Results/ge-bird-intvar-', run_date,
+#                       '/ge-bird-intvar-fit-', run_date, '.rds'))
 
 
 # residuals ---------------------------------------------------------------
@@ -186,7 +191,7 @@ idx_df <- data.frame(idx = 1:NROW(bird_df),
 
 #for each of 1000 trees, calculate phylo signal (Blomberg's K) in resids
 out.df <- data.frame(K = rep(NA, length(pr_tr)), 
-                             PIC.var.P = NA)
+                     PIC.var.P = NA)
 for (i in 1:100)
 {
   #i <- 2
@@ -258,10 +263,10 @@ theta3_rs_ch <- (exp(theta3_ch * sd(DATA$precip_sp_color_month)) - 1) * 100
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/ge-bird-novar-', run_date, '/')
-
 #https://www.wikiwand.com/en/Partial_regression_plot
 #residuals regressing response
+
+fig_dir <- paste0(dir, 'Results/ge-bird-intvar-', run_date, '/')
 
 av_fun <- function(num)
 {
@@ -323,7 +328,6 @@ pr_fun(num = 7, nm = 'precip-color') #precip color
 
 # cat plots ---------------------------------------------------------------
 
-
 #temp
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 5, width = 5)
@@ -362,6 +366,13 @@ MCMCvis::MCMCplot(cbind(gamma1_rs_ch,
                   guide_lines = TRUE)
 dev.off()
 
+niche_names <- unique(bird_df[,c('f_id', 'Trophic.Niche')]) %>%
+  dplyr::arrange(f_id)
+
+MCMCvis::MCMCplot(fit,
+                  params = 'alpha',
+                  labels = niche_names$Trophic.Niche)
+
 
 # PPC ---------------------------------------------------------------------
 
@@ -386,7 +397,7 @@ for (i in 1:length(sidx))
   }
 }
 
-pdf(paste0(fig_dir, 'novar_PPC-', run_date, '.pdf'), height = 5, width = 5)
+pdf(paste0(fig_dir, 'intvar_PPC-', run_date, '.pdf'), height = 5, width = 5)
 plot(density(DATA$y), col = 'black', lwd = 3, xlim = c(0, 3.5), ylim = c(0, 1.5))
 for (i in 1:500)
 {
@@ -402,13 +413,13 @@ dev.off()
 #in other words:
 #explained var / (explained var + resid var)
 
-#with mass - ~0.716
+#with mass - ~0.731
 var_pred <- apply(mu_ch, 1, var)
 var_resid <- apply(sweep(mu_ch, 2, DATA$y), 1, var)
 r2_ch <- var_pred / (var_pred + var_resid)
 hist(r2_ch)
 
-#no mass - ~0.008
+#no mass - ~0.0052
 mu_nm_ch <- MCMCvis::MCMCchains(fit, params = 'mu_nm')
 var_pred_nm <- apply(mu_nm_ch, 1, var)
 var_resid_nm <- apply(sweep(mu_nm_ch, 2, DATA$y), 1, var)
@@ -465,5 +476,5 @@ stf7 <- summary(tf7)
 
 #correlation
 cor(as.matrix(dplyr::select(bird_df,
-                         lMass, temp_sd_year, temp_sd_season, temp_sp_color_month,
-                         precip_cv_year, precip_cv_season, precip_sp_color_month)))
+                            lMass, temp_sd_year, temp_sd_season, temp_sp_color_month,
+                            precip_cv_year, precip_cv_season, precip_sp_color_month)))
