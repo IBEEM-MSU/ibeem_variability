@@ -173,16 +173,16 @@ resids <- bird_df$resids
 #read in phylo tree (birdtree.org - Ericson 0001-1000)
 tr <- ape::read.tree(paste0(dir, 'data/L1/trait/AllBirdsEricson1.tre'))
 
+#df with names and idx
+idx_df <- data.frame(idx = 1:NROW(bird_df), 
+                     name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
+
 #species not found in both datasets (species to drop from tree)
 nm <- setdiff(tr[[1]]$tip.label, idx_df$name)
 
 #prune specified tips from all trees
 pr_tr <- lapply(tr, drop.tip, tip = nm)
 class(pr_tr) <- "multiPhylo"
-
-#df with names and idx
-idx_df <- data.frame(idx = 1:NROW(bird_df), 
-                     name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
 
 #for each of 1000 trees, calculate phylo signal (Blomberg's K) in resids
 out.df <- data.frame(K = rep(NA, length(pr_tr)), 

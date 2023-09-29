@@ -3,7 +3,7 @@
 
 data {
 int<lower=0> N;                        // number of data points
-real<lower=0> y[N];
+real y[N];
 vector[N] lMass;
 vector[N] temp_sd_season;
 vector[N] temp_sd_year;

@@ -102,6 +102,17 @@ f7 <- lme4::lmer(lGL ~ lMass +
                  data = mam_df)
 round(summary(f1)$coefficients, 2)
 
+fx <- lm(lGL ~ lMass + 
+                   temp_sd_season + 
+                   temp_sd_year +
+                   # temp_sp_color_month +
+                   precip_cv_season +
+                   precip_cv_year, #+
+                   # precip_sp_color_month,
+                 data = mam_df)
+summary(fx)
+car::vif(fx)
+
 AIC(f1) #2nd best
 AIC(f2)
 AIC(f3)

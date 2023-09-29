@@ -7,7 +7,7 @@
 # specify dir -------------------------------------------------------------
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-run_date <- '2023-09-26'
+run_date <- '2023-09-27'
 
 
 # load packages -----------------------------------------------------------
@@ -22,6 +22,7 @@ library(picante)
 # load mammal data --------------------------------------------------------
 
 mam_df <- read.csv(paste0(dir, 'Data/L3/main-mammal-data.csv')) %>%
+  dplyr::filter(PH_Terrestrial == 1) %>%
   dplyr::mutate(Family = PH_Family,
                 Order = PH_Order,
                 # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
@@ -119,6 +120,17 @@ mu_mn <- MCMCvis::MCMCpstr(fit, params = 'mu')[[1]]
 mam_df$resids <- DATA$y - mu_mn
 resids <- mam_df$resids
 
+plot(factor(mam_df$Order), mam_df$resids)
+plot(factor(mam_df$Family), mam_df$resids)
+plot(mam_df$PH_Terrestrial, mam_df$resids)
+plot(mam_df$PH_Marine, mam_df$resids)
+plot(mam_df$PH_Freshwater, mam_df$resids)
+plot(mam_df$PH_Aerial, mam_df$resids)
+str(mam_df)
+plot(mam_df$PH_Diet.Plant, mam_df$resids)
+plot(mam_df$PH_Diet.Vertebrate, mam_df$resids)
+plot(mam_df$PH_Diet.Invertebrate, mam_df$resids)
+
 
 # phylo signal in resids --------------------------------------------------
 
@@ -130,6 +142,9 @@ resids <- mam_df$resids
 # #read in phylo tree (birdtree.org - Ericson 0001-1000)
 # tr <- ape::read.tree(paste0(dir, 'data/L1/trait/AllBirdsEricson1.tre'))
 # 
+# #df with names and idx
+# idx_df <- data.frame(idx = 1:NROW(bird_df), 
+#                      name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
 # #species not found in both datasets (species to drop from tree)
 # nm <- setdiff(tr[[1]]$tip.label, idx_df$name)
 # 
@@ -137,9 +152,6 @@ resids <- mam_df$resids
 # pr_tr <- lapply(tr, drop.tip, tip = nm)
 # class(pr_tr) <- "multiPhylo"
 # 
-# #df with names and idx
-# idx_df <- data.frame(idx = 1:NROW(bird_df), 
-#                      name = stringr::str_to_title(gsub(' ', '_', bird_df$Birdtree_name)))
 # 
 # #for each of 1000 trees, calculate phylo signal (Blomberg's K) in resids
 # out.df <- data.frame(K = rep(NA, length(pr_tr)), 
@@ -221,25 +233,25 @@ fig_dir <- paste0(dir, 'Results/ge-mam-novar-', run_date, '/')
 #https://www.wikiwand.com/en/Partial_regression_plot
 #residuals regressing response
 
-av_fun <- function(num)
-{
-  tm <- cbind(DATA$lMass, DATA$temp_sd_season, DATA$temp_sd_year,
-              DATA$temp_sp_color_month, DATA$precip_cv_season,
-              DATA$precip_cv_year, DATA$precip_sp_color_month)
-  
-  tm2 <- tm[,-num]
-  f1 <- residuals(lm(DATA$y ~ tm2))
-  rf1 <- residuals(lm(tm[,num] ~ tm2))
-  plot(f1, rf1, col = rgb(0,0,0,0.2), pch = 19)
-}
-
-av_fun(num = 1) #Mass
-av_fun(num = 2) #temp season
-av_fun(num = 3) #temp year
-av_fun(num = 4) #temp color
-av_fun(num = 5) #precip season
-av_fun(num = 6) #precip year
-av_fun(num = 7) #precip color
+# av_fun <- function(num)
+# {
+#   tm <- cbind(DATA$lMass, DATA$temp_sd_season, DATA$temp_sd_year,
+#               DATA$temp_sp_color_month, DATA$precip_cv_season,
+#               DATA$precip_cv_year, DATA$precip_sp_color_month)
+#   
+#   tm2 <- tm[,-num]
+#   f1 <- residuals(lm(DATA$y ~ tm2))
+#   rf1 <- residuals(lm(tm[,num] ~ tm2))
+#   plot(f1, rf1, col = rgb(0,0,0,0.2), pch = 19)
+# }
+# 
+# av_fun(num = 1) #Mass
+# av_fun(num = 2) #temp season
+# av_fun(num = 3) #temp year
+# av_fun(num = 4) #temp color
+# av_fun(num = 5) #precip season
+# av_fun(num = 6) #precip year
+# av_fun(num = 7) #precip color
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
@@ -424,6 +436,6 @@ stf6 <- summary(tf6)
 # 1 / (1 - stf7$r.squared) #precip_sp_color_month
 
 #correlation
-cor(as.matrix(dplyr::select(bird_df,
+cor(as.matrix(dplyr::select(mam_df,
                             lMass, temp_sd_year, temp_sd_season, temp_sp_color_month,
-                            precip_cv_year, precip_cv_season, precip_sp_color_month)))
+                            precip_cv_year, precip_cv_season)))#, precip_sp_color_month)))
