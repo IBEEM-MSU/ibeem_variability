@@ -107,7 +107,7 @@ idx_df <- data.frame(idx = 1:NROW(tri),
                      name = stringr::str_to_title(gsub(' ', '_', tri$species)))
 
 #species not found in both datasets (species to drop from tree)
-nm <- setdiff(tree[[1]]$tip.label, tri$name)
+nm <- setdiff(tree[[1]]$tip.label, tri$species)
 
 #prune specified tips from all trees
 pr_tree <- lapply(tree, ape::drop.tip, tip = nm)
@@ -243,24 +243,25 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar-oe-sep.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('se-bird-novar-oe-sep-results-', run_date),
+                  file_name = paste0('se-bird-novar-oe-sep-surv-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-novar-oe-sep-', run_date),
+                  mkdir = paste0('se-bird-novar-oe-sep-surv-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('se-bird-novar-oe-sep-fit-', run_date),
+                  obj_name = paste0('se-bird-novar-oe-sep-surv-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('se-bird-novar-oe-sep-data-', run_date),
+                  add_obj_names = paste0('se-bird-novar-oe-sep-surv-data-', run_date),
                   cp_file = c(paste0(dir, 'Scripts/Model_files/5-novar-oe-sep.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-novar-oe-sep.R')),
+                              paste0(dir, 'Scripts/5-model/5-novar-oe-sepsurv-.R')),
                   cp_file_names = c(paste0('5-novar-novar-oe-sep-', run_date, '.stan'),
-                                    paste0('5-novar-novar-oe-sep-', run_date, '.R')))
+                                    paste0('5-novar-novar-oe-sep-surv-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
 # fit <- readRDS(paste0(dir, '/Results/se-bird-novar-oe-sep-', run_date,
 #                       '/se-bird-novar-oe-sep-fit-', run_date, '.rds'))
+
 
 
 # residuals ---------------------------------------------------------------
@@ -285,27 +286,29 @@ resid_comb <- y_comb - mu_comb
 #df with names and idx
 idx_df <- data.frame(idx = 1:length(y_comb), 
                      name = stringr::str_to_title(gsub(' ', '_', 
-                                                       c(idm2$species[obs_idx],
-                                                         idm2$species[imp_idx]))))
+                                                       c(bird_df3$species[obs_idx],
+                                                         bird_df3$species[imp_idx]))))
 
 #get index for name order on tips
 j_idx <- dplyr::left_join(data.frame(name = tree_n$tip.label), idx_df, 
                           by = 'name')
-#apply to residuals
 resid_srt <- resid_comb[j_idx$idx]
-phy_res <- picante::phylosignal(resid_srt, tree_n) #quite slow (10s of minutes)
+
+#apply to residuals
+# phy_res <- picante::phylosignal(resid_srt, tree_n) #quite slow (10s of minutes)
 
 #K ~ 0.3
 #lambda ~ 
-library(phytools)
-phytools::phylosig(tree_n, resid_srt, method = 'K') #quit slow
-phytools::phylosig(tree_n, resid_srt, method = 'lambda') #even slower (multiple hours)
+# library(phytools)
+# phytools::phylosig(tree_n, resid_srt, method = 'K') #quit slow
+# phytools::phylosig(tree_n, resid_srt, method = 'lambda') #wouldn't finish??? (many hours)
 
 
 #fit alternative model - no measures err - using nlme
-j_idx2 <- dplyr::left_join(data.frame(species = tree_n$tip.label), bird_df3, 
+j_idx2 <- dplyr::left_join(data.frame(species = tree_n$tip.label), 
+                           data.frame(idx = 1:NROW(bird_df3), bird_df3), 
                           by = 'species')
-#apply to residuals
+#apply
 bird_gls <- bird_df3[j_idx2$idx,]
 library(nlme)
 pgls_fit <- nlme::gls(Phylo_survival ~ lMass +
@@ -313,12 +316,66 @@ pgls_fit <- nlme::gls(Phylo_survival ~ lMass +
                          temp_sd_year +
                          precip_cv_season +
                          precip_cv_year,
-                      # correlation = ape::corBrownian(phy = tree_n),
-                       correlation = ape::corPagel(1, tree_n),
+                       correlation = ape::corPagel(1, tree_n, fixed = FALSE),
                        data = bird_gls,
                        method = "ML")
 summary(pgls_fit)
-?ape::corPagel
+# car::vif(pgls_fit)
+#Pagel (1)
+# Coefficients:
+#   Value  Std.Error   t-value p-value
+# (Intercept)       0.3577705 0.03975689   8.99896  0.0000
+# lMass             0.0458616 0.00084637  54.18605  0.0000
+# temp_sd_season   -0.0028178 0.00026847 -10.49553  0.0000
+# temp_sd_year     -0.0041413 0.00403653  -1.02596  0.3049
+# precip_cv_season -0.0033795 0.00232325  -1.45464  0.1458
+# precip_cv_year    0.0142654 0.01024590   1.39230  0.1639
+
+#just measured
+bird_ms <- dplyr::filter(bird_df3, !is.na(Measured_survival))
+
+#prune tree
+#df with names and idx
+idx_df2 <- data.frame(idx = 1:NROW(bird_ms), 
+                     name = stringr::str_to_title(gsub(' ', '_', bird_ms$species)))
+
+#species not found in both datasets (species to drop from tree)
+nm2 <- setdiff(tree[[1]]$tip.label, bird_ms$species)
+
+#prune specified tips from all trees
+pr_tree2 <- lapply(tree, ape::drop.tip, tip = nm2)
+class(pr_tree2) <- "multiPhylo"
+tree_n2 <- pr_tree2[[1]]
+
+#get idx
+j_idx3 <- dplyr::left_join(data.frame(species = tree_n2$tip.label), 
+                           data.frame(idx = 1:NROW(bird_ms), bird_ms), 
+                           by = 'species')
+#apply
+bird_gls2 <- bird_ms[j_idx3$idx,]
+
+library(nlme)
+pgls_fit2 <- nlme::gls(Measured_survival ~ lMass +
+                        temp_sd_season +
+                        temp_sd_year +
+                        precip_cv_season +
+                        precip_cv_year,
+                      # correlation = ape::corBrownian(phy = tree_n),
+                      correlation = ape::corPagel(1, tree_n2, fixed = FALSE),
+                      data = bird_gls2,
+                      method = "ML")
+summary(pgls_fit2)
+car::vif(pgls_fit2)
+#Pagel
+# Coefficients:
+#   Value  Std.Error   t-value p-value
+# (Intercept)       0.3459467 0.08343573  4.146266  0.0000
+# lMass             0.0499811 0.01056317  4.731644  0.0000
+# temp_sd_season   -0.0115342 0.00558003 -2.067054  0.0395
+# temp_sd_year      0.0268342 0.11241383  0.238709  0.8115
+# precip_cv_season  0.0246000 0.06265611  0.392619  0.6949
+# precip_cv_year    0.2150230 0.23048542  0.932914  0.3515
+
 
 # Summary -----------------------------------------------------------------
 
@@ -364,7 +421,7 @@ theta2_rs_ch <- (exp(theta2_ch * sd(c(DATA$precip_cv_year_obs,
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/se-bird-novar-oe-sep-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/se-bird-novar-oe-sep-surv-', run_date, '/')
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)

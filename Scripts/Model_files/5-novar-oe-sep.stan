@@ -1,4 +1,4 @@
-// gen lenth ~ env
+// LH trait ~ env
 // no varying intercepts or slopes - incorporate obs error
 // separate obs and imputed vales
 
