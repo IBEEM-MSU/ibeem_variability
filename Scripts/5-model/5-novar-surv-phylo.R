@@ -8,7 +8,7 @@
 # specify dir -------------------------------------------------------------
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-run_date <- '2023-10-05'
+run_date <- '2023-10-08'
 
 
 # load packages -----------------------------------------------------------
@@ -184,7 +184,12 @@ bird_df3 <- dplyr::mutate(bird_df2,
 # phylo -------------------------------------------------------------------
 
 #just measured
-bird_df4 <- dplyr::filter(bird_df3, !is.na(Measured_survival))
+# bird_df4 <- dplyr::filter(bird_df3, !is.na(Measured_survival))
+
+#subset of imp
+set.seed(1)
+stidx <- sample(x = 1:NROW(bird_df3), size = 1000)
+bird_df4 <- bird_df3[stidx,]
 
 #prune tree
 #df with names and idx
@@ -207,42 +212,50 @@ j_idx3 <- dplyr::left_join(data.frame(species = tree_n2$tip.label),
 bird_df5 <- bird_df4[j_idx3$idx,]
 
 #calculate covariance matrix using tree
-V <- ape::vcv.phylo(tree_n)
+V <- ape::vcv.phylo(tree_n2)
 
-#########
-# MATCH SPECIES NAMES HERE
-#########
+#names already in correct order
 #scale by max variance -> correlation matrix
-R <- V[bn2, bn2] / max(V)
-#########
-#########
-#########
+R <- V / max(V)
 
 
 # Run Stan model --------------------------------------------------------------
 
-
 DATA <- list(N = NROW(bird_df5),
              R = R,
-             I = diag(1, nrow = N, ncol = N),
-             y_obs = bird_df5$Measured_survival,
-             lMass_obs = bird_df5$lMass[obs_idx],
-             temp_sd_season_obs = bird_df5$temp_sd_season[obs_idx],
-             temp_sd_year_obs = bird_df5$temp_sd_year[obs_idx],
-             precip_cv_season_obs = bird_df5$precip_cv_season[obs_idx],
-             precip_cv_year_obs = bird_df5$precip_cv_year[obs_idx],
-             pro_data = birdbird_df5_df3)
+             I = diag(1, nrow = NROW(bird_df5), ncol = NROW(bird_df5)),
+             y_obs = bird_df5$Phylo_survival,
+             lMass_obs = bird_df5$lMass,
+             temp_sd_season_obs = bird_df5$temp_sd_season,
+             temp_sd_year_obs = bird_df5$temp_sd_year,
+             precip_cv_season_obs = bird_df5$precip_cv_season,
+             precip_cv_year_obs = bird_df5$precip_cv_year,
+             pro_data = bird_df5)
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-DELTA <- 0.95
+# DELTA <- 0.95
 TREE_DEPTH <- 12
 STEP_SIZE <- 0.03
 CHAINS <- 4
 ITER <- 2000
 
-#survival - ~?? min to fit
+# survival
+# ~28 min to fit - no cholesky decomp (measured only - N = 335)
+# ~293 min to fit - no cholesky decomp (imputed subset - N = 700)
+
+# 105 sec N = 100 - cholesky decomp (L 46 on)
+# 94.5 sec N = 100 - cholesky decomp (L 51 on)
+# 73 sec N = 100 - no cholesky decomp (L 51 on)
+
+# 1218 sec N = 250 - cholesky decomp (L 46 on)
+# XXXX sec N = 250 - cholesky decomp (L 51 on)
+# XXXX sec N = 250 - no cholesky decomp (L 51 on)
+# 130 sec N = 250 - brms (had div problems though)
+# 3383 sec (56 min) N = 1000 - brms (had div problems though)
+# 13k sec (217 min) N = 2000 - brms 
+
 #no varying intercepts or slopes - obs err
 fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar-phylo.stan'),
                    data = DATA,
@@ -259,6 +272,7 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar-phylo.stan'),
                             # 'theta3',
                             'sigma',
                             # 'nu',
+                            'lambda',
                             'mu_obs'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
@@ -272,7 +286,7 @@ MCMCvis::MCMCdiag(fit,
                   round = 4,
                   file_name = paste0('se-bird-novar-surv-phylo-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-novar-surv-phylo-', run_date),
+                  mkdir = paste0('se-bird-novar-surv-phylo-imp700-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
@@ -392,7 +406,7 @@ theta2_rs_ch <- (exp(theta2_ch * sd(c(DATA$precip_cv_year_obs,
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/se-bird-novar-surv-phylo-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/se-bird-novar-surv-phylo-imp700-', run_date, '/')
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
