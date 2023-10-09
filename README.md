@@ -55,6 +55,9 @@
     * `X-explore-bird.R` - exploratory analyses birds
     * `X-explore-mammal.R` - exploratory analyses mammals
     * `X-explore-env-var.R` - explore environmental variability
+  * `6-phylo-cor` - get phylogenetic correlation matrix
+    * `6a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
+    * `6b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
@@ -82,6 +85,7 @@
     * `main-bird-data.csv` - merged bird data
     * `main-mammal-data.csv` - merged mammal data
     * `raster-gl-dh-nsp.tif` - raster of median and sd of gen length and delta haldane (relative temp change), as well as number of species in each cell (5 layers)
+    * `bird-phylo-cor-matrix.rda` - bird phylogenetic correlation matrix
 
 
 ## Data sources:
