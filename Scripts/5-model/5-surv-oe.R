@@ -288,67 +288,47 @@ idx_df <- data.frame(idx = 1:length(y_comb),
                                                          bird_df3$species[imp_idx]))))
 
 #get index for name order on tips
-j_idx <- dplyr::left_join(data.frame(name = tree_n$tip.label), idx_df, 
+j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
                           by = 'name')
 resid_srt <- resid_comb[j_idx$idx]
 
-#apply to residuals
-# phy_res <- picante::phylosignal(resid_srt, tree_n) #quite slow (10s of minutes)
 
 #K ~ 0.3
 #lambda ~ 
 # library(phytools)
-# phytools::phylosig(tree_n, resid_srt, method = 'K') #quit slow
-# phytools::phylosig(tree_n, resid_srt, method = 'lambda') #wouldn't finish??? (many hours)
+# phytools::phylosig(pr_tree, resid_srt, method = 'K') #quit slow
+# phytools::phylosig(pr_tree, resid_srt, method = 'lambda') #wouldn't finish??? (many hours)
 
 
 #fit alternative model - no measures err - using nlme
-j_idx2 <- dplyr::left_join(data.frame(species = tree_n$tip.label), 
+j_idx2 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
                            data.frame(idx = 1:NROW(bird_df3), bird_df3), 
                           by = 'species')
 #apply
-bird_gls <- bird_df3[j_idx2$idx,]
-library(nlme)
-pgls_fit <- nlme::gls(Phylo_survival ~ lMass +
-                         temp_sd_season +
-                         temp_sd_year +
-                         precip_cv_season +
-                         precip_cv_year,
-                       correlation = ape::corPagel(1, tree_n, fixed = FALSE),
-                       data = bird_gls,
-                       method = "ML")
-summary(pgls_fit)
+# bird_gls <- bird_df3[j_idx2$idx,]
+# library(nlme)
+# pgls_fit <- nlme::gls(Phylo_survival ~ lMass +
+#                          temp_sd_season +
+#                          temp_sd_year +
+#                          precip_cv_season +
+#                          precip_cv_year,
+#                        correlation = ape::corPagel(1, pr_tree, fixed = FALSE),
+#                        data = bird_gls,
+#                        method = "ML")
+# summary(pgls_fit)
 # car::vif(pgls_fit)
-#Pagel (1)
-# Coefficients:
-#   Value  Std.Error   t-value p-value
-# (Intercept)       0.3577705 0.03975689   8.99896  0.0000
-# lMass             0.0458616 0.00084637  54.18605  0.0000
-# temp_sd_season   -0.0028178 0.00026847 -10.49553  0.0000
-# temp_sd_year     -0.0041413 0.00403653  -1.02596  0.3049
-# precip_cv_season -0.0033795 0.00232325  -1.45464  0.1458
-# precip_cv_year    0.0142654 0.01024590   1.39230  0.1639
+
 
 #just measured
 bird_ms <- dplyr::filter(bird_df3, !is.na(Measured_survival))
 
-#prune tree
-#df with names and idx
-idx_df2 <- data.frame(idx = 1:NROW(bird_ms), 
-                     name = stringr::str_to_title(gsub(' ', '_', bird_ms$species)))
+#prune specified tips from tree
+pr_tree2 <- ape::drop.tip(pr_tree, nm)
 
-#species not found in both datasets (species to drop from tree)
-nm2 <- setdiff(tree[[1]]$tip.label, bird_ms$species)
+#get index for name order on tips
+j_idx <- dplyr::left_join(data.frame(name = pr_tree2$tip.label), idx_df, 
+                          by = 'name')
 
-#prune specified tips from all trees
-pr_tree2 <- lapply(tree, ape::drop.tip, tip = nm2)
-class(pr_tree2) <- "multiPhylo"
-tree_n2 <- pr_tree2[[1]]
-
-#get idx
-j_idx3 <- dplyr::left_join(data.frame(species = tree_n2$tip.label), 
-                           data.frame(idx = 1:NROW(bird_ms), bird_ms), 
-                           by = 'species')
 #apply
 bird_gls2 <- bird_ms[j_idx3$idx,]
 
@@ -359,20 +339,13 @@ pgls_fit2 <- nlme::gls(Measured_survival ~ lMass +
                         precip_cv_season +
                         precip_cv_year,
                       # correlation = ape::corBrownian(phy = tree_n),
-                      correlation = ape::corPagel(1, tree_n2, fixed = FALSE),
+                      correlation = ape::corPagel(1, pr_tree2, fixed = FALSE),
                       data = bird_gls2,
                       method = "ML")
 summary(pgls_fit2)
 car::vif(pgls_fit2)
 #Pagel
-# Coefficients:
-#   Value  Std.Error   t-value p-value
-# (Intercept)       0.3459467 0.08343573  4.146266  0.0000
-# lMass             0.0499811 0.01056317  4.731644  0.0000
-# temp_sd_season   -0.0115342 0.00558003 -2.067054  0.0395
-# temp_sd_year      0.0268342 0.11241383  0.238709  0.8115
-# precip_cv_season  0.0246000 0.06265611  0.392619  0.6949
-# precip_cv_year    0.2150230 0.23048542  0.932914  0.3515
+
 
 
 # Summary -----------------------------------------------------------------

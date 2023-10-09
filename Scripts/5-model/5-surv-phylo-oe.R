@@ -5,8 +5,8 @@
 
 # specify dir -------------------------------------------------------------
 
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-# dir <- '/mnt/research/ibeem/variability/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+dir <- '/mnt/research/ibeem/variability/'
 run_date <- '2023-10-09'
 
 
