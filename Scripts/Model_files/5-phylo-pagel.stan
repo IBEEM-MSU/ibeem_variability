@@ -1,6 +1,6 @@
-// LH trait ~ env
+// LH trait ~ env - TOO SLOW SEE 5-phylo.stan or 5-phylo-oe.stan for optimized scripts
 // no varying intercepts or slopes - incorporate phylo
-// no obs err
+// no obs err -
 
 data {
 int<lower=0> N;                        // number of observed vals

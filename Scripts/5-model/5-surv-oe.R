@@ -8,7 +8,7 @@
 # specify dir -------------------------------------------------------------
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-run_date <- '2023-09-29'
+run_date <- '2023-10-09'
 
 
 # load packages -----------------------------------------------------------
@@ -17,7 +17,6 @@ library(tidyverse)
 library(rstan)
 library(MCMCvis)
 library(ape)
-library(picante)
 library(Rphylopars)
 
 
@@ -99,36 +98,34 @@ tri <- dplyr::mutate(bird_df2,
 
 # trait imputation --------------------------------------------------------
 
-#read in phylo tree (birdtree.org - Ericson 0001-1000)
-tree <- ape::read.tree(paste0(dir, 'data/L1/trait/AllBirdsEricson1.tre'))
+#load consensus tree - bird.phylo
+load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 
 #df with names and idx
-idx_df <- data.frame(idx = 1:NROW(tri), 
-                     name = stringr::str_to_title(gsub(' ', '_', tri$species)))
+idx_df <- data.frame(idx = 1:NROW(tri),
+                     name = tri$species)
 
 #species not found in both datasets (species to drop from tree)
-nm <- setdiff(tree[[1]]$tip.label, tri$species)
+nm <- setdiff(bird.phylo$tip.label, tri$species)
 
-#prune specified tips from all trees
-pr_tree <- lapply(tree, ape::drop.tip, tip = nm)
-class(pr_tree) <- "multiPhylo"
-tree_n <- pr_tree[[1]]
+#prune specified tips from tree
+pr_tree <- ape::drop.tip(bird.phylo, nm)
 
 #get index for name order on tips
-j_idx <- dplyr::left_join(data.frame(name = tree_n$tip.label), idx_df, 
+j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
                           by = 'name')
 
 #run phylo imputation
 ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
-                            tree = tree_n, 
+                            tree = pr_tree, 
                             phylo_correlated = TRUE,
                             # model = "BM") # AIC = 20804
                             # model = "OU") # AIC = 1942203
                             model = "lambda") # AIC = 10755
-                            # model = "mvOU") # threw an error
-                            # model = "delta") # threw an error
-                            # model = "EB") # AIC = 20697
-                            # model = "star") # ???
+# model = "mvOU") # threw an error
+# model = "delta") # threw an error
+# model = "EB") # AIC = 20697
+# model = "star") # ???
 
 # AIC(ir)
 
@@ -180,6 +177,8 @@ bird_df3 <- dplyr::mutate(bird_df2,
                 Modeled_max_longevity) %>%
   dplyr::left_join(ir_mrg, by = 'species')
 
+# saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+
 
 # Run Stan model --------------------------------------------------------------
 
@@ -214,8 +213,8 @@ CHAINS <- 4
 ITER <- 2000
 
 #survival - ~25 min to fit
-#no varying intercepts or slopes - obs err
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar-oe-sep.stan'),
+#obs err model
+fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
@@ -243,25 +242,24 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar-oe-sep.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('se-bird-novar-oe-sep-surv-results-', run_date),
+                  file_name = paste0('bird-surv-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-novar-oe-sep-surv-', run_date),
+                  mkdir = paste0('bird-surv-oe-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('se-bird-novar-oe-sep-surv-fit-', run_date),
+                  obj_name = paste0('bird-surv-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('se-bird-novar-oe-sep-surv-data-', run_date),
-                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-novar-oe-sep.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-novar-oe-sepsurv-.R')),
-                  cp_file_names = c(paste0('5-novar-novar-oe-sep-', run_date, '.stan'),
-                                    paste0('5-novar-novar-oe-sep-surv-', run_date, '.R')))
+                  add_obj_names = paste0('bird-surv-oe-data-', run_date),
+                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-oe.stan'), 
+                              paste0(dir, 'Scripts/5-model/5-surv-oe.R')),
+                  cp_file_names = c(paste0('5-oe-', run_date, '.stan'),
+                                    paste0('5-surv-oe-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
 # fit <- readRDS(paste0(dir, '/Results/se-bird-novar-oe-sep-', run_date,
 #                       '/se-bird-novar-oe-sep-fit-', run_date, '.rds'))
-
 
 
 # residuals ---------------------------------------------------------------
@@ -421,7 +419,7 @@ theta2_rs_ch <- (exp(theta2_ch * sd(c(DATA$precip_cv_year_obs,
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/se-bird-novar-oe-sep-surv-', run_date, '/')
+fig_dir <- paste0('bird-surv-oe-', run_date, '/')
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)

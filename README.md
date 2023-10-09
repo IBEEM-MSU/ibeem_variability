@@ -47,10 +47,20 @@
     * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
     * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
     * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
-  * `5-model/`
-    * `5-novar.R` - simple regression (no varying intercepts/slopes)
-    * `5-varfam.R` - varying intercepts, varying slopes by family
-    * `5-varniche.R` - varying intercepts, varying slopes by niche
+  * `5-model/` - * = working scripts
+    * `5-clutch-oe.R` - imputed clutch size ~ var with observation error
+    * `5-gl-intvar.R` - gen length ~ var - varying int (by fam/niche) model - not that useful since it's ignoring var across fams/niches
+    * `5-gl-mam.R` - gen length ~ var for mammals
+    * `5-gl-varfam.R` - gen length ~ var varying intercepts, varying slopes by family
+    * `5-gl-varniche.R` - gen length ~ var varying intercepts, varying slopes by niche
+    * `5-gl.R` - gen length ~ var simple
+    * `*5-surv-oe.R` - imputed survival ~ var with observation error
+    * `*5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
+    * `*5-surv-phylo-oe.R` - imputed survival ~ var with phylo and observation error
+    * `5-surv-phylo-oe.slurm` - to run `5-surv-phylo-oe.R`
+    * `5-surv-phylo.R` - imputed survival ~ var with phylo
+    * `bird_df3.rds` - data to avoid running first part of `5-...R` scripts
+    * `brms.R` - benchmarking brms models with rstan models
   * `X-explore/`
     * `X-explore-bird.R` - exploratory analyses birds
     * `X-explore-mammal.R` - exploratory analyses mammals
@@ -58,6 +68,7 @@
   * `6-phylo-cor` - get phylogenetic correlation matrix
     * `6a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `6b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
+  * `Model_files` - Stan model files
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
   * `L0/` - raw data

@@ -17,8 +17,6 @@ library(rstan)
 library(MCMCvis)
 library(ape)
 library(Rphylopars)
-# library(picante)
-
 
 
 # load bird data ---------------------------------------------------------------
@@ -84,12 +82,12 @@ bird_df2 <- dplyr::left_join(bird_df, bs, by = c('Birdtree_name' = 'Sci_name')) 
                 Modeled_survival, Modeled_age_first_breeding, Modeled_max_longevity)
 
 #subset out just traits of interest
-# tri <- dplyr::mutate(bird_df2,
-#                      species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-tri <-dplyr::mutate(bird_df2, Measured_log_age_first_breeding = log(Measured_age_first_breeding),
+tri <- dplyr::mutate(bird_df2,
+                     species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+dplyr::mutate(Measured_log_age_first_breeding = log(Measured_age_first_breeding),
                 Measured_log_max_longevity = log(Measured_max_longevity),
                 Measured_log_clutch_size = log(Mean.clutch.size)) %>%
-  dplyr::select(species = Birdtree_name, 
+  dplyr::select(species, 
                 lMass,
                 Measured_survival,
                 Measured_log_age_first_breeding,
@@ -99,26 +97,26 @@ tri <-dplyr::mutate(bird_df2, Measured_log_age_first_breeding = log(Measured_age
 
 # trait imputation --------------------------------------------------------
 
-#load consensus tree - final.cor.mat
-load(paste0(dir, 'data/L3/bird-phylo-cor-matrix.rda'))
+#load consensus tree - bird.phylo
+load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 
 #df with names and idx
-idx_df <- data.frame(idx = 1:NROW(tri), 
+idx_df <- data.frame(idx = 1:NROW(tri),
                      name = tri$species)
 
 #species not found in both datasets (species to drop from tree)
-nm <- setdiff(colnames(final.cor.mat), tri$species)
+nm <- setdiff(bird.phylo$tip.label, tri$species)
 
-#drop specified names
-rm_idx <- which(nm %in% colnames(final.cor.mat))
-cor_mat2 <- final.cor.mat[-rm_idx, -rm_idx]
+#prune specified tips from tree
+pr_tree <- ape::drop.tip(bird.phylo, nm)
 
-#reorder names to be alphabetical
-cor_mat3 <- cor_mat2[order(colnames(cor_mat2)), order(colnames(cor_mat2))]
+#get index for name order on tips
+j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
+                          by = 'name')
 
 #run phylo imputation
-ir <- Rphylopars::phylopars(trait_data = tri, 
-                            tree = tree, 
+ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
+                            tree = pr_tree, 
                             phylo_correlated = TRUE,
                             # model = "BM") # AIC = 20804
                             # model = "OU") # AIC = 1942203
@@ -164,8 +162,7 @@ row.names(ir_mrg) <- NULL
 
 #join trait and env data
 bird_df3 <- dplyr::mutate(bird_df2,
-                          species = stringr::str_to_title(gsub(' ', '_', 
-                                                               Birdtree_name))) %>%
+                          species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   dplyr::select(species,
                 temp_mean,
                 temp_sd_year,
@@ -179,11 +176,11 @@ bird_df3 <- dplyr::mutate(bird_df2,
                 Modeled_max_longevity) %>%
   dplyr::left_join(ir_mrg, by = 'species')
 
+# saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+
 
 # phylo -------------------------------------------------------------------
-
-#just measured
-# bird_df4 <- dplyr::filter(bird_df3, !is.na(Measured_survival))
 
 #subset of imp
 set.seed(1)
@@ -197,24 +194,25 @@ idx_df2 <- data.frame(idx = 1:NROW(bird_df4),
                       name = stringr::str_to_title(gsub(' ', '_', bird_df4$species)))
 
 #species not found in both datasets (species to drop from tree)
-nm2 <- setdiff(tree[[1]]$tip.label, bird_df4$species)
+nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
 
-#prune specified tips from all trees
-pr_tree2 <- lapply(tree, ape::drop.tip, tip = nm2)
-class(pr_tree2) <- "multiPhylo"
-tree_n2 <- pr_tree2[[1]]
+#prune specified tips from tree
+pr_tree2 <- ape::drop.tip(pr_tree, nm)
 
 #get idx
-j_idx3 <- dplyr::left_join(data.frame(species = tree_n2$tip.label), 
+j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
                            data.frame(idx = 1:NROW(bird_df4), bird_df4), 
                            by = 'species')
+
 #apply
 bird_df5 <- bird_df4[j_idx3$idx,]
+
+#separate obs and imp values
 obs_idx <- which(bird_df5$SD_survival == 0)
 imp_idx <- which(bird_df5$SD_survival != 0)
 
 #get corr matrix
-V <- ape::vcv.phylo(tree_n2, corr = TRUE)
+V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
 
 
 # scale/prep data ---------------------------------------------------------
@@ -228,17 +226,27 @@ precip_cv_year_scalar <- 0.05
 y_scalar <- 10
 
 #split predictors into obs and imp
-tt_obs <- data.frame(bird_df5$lMass[obs_idx] * lMass_scalar,
-                     bird_df5$temp_sd_season[obs_idx] * temp_sd_season_scalar,
-                     bird_df5$temp_sd_year[obs_idx] * temp_sd_year_scalar,
-                     bird_df5$precip_cv_season[obs_idx] * precip_cv_season_scalar,
-                     bird_df5$precip_cv_year[obs_idx] * precip_cv_year_scalar)
+tt_obs <- data.frame(lMass = bird_df5$lMass[obs_idx] * 
+                       lMass_scalar,
+                     temp_sd_season = bird_df5$temp_sd_season[obs_idx] * 
+                       temp_sd_season_scalar,
+                     temp_sd_year = bird_df5$temp_sd_year[obs_idx] * 
+                       temp_sd_year_scalar,
+                     precip_cv_season = bird_df5$precip_cv_season[obs_idx] * 
+                       precip_cv_season_scalar,
+                     precip_cv_year = bird_df5$precip_cv_year[obs_idx] * 
+                       precip_cv_year_scalar)
 
-tt_imp <- data.frame(bird_df5$lMass[imp_idx] * lMass_scalar,
-                     bird_df5$temp_sd_season[imp_idx] * temp_sd_season_scalar,
-                     bird_df5$temp_sd_year[imp_idx] * temp_sd_year_scalar,
-                     bird_df5$precip_cv_season[imp_idx] * precip_cv_season_scalar,
-                     bird_df5$precip_cv_year[imp_idx] * precip_cv_year_scalar)
+tt_imp <- data.frame(lMass = bird_df5$lMass[imp_idx] * 
+                       lMass_scalar,
+                     temp_sd_season = bird_df5$temp_sd_season[imp_idx] * 
+                       temp_sd_season_scalar,
+                     temp_sd_year = bird_df5$temp_sd_year[imp_idx] * 
+                       temp_sd_year_scalar,
+                     precip_cv_season = bird_df5$precip_cv_season[imp_idx] * 
+                       precip_cv_season_scalar,
+                     precip_cv_year = bird_df5$precip_cv_year[imp_idx] * 
+                       precip_cv_year_scalar)
 
 #subtract off mean to center vars
 tt_mns <- rbind(tt_obs, tt_imp) %>%
@@ -261,7 +269,7 @@ DATA <- list(N = NROW(bird_df5),
              X_imp = tt_imp2,
              imp_idx = imp_idx,
              obs_idx = obs_idx,
-             LRho = chol(V)) #cholesky factor of cov matrix
+             LRho = chol(V)) #cholesky factor of corr matrix
 
 DELTA <- 0.92
 TREE_DEPTH <- 12
@@ -270,7 +278,7 @@ CHAINS <- 4
 ITER <- 3000
 
 #N = 1000 - 
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/brms_mod_oe.stan'),
+fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-phylo-oe.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
@@ -278,29 +286,31 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/brms_mod_oe.stan'),
                    pars = c('beta',
                             'sigma',
                             'sigma_phylo',
-                            'kappa'),
+                            'kappa',
+                            'alpha'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
                                   stepsize = STEP_SIZE))
+
 
 # save summary space ------------------------------------------------------------
 
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('se-bird-surv-phylo-oe-results-', run_date),
+                  file_name = paste0('bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-surv-phylo-oe-', Nsel', -', run_date),
+                  mkdir = paste0('bird-surv-phylo-oe-', Nsel', -', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('se-bird-surv-phylo-oe-fit-', run_date),
+                  obj_name = paste0('bird-surv-phylo-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('se-bird-surv-phylo-oe-data-', run_date),
+                  add_obj_names = paste0('bird-surv-phylo-oe-data-', run_date),
                   cp_file = c(paste0(dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-phylo-oe.R')),
+                              paste0(dir, 'Scripts/5-model/5-surv-phylo-oe.R')),
                   cp_file_names = c(paste0('5-phylo-oe-', run_date, '.stan'),
-                                    paste0('5-phylo-oe-', run_date, '.R')))
+                                    paste0('5-surv-phylo-oe-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -367,7 +377,7 @@ beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 1
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0('se-bird-surv-phylo-oe-', Nsel', -', run_date)
+fig_dir <- paste0('bird-surv-phylo-oe-', Nsel', -', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)
