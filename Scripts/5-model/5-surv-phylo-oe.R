@@ -7,6 +7,7 @@
 
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
+df3_dir <- '/mnt/home/ccy/variability/Scripts/5-model'
 run_date <- '2023-10-09'
 
 
@@ -178,7 +179,7 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 #   dplyr::left_join(ir_mrg, by = 'species')
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
-bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+bird_df3 <- readRDS(paste0(df3_dir, 'Scripts/5-model/bird_df3.rds'))
 
 
 # phylo -------------------------------------------------------------------
