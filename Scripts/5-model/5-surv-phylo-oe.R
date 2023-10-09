@@ -114,67 +114,68 @@ pr_tree <- ape::drop.tip(bird.phylo, nm)
 j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
                           by = 'name')
 
-#run phylo imputation
-ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
-                            tree = pr_tree, 
-                            phylo_correlated = TRUE,
-                            # model = "BM") # AIC = 20804
-                            # model = "OU") # AIC = 1942203
-                            model = "lambda") # AIC = 10755
-# model = "mvOU") # threw an error
-# model = "delta") # threw an error
-# model = "EB") # AIC = 20697
-# model = "star") # ???
 
-# AIC(ir)
-
-#returns species means as well as some internal nodes
-#get just species rows
-ridx <- which(row.names(ir$anc_rec) %in% tri$species)
-
-#variance (uncertainty)
-ir_unc <- data.frame(species = tri$species[j_idx$idx], 
-                     ir$anc_var[ridx,]) %>%
-  dplyr::mutate(SD_survival = sqrt(Measured_survival),
-                SD_log_age_first_breeding = sqrt(Measured_log_age_first_breeding),
-                SD_log_max_longevity = sqrt(Measured_log_max_longevity),
-                SD_log_clutch_size = sqrt(Measured_log_clutch_size)) %>%
-  dplyr::arrange(species) %>%
-  dplyr::select(species, 
-                SD_survival, 
-                SD_log_age_first_breeding,
-                SD_log_max_longevity,
-                SD_log_clutch_size)
-
-#merge imputed values with unc and env data
-ir_mrg <- data.frame(species = tri$species[j_idx$idx], 
-                     ir$anc_rec[ridx,]) %>%
-  dplyr::arrange(species) %>%
-  dplyr::rename(Phylo_survival = Measured_survival,
-                Phylo_log_age_first_breeding = Measured_log_age_first_breeding,
-                Phylo_log_max_longevity = Measured_log_max_longevity,
-                Phylo_log_clutch_size = Measured_log_clutch_size) %>%
-  #join with measured traits
-  dplyr::left_join(dplyr::select(tri, -lMass), by = 'species') %>%
-  #join with var
-  dplyr::left_join(ir_unc, by = 'species')
-row.names(ir_mrg) <- NULL
-
-#join trait and env data
-bird_df3 <- dplyr::mutate(bird_df2,
-                          species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  dplyr::select(species,
-                temp_mean,
-                temp_sd_year,
-                temp_sd_season,
-                temp_sp_color_month,
-                precip_cv_year,
-                precip_cv_season,
-                precip_sp_color_month,
-                Modeled_survival,
-                Modeled_age_first_breeding,
-                Modeled_max_longevity) %>%
-  dplyr::left_join(ir_mrg, by = 'species')
+# #run phylo imputation - not working properly on cluster - read in bird_df3 instead
+# ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
+#                             tree = pr_tree, 
+#                             phylo_correlated = TRUE,
+#                             # model = "BM") # AIC = ???
+#                             # model = "OU") # AIC = ???
+#                             model = "lambda") # AIC = 10106.53
+# # model = "mvOU") # threw an error
+# # model = "delta") # threw an error
+# # model = "EB") # AIC = ???
+# # model = "star") # ???
+# 
+# # AIC(ir)
+# 
+# #returns species means as well as some internal nodes
+# #get just species rows
+# ridx <- which(row.names(ir$anc_rec) %in% tri$species)
+# 
+# #variance (uncertainty)
+# ir_unc <- data.frame(species = tri$species[j_idx$idx], 
+#                      ir$anc_var[ridx,]) %>%
+#   dplyr::mutate(SD_survival = sqrt(Measured_survival),
+#                 SD_log_age_first_breeding = sqrt(Measured_log_age_first_breeding),
+#                 SD_log_max_longevity = sqrt(Measured_log_max_longevity),
+#                 SD_log_clutch_size = sqrt(Measured_log_clutch_size)) %>%
+#   dplyr::arrange(species) %>%
+#   dplyr::select(species, 
+#                 SD_survival, 
+#                 SD_log_age_first_breeding,
+#                 SD_log_max_longevity,
+#                 SD_log_clutch_size)
+# 
+# #merge imputed values with unc and env data
+# ir_mrg <- data.frame(species = tri$species[j_idx$idx], 
+#                      ir$anc_rec[ridx,]) %>%
+#   dplyr::arrange(species) %>%
+#   dplyr::rename(Phylo_survival = Measured_survival,
+#                 Phylo_log_age_first_breeding = Measured_log_age_first_breeding,
+#                 Phylo_log_max_longevity = Measured_log_max_longevity,
+#                 Phylo_log_clutch_size = Measured_log_clutch_size) %>%
+#   #join with measured traits
+#   dplyr::left_join(dplyr::select(tri, -lMass), by = 'species') %>%
+#   #join with var
+#   dplyr::left_join(ir_unc, by = 'species')
+# row.names(ir_mrg) <- NULL
+# 
+# #join trait and env data
+# bird_df3 <- dplyr::mutate(bird_df2,
+#                           species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+#   dplyr::select(species,
+#                 temp_mean,
+#                 temp_sd_year,
+#                 temp_sd_season,
+#                 temp_sp_color_month,
+#                 precip_cv_year,
+#                 precip_cv_season,
+#                 precip_sp_color_month,
+#                 Modeled_survival,
+#                 Modeled_age_first_breeding,
+#                 Modeled_max_longevity) %>%
+#   dplyr::left_join(ir_mrg, by = 'species')
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
 bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
