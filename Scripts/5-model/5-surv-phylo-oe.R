@@ -6,8 +6,9 @@
 # specify dir -------------------------------------------------------------
 
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
-df3_dir <- '/mnt/home/ccy/variability/Scripts/5-model/'
+sc_dir <- '/mnt/home/ccy/variability/'
 run_date <- '2023-10-09'
 
 
@@ -179,7 +180,7 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 #   dplyr::left_join(ir_mrg, by = 'species')
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
-bird_df3 <- readRDS(paste0(df3_dir, 'bird_df3.rds'))
+bird_df3 <- readRDS(paste0(sc_dir, 'Scripts/5-model/bird_df3.rds'))
 
 
 # phylo -------------------------------------------------------------------
@@ -280,7 +281,7 @@ CHAINS <- 4
 ITER <- 3000
 
 #N = 1000 - 
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-phylo-oe.stan'),
+fit <- rstan::stan(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
@@ -309,8 +310,8 @@ MCMCvis::MCMCdiag(fit,
                   obj_name = paste0('bird-surv-phylo-oe-fit-', run_date),
                   add_obj = list(DATA),
                   add_obj_names = paste0('bird-surv-phylo-oe-data-', run_date),
-                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-surv-phylo-oe.R')),
+                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
+                              paste0(sc_dir, 'Scripts/5-model/5-surv-phylo-oe.R')),
                   cp_file_names = c(paste0('5-phylo-oe-', run_date, '.stan'),
                                     paste0('5-surv-phylo-oe-', run_date, '.R')))
 
@@ -379,7 +380,7 @@ beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 1
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0('bird-surv-phylo-oe-', Nsel', -', run_date)
+fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', Nsel', -', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)
@@ -420,7 +421,6 @@ fig_dir <- paste0('bird-surv-phylo-oe-', Nsel', -', run_date)
 
 # cat plots ---------------------------------------------------------------
 
-temp
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(fit,
