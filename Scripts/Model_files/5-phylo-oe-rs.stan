@@ -74,5 +74,4 @@ model {
   // lprior += normal_lupdf(sigma_phylo | 0, 2);
   target += lprior;
   target += std_normal_lupdf(z);
-  target += std_normal_lupdf(y_iv_raw);
 }
