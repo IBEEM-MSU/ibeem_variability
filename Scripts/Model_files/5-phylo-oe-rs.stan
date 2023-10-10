@@ -1,31 +1,31 @@
 // phylo intercepts w/ reduce_sum to parallelize within chains
 
-functions {
-  /* integer sequence of values
-   * Args:
-   *   start: starting integer
-   *   end: ending integer
-   * Returns:
-   *   an integer sequence from start to end
-   */
-  array[] int sequence(int start, int end) {
-    array[end - start + 1] int seq;
-    for (n in 1 : num_elements(seq)) {
-      seq[n] = n + start - 1;
-    }
-    return seq;
-  }
-  // compute partial sums of the log-likelihood
-  real partial_log_lik_lpmf(array[] int seq, int start, int end,
-                            data vector y_obs, data matrix X_obs, vector beta,
-                            real kappa, vector alpha, real sigma) {
-    real ptarget = 0;
-    int N = end - start + 1;
-
-    ptarget += normal_id_glm_lupdf(y_obs[start : end] | X_obs[start : end], kappa + alpha[start : end], beta, sigma);
-    return ptarget;
-  }
-}
+// functions {
+//   /* integer sequence of values
+//    * Args:
+//    *   start: starting integer
+//    *   end: ending integer
+//    * Returns:
+//    *   an integer sequence from start to end
+//    */
+//   array[] int sequence(int start, int end) {
+//     array[end - start + 1] int seq;
+//     for (n in 1 : num_elements(seq)) {
+//       seq[n] = n + start - 1;
+//     }
+//     return seq;
+//   }
+//   // compute partial sums of the log-likelihood
+//   real partial_log_lik_lpmf(array[] int seq, int start, int end,
+//                             data vector y_obs, data matrix X_obs, vector beta,
+//                             real kappa, vector alpha, real sigma) {
+//     real ptarget = 0;
+//     int N = end - start + 1;
+// 
+//     ptarget += normal_id_glm_lupdf(y_obs[start : end] | X_obs[start : end], kappa + alpha[start : end], beta, sigma);
+//     return ptarget;
+//   }
+// }
 
 data {
   int<lower=1> N;  // total number of observations
@@ -43,7 +43,7 @@ data {
   matrix[N, N] LRho;  // cholesky factor of known correlation matrix
 }
 transformed data {
-  array[N] int seq = sequence(1, N);
+  // array[N] int seq = sequence(1, N);
 }
 parameters {
   vector[K] beta;  // regression coefficients
@@ -63,8 +63,9 @@ model {
   real lprior = 0;  // prior contributions to the log posterior
 
   // optimized call for glm
-  target += reduce_sum(partial_log_lik_lpmf, seq, grainsize, y_obs, X_obs, beta, 
-  kappa, alpha, sigma);
+  // target += reduce_sum(partial_log_lik_lpmf, seq, grainsize, y_obs, X_obs, beta,
+  // kappa, alpha, sigma);
+  target += normal_id_glm_lupdf(y_obs | X_obs, kappa + alpha, beta, sigma);
 
   // priors not including constants
   lprior += std_normal_lupdf(beta);
