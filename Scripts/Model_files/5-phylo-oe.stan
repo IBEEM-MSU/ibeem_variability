@@ -9,8 +9,8 @@ data {
   int<lower=1> K;  // number of population-level effects
   matrix[No, K] X_obs;  // population-level design matrix
   matrix[Ni, K] X_imp;  // population-level design matrix
-  int<lower=1> obs_idx[No]; // idx of alpha that corresponds to obs value
-  int<lower=1> imp_idx[Ni]; // idx of alpha that corresponds to imp value
+  array[No] int<lower=1> obs_idx; // idx of alpha that corresponds to obs value
+  array[Ni] int<lower=1> imp_idx; // idx of alpha that corresponds to imp value
   matrix[N, N] LRho;  // cholesky factor of known correlation matrix
 }
 parameters {
