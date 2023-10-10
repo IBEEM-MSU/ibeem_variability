@@ -283,7 +283,7 @@ CHAINS <- 4
 ITER <- 2000
 
 #compile model
-mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'))
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'))
 
 #sample
 fit <- mod$sample(
