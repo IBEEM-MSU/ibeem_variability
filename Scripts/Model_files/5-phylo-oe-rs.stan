@@ -42,6 +42,9 @@ data {
   // int<lower=1> imp_idx[Ni]; // idx of alpha that corresponds to imp value
   matrix[N, N] LRho;  // cholesky factor of known correlation matrix
 }
+transformed data {
+  array[N] int seq = sequence(1, N);
+}
 parameters {
   vector[K] beta;  // regression coefficients
   real kappa;  // global int
