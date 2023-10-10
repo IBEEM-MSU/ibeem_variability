@@ -200,7 +200,7 @@ idx_df2 <- data.frame(idx = 1:NROW(bird_df4),
 nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
 
 #prune specified tips from tree
-pr_tree2 <- ape::drop.tip(pr_tree, nm)
+pr_tree2 <- ape::drop.tip(pr_tree, nm2)
 
 #get idx
 j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
@@ -284,29 +284,47 @@ DATA <- list(N = NROW(bird_df5),
              # X_imp = tt_imp2,
              # imp_idx = imp_idx,
              # obs_idx = obs_idx,
-             grainsize = 25, #set gs to N / cores (500 / 20) - 25, 12, 6, 3
+             grainsize = 1, #set gs to N / cores (500 / 20) - 25, 12, 6, 3
              LRho = chol(V)) #cholesky factor of corr matrix
+
+rstan_options(auto_write = TRUE)
+rstan_options(threads_per_chain = 1)
+options(mc.cores = parallel::detectCores())
 
 DELTA <- 0.92
 TREE_DEPTH <- 12
 STEP_SIZE <- 0.03
 CHAINS <- 4
-ITER <- 3000
+ITER <- 2000
 
 #N = 1000 - 
 fit <- rstan::stan(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
-                   cores = CHAINS,
+                   #cores = CHAINS,
                    pars = c('beta',
                             'sigma',
                             'sigma_phylo',
                             'kappa',
-                            'alpha'),
-                   control = list(adapt_delta = DELTA,
-                                  max_treedepth = TREE_DEPTH,
-                                  stepsize = STEP_SIZE))
+                            'alpha'))#,
+                   # control = list(adapt_delta = DELTA,
+                   #                max_treedepth = TREE_DEPTH,
+                   #                stepsize = STEP_SIZE))
+
+library(cmdstanr)
+mod <- cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'))#,
+                     # cpp_options = list(stan_threads = TRUE))
+fit <- mod$sample(
+  data = DATA,
+  chains = 4,
+  iter_sampling = 1000,
+  iter_warmup = 1000,
+  parallel_chains = 4,
+  threads_per_chain = 1,
+  refresh = 500)
+
+MCMCsummary(fit, params = 'beta')
 
 
 # save summary space ------------------------------------------------------------
@@ -316,7 +334,7 @@ MCMCvis::MCMCdiag(fit,
                   round = 4,
                   file_name = paste0('bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-phylo-oe-', Nsel', -', run_date),
+                  mkdir = paste0('XXXX-', Nsel, '-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,

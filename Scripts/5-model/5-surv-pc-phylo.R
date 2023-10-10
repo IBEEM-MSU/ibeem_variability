@@ -13,7 +13,7 @@ run_date <- '2023-10-09'
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
-library(rstan)
+library(cmdstanr)
 library(MCMCvis)
 library(ape)
 library(Rphylopars)
@@ -351,35 +351,36 @@ DATA <- list(N = NROW(bird_df5),
              obs_idx = obs_idx,
              LRho = chol(V)) #cholesky factor of corr matrix
 
-DELTA <- 0.92
-TREE_DEPTH <- 12
-STEP_SIZE <- 0.03
+# DELTA <- 0.92
+# TREE_DEPTH <- 12
+# STEP_SIZE <- 0.03
 CHAINS <- 4
-ITER <- 3000
+ITER <- 2000
 
-#N = 1000 - 
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-phylo.stan'),
-                   data = DATA,
-                   chains = CHAINS,
-                   iter = ITER,
-                   cores = CHAINS,
-                   pars = c('beta',
-                            'sigma',
-                            'sigma_phylo',
-                            'kappa'),
-                   control = list(adapt_delta = DELTA,
-                                  max_treedepth = TREE_DEPTH,
-                                  stepsize = STEP_SIZE))
+#compile model
+mod <- cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'))
+
+#fit model
+fit <- mod$sample(
+  data = DATA,
+  chains = CHAINS,
+  iter_sampling = ITER / 2,
+  iter_warmup = ITER / 2,
+  parallel_chains = CHAINS,
+  refresh = 500)
 
 
 # save summary space ------------------------------------------------------------
+
+
+fit$save_object(file = temp_rds_file)
 
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
                   file_name = paste0('se-bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-surv-phylo-oe-', Nsel', -', run_date),
+                  mkdir = paste0('se-bird-surv-phylo-oe-', Nsel, '-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
@@ -456,7 +457,7 @@ beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar) - 1) * 1
                                                                 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'se-bird-surv-phylo-oe-', Nsel', -', run_date)
+fig_dir <- paste0(dir, 'se-bird-surv-phylo-oe-', Nsel, '-', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)

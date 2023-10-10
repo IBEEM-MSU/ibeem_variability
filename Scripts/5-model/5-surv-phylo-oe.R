@@ -9,13 +9,13 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-09'
+run_date <- '2023-10-10'
 
 
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
-library(rstan)
+library(cmdstanr)
 library(MCMCvis)
 library(ape)
 library(Rphylopars)
@@ -200,7 +200,7 @@ idx_df2 <- data.frame(idx = 1:NROW(bird_df4),
 nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
 
 #prune specified tips from tree
-pr_tree2 <- ape::drop.tip(pr_tree, nm)
+pr_tree2 <- ape::drop.tip(pr_tree, nm2)
 
 #get idx
 j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
@@ -274,26 +274,25 @@ DATA <- list(N = NROW(bird_df5),
              obs_idx = obs_idx,
              LRho = chol(V)) #cholesky factor of corr matrix
 
-DELTA <- 0.92
-TREE_DEPTH <- 12
-STEP_SIZE <- 0.03
-CHAINS <- 4
-ITER <- 3000
+options(mc.cores = parallel::detectCores())
 
-#N = 1000 - 
-fit <- rstan::stan(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'),
-                   data = DATA,
-                   chains = CHAINS,
-                   iter = ITER,
-                   cores = CHAINS,
-                   pars = c('beta',
-                            'sigma',
-                            'sigma_phylo',
-                            'kappa',
-                            'alpha'),
-                   control = list(adapt_delta = DELTA,
-                                  max_treedepth = TREE_DEPTH,
-                                  stepsize = STEP_SIZE))
+# DELTA <- 0.92
+# TREE_DEPTH <- 12
+# STEP_SIZE <- 0.03
+CHAINS <- 4
+ITER <- 2000
+
+#compile model
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'))
+
+#sample
+fit <- mod$sample(
+  data = DATA,
+  chains = CHAINS,
+  iter_sampling = ITER / 2,
+  iter_warmup = ITER / 2,
+  parallel_chains = CHAINS,
+  refresh = 500)
 
 
 # save summary space ------------------------------------------------------------
@@ -303,7 +302,7 @@ MCMCvis::MCMCdiag(fit,
                   round = 4,
                   file_name = paste0('bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-phylo-oe-', Nsel', -', run_date),
+                  mkdir = paste0('bird-surv-phylo-oe-', Nsel, '-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
@@ -380,7 +379,7 @@ beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 1
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', Nsel', -', run_date)
+fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', Nsel, '-', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)

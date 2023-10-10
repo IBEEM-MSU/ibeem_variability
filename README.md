@@ -59,6 +59,7 @@
     * `5-surv-oe.R` - imputed survival ~ var with observation error
     * `5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
     * `*5-surv-phylo-oe.R` - imputed survival ~ var with phylo and observation error
+    * `5-surv-phylo-oe-rs.R` - as above but check benchmarking reduce_sum
     * `5-surv-phylo-oe.slurm` - to run `5-surv-phylo-oe.R`
     * `5-surv-phylo.R` - imputed survival ~ var with phylo
     * `bird_df3.rds` - data to avoid running first part of `5-...R` scripts
