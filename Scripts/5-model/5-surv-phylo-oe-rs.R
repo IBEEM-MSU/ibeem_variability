@@ -1,13 +1,14 @@
 ####################
-# Fit Bayes model - survival ~ env
-# Estimate surv from traits and phylo
-# Fit model incorporating obs error
+# Fit Bayes model - survival ~ env + phylo -> reduce_sum (no oe for now)
 ####################
 
 
 # specify dir -------------------------------------------------------------
 
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+dir <- '/mnt/research/ibeem/variability/'
+sc_dir <- '/mnt/home/ccy/variability/'
 run_date <- '2023-10-10'
 
 
@@ -84,7 +85,7 @@ bird_df2 <- dplyr::left_join(bird_df, bs, by = c('Birdtree_name' = 'Sci_name')) 
 
 #subset out just traits of interest
 tri <- dplyr::mutate(bird_df2,
-                    species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+                     species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   dplyr::mutate(Measured_log_age_first_breeding = log(Measured_age_first_breeding),
                 Measured_log_max_longevity = log(Measured_max_longevity),
                 Measured_log_clutch_size = log(Mean.clutch.size)) %>%
@@ -114,6 +115,7 @@ pr_tree <- ape::drop.tip(bird.phylo, nm)
 #get index for name order on tips
 j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
                           by = 'name')
+
 
 # #run phylo imputation - not working properly on cluster - read in bird_df3 instead
 # ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
@@ -178,67 +180,130 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 #   dplyr::left_join(ir_mrg, by = 'species')
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
-bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+bird_df3 <- readRDS(paste0(sc_dir, 'Scripts/5-model/bird_df3.rds'))
 
-# scale/prep data ---------------------------------------------------------
 
-bird_df5 <- bird_df3
+# phylo -------------------------------------------------------------------
+
+#subset of imp
+set.seed(1)
+Nsel <- 500
+stidx <- sample(x = 1:NROW(bird_df3), size = Nsel)
+bird_df4 <- bird_df3[stidx,]
+
+#prune tree
+#df with names and idx
+idx_df2 <- data.frame(idx = 1:NROW(bird_df4), 
+                      name = stringr::str_to_title(gsub(' ', '_', bird_df4$species)))
+
+#species not found in both datasets (species to drop from tree)
+nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
+
+#prune specified tips from tree
+pr_tree2 <- ape::drop.tip(pr_tree, nm)
+
+#get idx
+j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
+                           data.frame(idx = 1:NROW(bird_df4), bird_df4), 
+                           by = 'species')
+
+#apply
+bird_df5 <- bird_df4[j_idx3$idx,]
 
 #separate obs and imp values
 obs_idx <- which(bird_df5$SD_survival == 0)
 imp_idx <- which(bird_df5$SD_survival != 0)
 
-#split predictors into obs and imp
-tt_obs <- data.frame(rep(1, NROW(bird_df5))[obs_idx],
-                         bird_df5$lMass[obs_idx],
-                         bird_df5$temp_sd_season[obs_idx],
-                         bird_df5$temp_sd_year[obs_idx],
-                         bird_df5$precip_cv_season[obs_idx],
-                         bird_df5$precip_cv_year[obs_idx])
-
-tt_imp <- data.frame(rep(1, NROW(bird_df5))[imp_idx],
-                         bird_df5$lMass[imp_idx],
-                         bird_df5$temp_sd_season[imp_idx],
-                         bird_df5$temp_sd_year[imp_idx],
-                         bird_df5$precip_cv_season[imp_idx],
-                         bird_df5$precip_cv_year[imp_idx])
+#get corr matrix
+V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
 
 
-# Run Stan model --------------------------------------------------------------
+# scale/prep data ---------------------------------------------------------
 
-DATA <- list(No = length(obs_idx),
-             Ni = length(imp_idx),
-             y_obs = bird_df5$Phylo_survival[obs_idx],
-             y_imp = bird_df5$Phylo_survival[imp_idx],
-             sd_y = bird_df5$SD_survival[imp_idx],
-             K = NCOL(tt_obs),
-             X_obs = tt_obs,
-             X_imp = tt_imp,
-             imp_idx = imp_idx,
-             obs_idx = obs_idx,
-             pro_data = bird_df5)
+#scalars for data
+lMass_scalar <- 0.5
+temp_sd_season_scalar <- 0.1
+temp_sd_year_scalar <- 0.05
+precip_cv_season_scalar <- 0.05
+precip_cv_year_scalar <- 0.05
+y_scalar <- 10
 
-rstan_options(auto_write = TRUE)
-options(mc.cores = parallel::detectCores())
+# #split predictors into obs and imp
+# tt_obs <- data.frame(lMass = bird_df5$lMass[obs_idx] * 
+#                        lMass_scalar,
+#                      temp_sd_season = bird_df5$temp_sd_season[obs_idx] * 
+#                        temp_sd_season_scalar,
+#                      temp_sd_year = bird_df5$temp_sd_year[obs_idx] * 
+#                        temp_sd_year_scalar,
+#                      precip_cv_season = bird_df5$precip_cv_season[obs_idx] * 
+#                        precip_cv_season_scalar,
+#                      precip_cv_year = bird_df5$precip_cv_year[obs_idx] * 
+#                        precip_cv_year_scalar)
+# 
+# tt_imp <- data.frame(lMass = bird_df5$lMass[imp_idx] * 
+#                        lMass_scalar,
+#                      temp_sd_season = bird_df5$temp_sd_season[imp_idx] * 
+#                        temp_sd_season_scalar,
+#                      temp_sd_year = bird_df5$temp_sd_year[imp_idx] * 
+#                        temp_sd_year_scalar,
+#                      precip_cv_season = bird_df5$precip_cv_season[imp_idx] * 
+#                        precip_cv_season_scalar,
+#                      precip_cv_year = bird_df5$precip_cv_year[imp_idx] * 
+#                        precip_cv_year_scalar)
+# 
+# #subtract off mean to center vars
+# tt_mns <- rbind(tt_obs, tt_imp) %>%
+#   apply(2, mean)
+# 
+# tt_obs2 <- sweep(tt_obs, 2, tt_mns)
+# tt_imp2 <- sweep(tt_imp, 2, tt_mns)
 
-DELTA <- 0.93
+tt_obs2 <- data.frame(lMass = bird_df5$lMass *
+                       lMass_scalar,
+                     temp_sd_season = bird_df5$temp_sd_season *
+                       temp_sd_season_scalar,
+                     temp_sd_year = bird_df5$temp_sd_year *
+                       temp_sd_year_scalar,
+                     precip_cv_season = bird_df5$precip_cv_season *
+                       precip_cv_season_scalar,
+                     precip_cv_year = bird_df5$precip_cv_year *
+                       precip_cv_year_scalar) %>%
+  apply(2, function(x) scale(x, scale = FALSE)[,1])
+
+
+# fit model ---------------------------------------------------------------
+
+DATA <- list(N = NROW(bird_df5),
+             # No = length(obs_idx),
+             # Ni = length(imp_idx),
+             y_obs = bird_df5$Phylo_survival * y_scalar,
+             # y_imp = bird_df5$Phylo_survival[imp_idx] * y_scalar,
+             # sd_y = bird_df5$SD_survival[imp_idx] * y_scalar,
+             K = NCOL(tt_obs2),
+             X_obs = tt_obs2,
+             # X_imp = tt_imp2,
+             # imp_idx = imp_idx,
+             # obs_idx = obs_idx,
+             grainsize = 25, #set gs to N / cores (500 / 20) - 25, 12, 6, 3
+             LRho = chol(V)) #cholesky factor of corr matrix
+
+DELTA <- 0.92
 TREE_DEPTH <- 12
 STEP_SIZE <- 0.03
 CHAINS <- 4
-ITER <- 2000
+ITER <- 3000
 
-#survival - ~8 min to fit
-#obs err model
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
+#N = 1000 - 
+fit <- rstan::stan(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-rs.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
                    cores = CHAINS,
                    pars = c('beta',
                             'sigma',
-                            'mu_obs',
-                            'mu_imp',
-                            'y_iv'),
+                            'sigma_phylo',
+                            'kappa',
+                            'alpha'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
                                   stepsize = STEP_SIZE))
@@ -249,19 +314,19 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-surv-oe-results-', run_date),
+                  file_name = paste0('bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-oe-', run_date),
+                  mkdir = paste0('bird-surv-phylo-oe-', Nsel', -', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-surv-oe-fit-', run_date),
+                  obj_name = paste0('bird-surv-phylo-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-surv-oe-data-', run_date),
-                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-oe.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-surv-oe.R')),
-                  cp_file_names = c(paste0('5-oe-', run_date, '.stan'),
-                                    paste0('5-surv-oe-', run_date, '.R')))
+                  add_obj_names = paste0('bird-surv-phylo-oe-data-', run_date),
+                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
+                              paste0(sc_dir, 'Scripts/5-model/5-surv-phylo-oe.R')),
+                  cp_file_names = c(paste0('5-phylo-oe-', run_date, '.stan'),
+                                    paste0('5-surv-phylo-oe-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -269,69 +334,21 @@ MCMCvis::MCMCdiag(fit,
 #                       '/se-bird-novar-oe-sep-fit-', run_date, '.rds'))
 
 
-# residuals ---------------------------------------------------------------
-
-# extract residuals and calc phylo signal
-mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
-mu_imp_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_imp')[[1]]
-
-#combine and calc resid
-mu_comb <- c(mu_obs_mn, mu_imp_mn)
-y_comb <- c(DATA$y_obs, DATA$y_imp)
-resid_comb <- y_comb - mu_comb
-
-
-# phylo signal in resids --------------------------------------------------
-
-#df with names and idx
-idx_df <- data.frame(idx = 1:length(y_comb), 
-                     name = stringr::str_to_title(gsub(' ', '_', 
-                                                       c(bird_df5$species[obs_idx],
-                                                         bird_df5$species[imp_idx]))))
-
-#get index for name order on tips
-j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
-                          by = 'name')
-resid_srt <- resid_comb[j_idx$idx]
-
-#K ~ 1.1
-library(phytools)
-phytools::phylosig(pr_tree, resid_srt, method = 'K') #quite slow
-# phytools::phylosig(pr_tree, resid_srt, method = 'lambda')
-
-# #just measured
-# bird_ms <- dplyr::filter(bird_df3, !is.na(Measured_survival))
 # 
-# #prune specified tips from tree
-# pr_tree2 <- ape::drop.tip(pr_tree, nm)
+# # residuals ---------------------------------------------------------------
 # 
-# #get index for name order on tips
-# j_idx <- dplyr::left_join(data.frame(name = pr_tree2$tip.label), idx_df, 
-#                           by = 'name')
+# # extract residuals and calc phylo signal
+# mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
 # 
-# #apply
-# bird_gls2 <- bird_ms[j_idx3$idx,]
-# 
-# library(nlme)
-# pgls_fit2 <- nlme::gls(Measured_survival ~ lMass +
-#                         temp_sd_season +
-#                         temp_sd_year +
-#                         precip_cv_season +
-#                         precip_cv_year,
-#                       # correlation = ape::corBrownian(phy = tree_n),
-#                       correlation = ape::corPagel(1, pr_tree2, fixed = FALSE),
-#                       data = bird_gls2,
-#                       method = "ML")
-# summary(pgls_fit2)
-# car::vif(pgls_fit2)
-#Pagel
+# #calc resid
+# resid <- DATA$y_obs - mu_obs_mn
 
 
 # Summary -----------------------------------------------------------------
 
 #model summary
 MCMCvis::MCMCsummary(fit, round = 3, 
-                     params = 'beta',
+                     params = c('beta'),
                      pg0 = TRUE)
 
 
@@ -340,12 +357,21 @@ MCMCvis::MCMCsummary(fit, round = 3,
 #INTERPRETATION
 #((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
-beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', ISB = FALSE, exact = TRUE)
-beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', ISB = FALSE, exact = TRUE)
-beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', ISB = FALSE, exact = TRUE)
-beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', ISB = FALSE, exact = TRUE)
-beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', ISB = FALSE, exact = TRUE)
-beta6_ch <- MCMCvis::MCMCchains(fit, params = 'beta[6]', ISB = FALSE, exact = TRUE)
+beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
+                                exact = TRUE, ISB = FALSE) * 
+  lMass_scalar * y_scalar
+beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
+                                exact = TRUE, ISB = FALSE) * 
+  temp_sd_season_scalar * y_scalar
+beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
+                                exact = TRUE, ISB = FALSE) * 
+  temp_sd_year_scalar * y_scalar
+beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
+                                exact = TRUE, ISB = FALSE) * 
+  precip_cv_season_scalar * y_scalar
+beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
+                                exact = TRUE, ISB = FALSE) * 
+  precip_cv_year_scalar * y_scalar
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -353,39 +379,41 @@ beta6_ch <- MCMCvis::MCMCchains(fit, params = 'beta[6]', ISB = FALSE, exact = TR
 # median((exp(theta1_ch * diff(range(DATA$precip_cv_season))) - 1) * 100)
 # median((exp(theta2_ch * diff(range(DATA$precip_cv_year))) - 1) * 100)
 
+#combine data (scaled)
+tt_comb2 <- rbind(tt_obs2, tt_imp2)
+
+#scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
-tt_comb <- rbind(as.matrix(tt_obs), as.matrix(tt_imp))
-
-beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb[,2])) - 1) * 100
-beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb[,3])) - 1) * 100
-beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb[,4])) - 1) * 100
-beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb[,5])) - 1) * 100
-beta6_rs_ch <- (exp(beta6_ch * sd(tt_comb[,6])) - 1) * 100
-
-
+beta1_rs_ch <- (exp(beta1_ch * sd(tt_comb2[,1] / lMass_scalar)) - 1) * 100
+beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar) - 1) * 100
+                beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb2[,3] / temp_sd_year_scalar) - 1) * 100
+                                beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb2[,4] / precip_cv_season_scalar) - 1) * 100
+                                                beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 100
+                                                                
+                                                                
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/bird-surv-oe-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', Nsel', -', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)
 # {
-#   tm <- cbind(c(DATA$lMass_obs, DATA$lMass_imp),
+#   tm <- cbind(tt_comb2[,1],
 #               c(DATA$temp_sd_season_obs, DATA$temp_sd_season_imp),
 #               c(DATA$temp_sd_year_obs, DATA$temp_sd_year_imp),
 #               c(DATA$precip_cv_season_obs, DATA$precip_cv_season_imp),
 #               c(DATA$precip_cv_year_obs, DATA$precip_cv_year_imp))
-#   
-#   pch <- cbind(beta_ch, 
+# 
+#   pch <- cbind(beta_ch,
 #                gamma1_ch, gamma2_ch,
 #                theta1_ch, theta2_ch)
-#   
+# 
 #   names <- c('Mass', 'Temp seasonality', 'Temp interannual',
 #              'Precip seasonality', 'Precip interannual')
-#   
+# 
 #   #partial residuals
 #   pr <- resid_comb + (median(pch[,num]) * tm[,num])
-#   
+# 
 #   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
 #       height = 5, width = 5)
 #   plot(tm[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
@@ -409,7 +437,7 @@ fig_dir <- paste0(dir, 'Results/bird-surv-oe-', run_date, '/')
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(fit,
-                  params = 'beta', 
+                  params = 'beta',
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   ref_ovl = TRUE,
@@ -421,10 +449,10 @@ dev.off()
 
 pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(cbind(beta3_rs_ch,
+MCMCvis::MCMCplot(cbind(beta2_rs_ch,
+                        beta3_rs_ch,
                         beta4_rs_ch,
-                        beta5_rs_ch,
-                        beta6_rs_ch),
+                        beta5_rs_ch),
                   labels = c('T seasonality',
                              'T interannual var',
                              'P seasonality',
@@ -445,12 +473,12 @@ dev.off()
 # sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
 # nu_ch <- MCMCvis::MCMCchains(fit, params = 'nu')
 
-# # PPC - normal model
-mu_obs_ch <- MCMCvis::MCMCchains(fit, params = 'mu_obs')
-mu_imp_ch <- MCMCvis::MCMCchains(fit, params = 'mu_imp')
-sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
-mu_comb_ch <- cbind(mu_obs_ch, mu_imp_ch)
-
+# PPC - normal model
+# mu_obs_ch <- MCMCvis::MCMCchains(fit, params = 'mu_obs')
+# mu_imp_ch <- MCMCvis::MCMCchains(fit, params = 'mu_imp')
+# sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
+# mu_comb_ch <- cbind(mu_obs_ch, mu_imp_ch)
+# 
 # #500 iterations
 # sidx <- sample(1:NROW(mu_comb_ch), size = 500)
 # y_rep <- matrix(NA, nrow = length(sidx), ncol = NCOL(mu_comb_ch))
@@ -484,10 +512,10 @@ mu_comb_ch <- cbind(mu_obs_ch, mu_imp_ch)
 #explained var / (explained var + resid var)
 
 #with mass - 0.16
-var_pred <- apply(mu_comb_ch, 1, var)
-var_resid <- apply(sweep(mu_comb_ch, 2, y_comb), 1, var)
-r2_ch <- var_pred / (var_pred + var_resid)
-hist(r2_ch)
+# var_pred <- apply(mu_comb_ch, 1, var)
+# var_resid <- apply(sweep(mu_comb_ch, 2, y_comb), 1, var)
+# r2_ch <- var_pred / (var_pred + var_resid)
+# hist(r2_ch)
 
 # #no mass - ???
 # mu_nm_ch <- MCMCvis::MCMCchains(fit, params = 'mu_nm')
@@ -500,40 +528,42 @@ hist(r2_ch)
 # VIF ---------------------------------------------------------------------
 
 #covariates as a function of other covariates
-tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season +
-            precip_cv_year + precip_cv_season, 
-          data = bird_df)
-stf1 <- summary(tf1)
+# tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season +
+#             precip_cv_year + precip_cv_season, 
+#           data = bird_df)
+# stf1 <- summary(tf1)
+# 
+# tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season +
+#             precip_cv_year + precip_cv_season, data = 
+#             bird_df)
+# stf2 <- summary(tf2)
+# 
+# tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year +
+#             precip_cv_year + precip_cv_season, 
+#           data = bird_df)
+# stf3 <- summary(tf3)
+# 
+# tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
+#             precip_cv_season, 
+#           data = bird_df)
+# stf4 <- summary(tf4)
+# 
+# tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
+#             precip_cv_year, 
+#           data = bird_df)
+# stf5 <- summary(tf5)
+# 
+# 
+# #calc VIF per covariate
+# 1 / (1 - stf1$r.squared) #lMass
+# 1 / (1 - stf2$r.squared) #temp_sd_year
+# 1 / (1 - stf3$r.squared) #temp_sd_season
+# 1 / (1 - stf4$r.squared) #precip_cv_year
+# 1 / (1 - stf5$r.squared) #precip_cv_season
+# 
+# #correlation
+# cor(as.matrix(dplyr::select(bird_df3,
+#                             lMass, temp_sd_year, temp_sd_season,
+#                             precip_cv_year, precip_cv_season)))
 
-tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season +
-            precip_cv_year + precip_cv_season, data = 
-            bird_df)
-stf2 <- summary(tf2)
 
-tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year +
-            precip_cv_year + precip_cv_season, 
-          data = bird_df)
-stf3 <- summary(tf3)
-
-tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
-             precip_cv_season, 
-          data = bird_df)
-stf4 <- summary(tf4)
-
-tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
-            precip_cv_year, 
-          data = bird_df)
-stf5 <- summary(tf5)
-
-
-#calc VIF per covariate
-1 / (1 - stf1$r.squared) #lMass
-1 / (1 - stf2$r.squared) #temp_sd_year
-1 / (1 - stf3$r.squared) #temp_sd_season
-1 / (1 - stf4$r.squared) #precip_cv_year
-1 / (1 - stf5$r.squared) #precip_cv_season
-
-#correlation
-cor(as.matrix(dplyr::select(bird_df3,
-                            lMass, temp_sd_year, temp_sd_season,
-                            precip_cv_year, precip_cv_season)))

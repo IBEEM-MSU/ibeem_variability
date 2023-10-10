@@ -332,3 +332,63 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/brms_mod_oe.stan'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
                                   stepsize = STEP_SIZE))
+
+
+
+
+library(brms)
+
+idx <- sample(1:NROW(bird_df5), 100)
+bird_df6 <- bird_df5[idx,]
+
+#load consensus tree - bird.phylo
+load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
+
+#df with names and idx
+idx_df <- data.frame(idx = 1:NROW(bird_df6),
+                     name = bird_df6$species)
+
+#species not found in both datasets (species to drop from tree)
+nm <- setdiff(bird.phylo$tip.label, bird_df6$species)
+
+#prune specified tips from all trees
+pr_tree2 <- ape::drop.tip(bird.phylo, nm)
+
+V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
+
+model_formula <- "lGL ~ lMass + 
+    temp_sd_season + 
+    temp_sd_year +
+    precip_cv_season +
+    precip_cv_year + 
+    (1|gr(species, cov = V))"
+
+# brms formula.
+brms_formula <- brmsformula(model_formula)#, 
+# family = cumulative(threshold = "equidistant"), 
+# decomp = "QR")
+
+brms_model <- brm(
+  brms_formula,
+  data = bird_df6,
+  data2 = list(V = V),
+  iter = 2000,
+  chains = 4,
+  cores = 4,
+  normalize = FALSE,
+  backend = 'cmdstanr')
+
+
+fit_parallel <- update(
+  brms_model, 
+  chains = 2, 
+  cores = 2,
+  backend = "cmdstanr", 
+  threads = threading(2))
+
+
+stancode(brms_model)
+stancode(fit_parallel)
+
+brms::standata(brms_model)
+brms::standata(fit_parallel)

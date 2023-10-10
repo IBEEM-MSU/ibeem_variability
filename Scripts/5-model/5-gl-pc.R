@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gen length ~ env
+# Fit Bayes model - gen length ~ PC
 ####################
 
 
@@ -95,17 +95,51 @@ nm <- setdiff(bird.phylo$tip.label, bird_df2$species)
 pr_tree <- ape::drop.tip(bird.phylo, nm)
 
 
-# scale/prep data ---------------------------------------------------------
+# PCA ---------------------------------------------------------------------
 
-bird_df5 <- bird_df2
+#for full run
+j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
+                           data.frame(idx = 1:NROW(bird_df2), bird_df2),
+                           by = 'species')
+
+bird_df5 <- bird_df2[j_idx3$idx,]
+
+#same results as raw, essentially
+tt_pca <- dplyr::select(bird_df5, 
+                        temp_sd_year, 
+                        temp_sd_season,
+                        precip_cv_year,
+                        precip_cv_season) %>%
+  prcomp(center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(1,2),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(2,3),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+
+#add PC to data.frame
+bird_df5$PC1 <- tt_pca$x[,1]
+bird_df5$PC2 <- tt_pca$x[,2]
+bird_df5$PC3 <- tt_pca$x[,3]
+
+
+# scale/prep data ---------------------------------------------------------
 
 #split predictors into obs and imp
 tt <- data.frame(rep(1, NROW(bird_df5)),
-                     bird_df5$lMass,
-                     bird_df5$temp_sd_season,
-                     bird_df5$temp_sd_year,
-                     bird_df5$precip_cv_season,
-                     bird_df5$precip_cv_year)
+                 bird_df5$lMass,
+                 bird_df5$PC1,
+                 bird_df5$PC2,
+                 bird_df5$PC3)
 
 
 # Run Stan model --------------------------------------------------------------
@@ -144,19 +178,19 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-novar.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-gl-results-', run_date),
+                  file_name = paste0('bird-gl-pc-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-gl-', run_date),
+                  mkdir = paste0('bird-gl-pc-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-gl-fit-', run_date),
+                  obj_name = paste0('bird-gl-pc-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-gl-data-', run_date),
+                  add_obj_names = paste0('bird-gl-pc-data-', run_date),
                   cp_file = c(paste0(dir, 'Scripts/Model_files/5-novar.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-gl.R')),
+                              paste0(dir, 'Scripts/5-model/5-gl-pc.R')),
                   cp_file_names = c(paste0('5-novar-', run_date, '.stan'),
-                                    paste0('5-gl-', run_date, '.R')))
+                                    paste0('5-gl-pc-', run_date, '.R')))
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -236,7 +270,6 @@ beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', ISB = FALSE, exact = TR
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', ISB = FALSE, exact = TRUE)
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', ISB = FALSE, exact = TRUE)
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', ISB = FALSE, exact = TRUE)
-beta6_ch <- MCMCvis::MCMCchains(fit, params = 'beta[6]', ISB = FALSE, exact = TRUE)
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -249,28 +282,27 @@ beta2_rs_ch <- (exp(beta2_ch * sd(tt[,2])) - 1) * 100
 beta3_rs_ch <- (exp(beta3_ch * sd(tt[,3])) - 1) * 100
 beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4])) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5])) - 1) * 100
-beta6_rs_ch <- (exp(beta6_ch * sd(tt[,6])) - 1) * 100
 
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0(dir, 'Results/bird-gl-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-gl-pc-', run_date, '/')
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
 {
   tm <- tt[,-1]
-
+  
   pch <- cbind(beta2_ch,
                beta3_ch, beta4_ch,
-               beta5_ch, beta6_ch)
-
-  names <- c('Mass', 'Temp seasonality', 'Temp interannual',
-             'Precip seasonality', 'Precip interannual')
-
+               beta5_ch)
+  
+  names <- c('Mass', 'PC1', 'PC2',
+             'PC3')
+  
   #partial residuals
   pr <- resid + (median(pch[,num]) * tm[,num])
-
+  
   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
       height = 5, width = 5)
   plot(tm[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
@@ -282,11 +314,10 @@ pr_fun <- function(num, nm)
   dev.off()
 }
 
-pr_fun(num = 1, nm = 'mass') #Mass
-pr_fun(num = 2, nm = 'temp-season') #temp season
-pr_fun(num = 3, nm = 'temp-year') #temp year
-pr_fun(num = 4, nm = 'precip-season') #precip season
-pr_fun(num = 5, nm = 'precip-year') #precip year
+pr_fun(num = 1, nm = 'Mass') #Mass
+pr_fun(num = 2, nm = 'PC1')
+pr_fun(num = 3, nm = 'PC2')
+pr_fun(num = 4, nm = 'PC3')
 
 
 # cat plots ---------------------------------------------------------------
@@ -308,18 +339,41 @@ pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(cbind(beta3_rs_ch,
                         beta4_rs_ch,
-                        beta5_rs_ch,
-                        beta6_rs_ch),
-                  labels = c('T seasonality',
-                             'T interannual var',
-                             'P seasonality',
-                             'P interannual var'),
+                        beta5_rs_ch),
+                  labels = c('PC1',
+                             'PC2',
+                             'PC3'),
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = '% change Surv for 1 sd change in cov',
+                  main = '% change GL for 1 sd change in cov',
                   guide_lines = TRUE)
+dev.off()
+
+
+# PCA plots ---------------------------------------------------------------
+
+pdf(paste0(fig_dir, 'PC-plt-1-', run_date, '.pdf'),
+    height = 5, width = 5)
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(1,2),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+dev.off()
+
+pdf(paste0(fig_dir, 'PC-plt-2-', run_date, '.pdf'),
+    height = 5, width = 5)
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(2,3),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
 dev.off()
 
 

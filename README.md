@@ -51,11 +51,13 @@
     * `5-clutch-oe.R` - imputed clutch size ~ var with observation error
     * `5-gl-intvar.R` - gen length ~ var - varying int (by fam/niche) model - not that useful since it's ignoring var across fams/niches
     * `5-gl-mam.R` - gen length ~ var for mammals
+    * `5-gl-pc.R` - gen length ~ PC var
     * `5-gl-varfam.R` - gen length ~ var varying intercepts, varying slopes by family
     * `5-gl-varniche.R` - gen length ~ var varying intercepts, varying slopes by niche
     * `5-gl.R` - gen length ~ var simple
-    * `*5-surv-oe.R` - imputed survival ~ var with observation error
-    * `*5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
+    * `5-surv-pc-oe.R` - imputed survival ~ PC var with observation error
+    * `5-surv-oe.R` - imputed survival ~ var with observation error
+    * `5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
     * `*5-surv-phylo-oe.R` - imputed survival ~ var with phylo and observation error
     * `5-surv-phylo-oe.slurm` - to run `5-surv-phylo-oe.R`
     * `5-surv-phylo.R` - imputed survival ~ var with phylo

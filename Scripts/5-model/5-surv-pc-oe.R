@@ -97,7 +97,6 @@ tri <- dplyr::mutate(bird_df2,
 
 # trait imputation --------------------------------------------------------
 
-
 #load consensus tree - bird.phylo
 load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 
@@ -342,7 +341,7 @@ STEP_SIZE <- 0.03
 CHAINS <- 4
 ITER <- 2000
 
-#N = 1000 - 
+#survival - ~ min to fit
 fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
                    data = DATA,
                    chains = CHAINS,
@@ -384,21 +383,41 @@ MCMCvis::MCMCdiag(fit,
 #                       '/se-bird-novar-oe-sep-fit-', run_date, '.rds'))
 
 
-# 
-# # residuals ---------------------------------------------------------------
-# 
-# # extract residuals and calc phylo signal
-# mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
-# 
-# #calc resid
-# resid <- DATA$y_obs - mu_obs_mn
+# residuals ---------------------------------------------------------------
+
+# extract residuals and calc phylo signal
+mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
+mu_imp_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_imp')[[1]]
+
+#combine and calc resid
+mu_comb <- c(mu_obs_mn, mu_imp_mn)
+y_comb <- c(DATA$y_obs, DATA$y_imp)
+resid_comb <- y_comb - mu_comb
+
+
+# phylo signal in resids --------------------------------------------------
+
+#df with names and idx
+idx_df <- data.frame(idx = 1:length(y_comb), 
+                     name = stringr::str_to_title(gsub(' ', '_', 
+                                                       c(bird_df5$species[obs_idx],
+                                                         bird_df5$species[imp_idx]))))
+
+#get index for name order on tips
+j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
+                          by = 'name')
+resid_srt <- resid_comb[j_idx$idx
+
+#K ~ 1.07
+library(phytools)
+phytools::phylosig(pr_tree, resid_srt, method = 'K') #quite slow
 
 
 # Summary -----------------------------------------------------------------
 
 #model summary
 MCMCvis::MCMCsummary(fit, round = 3, 
-                     params = c('beta'),
+                     params = 'beta',
                      pg0 = TRUE)
 
 
@@ -407,21 +426,11 @@ MCMCvis::MCMCsummary(fit, round = 3,
 #INTERPRETATION
 #((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
-beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
-                                exact = TRUE, ISB = FALSE) * 
-  lMass_scalar * y_scalar
-beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
-                                exact = TRUE, ISB = FALSE) * 
-  temp_sd_season_scalar * y_scalar
-beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
-                                exact = TRUE, ISB = FALSE) * 
-  temp_sd_year_scalar * y_scalar
-beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
-                                exact = TRUE, ISB = FALSE) * 
-  precip_cv_season_scalar * y_scalar
-beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
-                                exact = TRUE, ISB = FALSE) * 
-  precip_cv_year_scalar * y_scalar
+beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', ISB = FALSE, exact = TRUE)
+beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', ISB = FALSE, exact = TRUE)
+beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', ISB = FALSE, exact = TRUE)
+beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', ISB = FALSE, exact = TRUE)
+beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', ISB = FALSE, exact = TRUE)
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -429,16 +438,13 @@ beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]',
 # median((exp(theta1_ch * diff(range(DATA$precip_cv_season))) - 1) * 100)
 # median((exp(theta2_ch * diff(range(DATA$precip_cv_year))) - 1) * 100)
 
-#combine data (scaled)
-tt_comb2 <- rbind(tt_obs2, tt_imp2)
-
-#scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
-beta1_rs_ch <- (exp(beta1_ch * sd(tt_comb2[,1] / lMass_scalar)) - 1) * 100
-beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar) - 1) * 100
-                beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb2[,3] / temp_sd_year_scalar) - 1) * 100
-                                beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb2[,4] / precip_cv_season_scalar) - 1) * 100
-                                                beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 100
+tt_comb <- rbind(as.matrix(tt_obs), as.matrix(tt_imp))
+
+beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb[,2])) - 1) * 100
+beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb[,3])) - 1) * 100
+beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb[,4])) - 1) * 100
+beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb[,5])) - 1) * 100
                                                                 
                                                                 
 # added variable and partial resid plots ------------------------------------------------
@@ -499,14 +505,12 @@ dev.off()
 
 pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(cbind(beta2_rs_ch,
-                        beta3_rs_ch,
+MCMCvis::MCMCplot(cbind(beta3_rs_ch,
                         beta4_rs_ch,
                         beta5_rs_ch),
-                  labels = c('T seasonality',
-                             'T interannual var',
-                             'P seasonality',
-                             'P interannual var'),
+                  labels = c('PC1',
+                             'PC2',
+                             'PC3'),
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
