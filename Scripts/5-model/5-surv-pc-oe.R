@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - surv ~ PC + phylo
+# Fit Bayes model - surv ~ env + oe
 ####################
 
 
@@ -7,7 +7,7 @@
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 # dir <- '/mnt/research/ibeem/variability/'
-run_date <- '2023-10-09'
+run_date <- '2023-10-10'
 
 
 # load packages -----------------------------------------------------------
@@ -204,14 +204,9 @@ bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
 # j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
 #                            data.frame(idx = 1:NROW(bird_df4), bird_df4), 
 #                            by = 'species')
-# 
-# #apply
-# bird_df5 <- bird_df4[j_idx3$idx,]
-# 
-# #get corr matrix
-# V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
 
 
+# PCA ---------------------------------------------------------------------
 
 #for full run
 j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
@@ -222,13 +217,6 @@ bird_df5 <- bird_df3[j_idx3$idx,]
 
 #get corr matrix
 V <- ape::vcv.phylo(pr_tree, corr = TRUE)
-
-#separate obs and imp values
-obs_idx <- which(bird_df5$SD_survival == 0)
-imp_idx <- which(bird_df5$SD_survival != 0)
-
-
-# PCA ---------------------------------------------------------------------
 
 #same results as raw, essentially
 tt_pca <- dplyr::select(bird_df5, 
@@ -257,38 +245,38 @@ bird_df5$PC1 <- tt_pca$x[,1]
 bird_df5$PC2 <- tt_pca$x[,2]
 bird_df5$PC3 <- tt_pca$x[,3]
 
-f1 <- lm(Phylo_survival ~ lMass + 
-                   temp_sd_season + 
-                   temp_sd_year + 
-                   precip_cv_season + 
-                   precip_cv_year, 
-                 data = bird_df5)
-p1 <- lm(Phylo_survival ~ lMass + 
-           PC1 + PC2 + PC3, 
-         data = bird_df5)
-summary(f1)
-summary(p1)
-
-f2 <- lm(Phylo_log_clutch_size ~ lMass + 
-           temp_sd_season + 
-           temp_sd_year + 
-           precip_cv_season + 
-           precip_cv_year, 
-         data = bird_df5)
-p2 <- lm(Phylo_log_clutch_size ~ lMass + 
-           PC1 + PC2 + PC3, 
-         data = bird_df5)
-summary(f2)
-summary(p2)
-
-
-library(phytools)
-length(residuals(f1))
-phytools::phylosig(pr_tree, as.vector(residuals(f1)), method = 'K') # K ~ 1.04
-phytools::phylosig(pr_tree, as.vector(residuals(p1)), method = 'K') # K ~ 1.04
-phytools::phylosig(pr_tree, as.vector(residuals(f2)), method = 'K') # K ~ 0.44
-phytools::phylosig(pr_tree, as.vector(residuals(p2)), method = 'K') # K ~ 0.44
-# phytools::phylosig(pr_tree, as.vector(residuals(f2)), method = 'lambda')
+# f1 <- lm(Phylo_survival ~ lMass + 
+#            temp_sd_season + 
+#            temp_sd_year + 
+#            precip_cv_season + 
+#            precip_cv_year, 
+#          data = bird_df5)
+# p1 <- lm(Phylo_survival ~ lMass + 
+#            PC1 + PC2 + PC3, 
+#          data = bird_df5)
+# summary(f1)
+# summary(p1)
+# 
+# f2 <- lm(Phylo_log_clutch_size ~ lMass + 
+#            temp_sd_season + 
+#            temp_sd_year + 
+#            precip_cv_season + 
+#            precip_cv_year, 
+#          data = bird_df5)
+# p2 <- lm(Phylo_log_clutch_size ~ lMass + 
+#            PC1 + PC2 + PC3, 
+#          data = bird_df5)
+# summary(f2)
+# summary(p2)
+# 
+# 
+# library(phytools)
+# length(residuals(f1))
+# phytools::phylosig(pr_tree, as.vector(residuals(f1)), method = 'K') # K ~ 1.04
+# phytools::phylosig(pr_tree, as.vector(residuals(p1)), method = 'K') # K ~ 1.04
+# phytools::phylosig(pr_tree, as.vector(residuals(f2)), method = 'K') # K ~ 0.44
+# phytools::phylosig(pr_tree, as.vector(residuals(p2)), method = 'K') # K ~ 0.44
+# # phytools::phylosig(pr_tree, as.vector(residuals(f2)), method = 'lambda')
 
 
 
@@ -312,28 +300,22 @@ phytools::phylosig(pr_tree, as.vector(residuals(p2)), method = 'K') # K ~ 0.44
 
 # scale/prep data ---------------------------------------------------------
 
-#scalars for data
-y_scalar <- 10
+#separate obs and imp values
+obs_idx <- which(bird_df5$SD_survival == 0)
+imp_idx <- which(bird_df5$SD_survival != 0)
 
-# #split predictors into obs and imp
-# tt_obs <- data.frame(bird_df5$lMass[obs_idx] * lMass_scalar,
-#                      bird_df5$temp_sd_season[obs_idx] * temp_sd_season_scalar,
-#                      bird_df5$temp_sd_year[obs_idx] * temp_sd_year_scalar,
-#                      bird_df5$precip_cv_season[obs_idx] * precip_cv_season_scalar,
-#                      bird_df5$precip_cv_year[obs_idx] * precip_cv_year_scalar)
-# 
-# tt_imp <- data.frame(bird_df5$lMass[imp_idx] * lMass_scalar,
-#                      bird_df5$temp_sd_season[imp_idx] * temp_sd_season_scalar,
-#                      bird_df5$temp_sd_year[imp_idx] * temp_sd_year_scalar,
-#                      bird_df5$precip_cv_season[imp_idx] * precip_cv_season_scalar,
-#                      bird_df5$precip_cv_year[imp_idx] * precip_cv_year_scalar)
-# 
-# #subtract off mean to center vars
-# tt_mns <- rbind(tt_obs, tt_imp) %>%
-#   apply(2, mean)
-# 
-# tt_obs2 <- sweep(tt_obs, 2, tt_mns)
-# tt_imp2 <- sweep(tt_imp, 2, tt_mns)
+#split predictors into obs and imp
+tt_obs <- data.frame(rep(1, NROW(bird_df5))[obs_idx],
+                     bird_df5$lMass[obs_idx],
+                     bird_df5$PC1[obs_idx],
+                     bird_df5$PC2[obs_idx],
+                     bird_df5$PC3[obs_idx])
+
+tt_imp <- data.frame(rep(1, NROW(bird_df5))[imp_idx],
+                     bird_df5$lMass[imp_idx],
+                     bird_df5$PC1[imp_idx],
+                     bird_df5$PC2[imp_idx],
+                     bird_df5$PC3[imp_idx])
 
 
 # fit model ---------------------------------------------------------------
@@ -341,32 +323,36 @@ y_scalar <- 10
 DATA <- list(N = NROW(bird_df5),
              No = length(obs_idx),
              Ni = length(imp_idx),
-             y_obs = bird_df5$Phylo_survival[obs_idx] * y_scalar,
-             y_imp = bird_df5$Phylo_survival[imp_idx] * y_scalar,
-             sd_y = bird_df5$SD_survival[imp_idx] * y_scalar,
+             y_obs = bird_df5$Phylo_survival[obs_idx],
+             y_imp = bird_df5$Phylo_survival[imp_idx],
+             sd_y = bird_df5$SD_survival[imp_idx],
              K = NCOL(tt_obs),
-             X_obs = tt_obs2,
-             X_imp = tt_imp2,
+             X_obs = tt_obs,
+             X_imp = tt_imp,
              imp_idx = imp_idx,
              obs_idx = obs_idx,
-             LRho = chol(V)) #cholesky factor of corr matrix
+             pro_data = bird_df5)
+
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
 
 DELTA <- 0.92
 TREE_DEPTH <- 12
 STEP_SIZE <- 0.03
 CHAINS <- 4
-ITER <- 3000
+ITER <- 2000
 
 #N = 1000 - 
-fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-phylo.stan'),
+fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
                    data = DATA,
                    chains = CHAINS,
                    iter = ITER,
                    cores = CHAINS,
                    pars = c('beta',
                             'sigma',
-                            'sigma_phylo',
-                            'kappa'),
+                            'mu_obs',
+                            'mu_imp',
+                            'y_iv'),
                    control = list(adapt_delta = DELTA,
                                   max_treedepth = TREE_DEPTH,
                                   stepsize = STEP_SIZE))
@@ -377,19 +363,20 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-phylo.stan'),
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('se-bird-surv-phylo-oe-results-', run_date),
+                  file_name = paste0('bird-surv-pc-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('se-bird-surv-phylo-oe-', Nsel', -', run_date),
+                  mkdir = paste0('bird-surv-pc-oe-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('se-bird-surv-phylo-oe-fit-', run_date),
+                  obj_name = paste0('bird-surv-pc-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('se-bird-surv-phylo-oe-data-', run_date),
-                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
-                              paste0(dir, 'Scripts/5-model/5-phylo-oe.R')),
-                  cp_file_names = c(paste0('5-phylo-oe-', run_date, '.stan'),
-                                    paste0('5-phylo-oe-', run_date, '.R')))
+                  add_obj_names = paste0('bird-surv-pc-oe-data-', run_date),
+                  cp_file = c(paste0(dir, 'Scripts/Model_files/5-oe.stan'), 
+                              paste0(dir, 'Scripts/5-model/5-surv-pc-oe.R')),
+                  cp_file_names = c(paste0('5-oe-', run_date, '.stan'),
+                                    paste0('5-surv-pc-oe-', run_date, '.R')))
+
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -455,8 +442,8 @@ beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar) - 1) * 1
                                                                 
                                                                 
 # added variable and partial resid plots ------------------------------------------------
-
-fig_dir <- paste0(dir, 'se-bird-surv-phylo-oe-', Nsel', -', run_date)
+                                                                
+fig_dir <- paste0(dir, 'Results/bird-surv-pc-oe-', run_date)
 
 # # https://www.wikiwand.com/en/Partial_residual_plot
 # pr_fun <- function(num, nm)
@@ -497,7 +484,6 @@ fig_dir <- paste0(dir, 'se-bird-surv-phylo-oe-', Nsel', -', run_date)
 
 # cat plots ---------------------------------------------------------------
 
-temp
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(fit,
@@ -631,3 +617,4 @@ dev.off()
 #                             precip_cv_year, precip_cv_season)))
 
 
+  

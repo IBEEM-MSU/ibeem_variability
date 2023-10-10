@@ -2,7 +2,7 @@
 #SBATCH --job-name=phylo-oe
 #SBATCH -N 1 #number of tasks
 #SBATCH -n 1 #number of nodes
-#SBATCH -c 4 #cpus
+#SBATCH -c 6 #cpus
 #SBATCH --time=168:00:00
 #SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=ccy@msu.edu

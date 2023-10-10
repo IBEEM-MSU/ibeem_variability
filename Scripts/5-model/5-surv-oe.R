@@ -8,7 +8,7 @@
 # specify dir -------------------------------------------------------------
 
 dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-run_date <- '2023-10-09'
+run_date <- '2023-10-10'
 
 
 # load packages -----------------------------------------------------------
@@ -115,98 +115,113 @@ pr_tree <- ape::drop.tip(bird.phylo, nm)
 j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df, 
                           by = 'name')
 
-#run phylo imputation
-ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
-                            tree = pr_tree, 
-                            phylo_correlated = TRUE,
-                            # model = "BM") # AIC = 20804
-                            # model = "OU") # AIC = 1942203
-                            model = "lambda") # AIC = 10755
-# model = "mvOU") # threw an error
-# model = "delta") # threw an error
-# model = "EB") # AIC = 20697
-# model = "star") # ???
-
-# AIC(ir)
-
-#returns species means as well as some internal nodes
-#get just species rows
-ridx <- which(row.names(ir$anc_rec) %in% tri$species)
-
-#variance (uncertainty)
-ir_unc <- data.frame(species = tri$species[j_idx$idx], 
-                 ir$anc_var[ridx,]) %>%
-  dplyr::mutate(SD_survival = sqrt(Measured_survival),
-                SD_log_age_first_breeding = sqrt(Measured_log_age_first_breeding),
-                SD_log_max_longevity = sqrt(Measured_log_max_longevity),
-                SD_log_clutch_size = sqrt(Measured_log_clutch_size)) %>%
-  dplyr::arrange(species) %>%
-  dplyr::select(species, 
-                SD_survival, 
-                SD_log_age_first_breeding,
-                SD_log_max_longevity,
-                SD_log_clutch_size)
-
-#merge imputed values with unc and env data
-ir_mrg <- data.frame(species = tri$species[j_idx$idx], 
-                  ir$anc_rec[ridx,]) %>%
-  dplyr::arrange(species) %>%
-  dplyr::rename(Phylo_survival = Measured_survival,
-                Phylo_log_age_first_breeding = Measured_log_age_first_breeding,
-                Phylo_log_max_longevity = Measured_log_max_longevity,
-                Phylo_log_clutch_size = Measured_log_clutch_size) %>%
-  #join with measured traits
-  dplyr::left_join(dplyr::select(tri, -lMass), by = 'species') %>%
-  #join with var
-  dplyr::left_join(ir_unc, by = 'species')
-row.names(ir_mrg) <- NULL
-
-#join trait and env data
-bird_df3 <- dplyr::mutate(bird_df2,
-                      species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  dplyr::select(species,
-                temp_mean,
-                temp_sd_year,
-                temp_sd_season,
-                temp_sp_color_month,
-                precip_cv_year,
-                precip_cv_season,
-                precip_sp_color_month,
-                Modeled_survival,
-                Modeled_age_first_breeding,
-                Modeled_max_longevity) %>%
-  dplyr::left_join(ir_mrg, by = 'species')
+# #run phylo imputation - not working properly on cluster - read in bird_df3 instead
+# ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
+#                             tree = pr_tree, 
+#                             phylo_correlated = TRUE,
+#                             # model = "BM") # AIC = ???
+#                             # model = "OU") # AIC = ???
+#                             model = "lambda") # AIC = 10106.53
+# # model = "mvOU") # threw an error
+# # model = "delta") # threw an error
+# # model = "EB") # AIC = ???
+# # model = "star") # ???
+# 
+# # AIC(ir)
+# 
+# #returns species means as well as some internal nodes
+# #get just species rows
+# ridx <- which(row.names(ir$anc_rec) %in% tri$species)
+# 
+# #variance (uncertainty)
+# ir_unc <- data.frame(species = tri$species[j_idx$idx], 
+#                      ir$anc_var[ridx,]) %>%
+#   dplyr::mutate(SD_survival = sqrt(Measured_survival),
+#                 SD_log_age_first_breeding = sqrt(Measured_log_age_first_breeding),
+#                 SD_log_max_longevity = sqrt(Measured_log_max_longevity),
+#                 SD_log_clutch_size = sqrt(Measured_log_clutch_size)) %>%
+#   dplyr::arrange(species) %>%
+#   dplyr::select(species, 
+#                 SD_survival, 
+#                 SD_log_age_first_breeding,
+#                 SD_log_max_longevity,
+#                 SD_log_clutch_size)
+# 
+# #merge imputed values with unc and env data
+# ir_mrg <- data.frame(species = tri$species[j_idx$idx], 
+#                      ir$anc_rec[ridx,]) %>%
+#   dplyr::arrange(species) %>%
+#   dplyr::rename(Phylo_survival = Measured_survival,
+#                 Phylo_log_age_first_breeding = Measured_log_age_first_breeding,
+#                 Phylo_log_max_longevity = Measured_log_max_longevity,
+#                 Phylo_log_clutch_size = Measured_log_clutch_size) %>%
+#   #join with measured traits
+#   dplyr::left_join(dplyr::select(tri, -lMass), by = 'species') %>%
+#   #join with var
+#   dplyr::left_join(ir_unc, by = 'species')
+# row.names(ir_mrg) <- NULL
+# 
+# #join trait and env data
+# bird_df3 <- dplyr::mutate(bird_df2,
+#                           species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+#   dplyr::select(species,
+#                 temp_mean,
+#                 temp_sd_year,
+#                 temp_sd_season,
+#                 temp_sp_color_month,
+#                 precip_cv_year,
+#                 precip_cv_season,
+#                 precip_sp_color_month,
+#                 Modeled_survival,
+#                 Modeled_age_first_breeding,
+#                 Modeled_max_longevity) %>%
+#   dplyr::left_join(ir_mrg, by = 'species')
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+bird_df3 <- readRDS(paste0(dir, 'Scripts/5-model/bird_df3.rds'))
+
+# scale/prep data ---------------------------------------------------------
+
+bird_df5 <- bird_df3
+
+#separate obs and imp values
+obs_idx <- which(bird_df5$SD_survival == 0)
+imp_idx <- which(bird_df5$SD_survival != 0)
+
+#split predictors into obs and imp
+tt_obs <- data.frame(rep(1, NROW(bird_df5))[obs_idx],
+                         bird_df5$lMass[obs_idx],
+                         bird_df5$temp_sd_season[obs_idx],
+                         bird_df5$temp_sd_year[obs_idx],
+                         bird_df5$precip_cv_season[obs_idx],
+                         bird_df5$precip_cv_year[obs_idx])
+
+tt_imp <- data.frame(rep(1, NROW(bird_df5))[imp_idx],
+                         bird_df5$lMass[imp_idx],
+                         bird_df5$temp_sd_season[imp_idx],
+                         bird_df5$temp_sd_year[imp_idx],
+                         bird_df5$precip_cv_season[imp_idx],
+                         bird_df5$precip_cv_year[imp_idx])
 
 
 # Run Stan model --------------------------------------------------------------
 
-#idx observed data
-obs_idx <- which(bird_df3$SD_survival == 0)
-imp_idx <- which(bird_df3$SD_survival != 0)
-
 DATA <- list(No = length(obs_idx),
              Ni = length(imp_idx),
-             y_obs = bird_df3$Phylo_survival[obs_idx],
-             y_imp = bird_df3$Phylo_survival[imp_idx],
-             sd_y = bird_df3$SD_survival[imp_idx],
-             lMass_obs = bird_df3$lMass[obs_idx],
-             temp_sd_season_obs = bird_df3$temp_sd_season[obs_idx],
-             temp_sd_year_obs = bird_df3$temp_sd_year[obs_idx],
-             precip_cv_season_obs = bird_df3$precip_cv_season[obs_idx],
-             precip_cv_year_obs = bird_df3$precip_cv_year[obs_idx],
-             lMass_imp = bird_df3$lMass[imp_idx],
-             temp_sd_season_imp = bird_df3$temp_sd_season[imp_idx],
-             temp_sd_year_imp = bird_df3$temp_sd_year[imp_idx],
-             precip_cv_season_imp = bird_df3$precip_cv_season[imp_idx],
-             precip_cv_year_imp = bird_df3$precip_cv_year[imp_idx],
-             pro_data = bird_df3)
+             y_obs = bird_df5$Phylo_survival[obs_idx],
+             y_imp = bird_df5$Phylo_survival[imp_idx],
+             sd_y = bird_df5$SD_survival[imp_idx],
+             K = NCOL(tt_obs),
+             X_obs = tt_obs,
+             X_imp = tt_imp,
+             imp_idx = imp_idx,
+             obs_idx = obs_idx,
+             pro_data = bird_df5)
 
 rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
-DELTA <- 0.95
+DELTA <- 0.93
 TREE_DEPTH <- 12
 STEP_SIZE <- 0.03
 CHAINS <- 4
@@ -219,16 +234,8 @@ fit <- rstan::stan(paste0(dir, 'Scripts/Model_files/5-oe.stan'),
                    chains = CHAINS,
                    iter = ITER,
                    cores = CHAINS,
-                   pars = c('alpha',
-                            'beta',
-                            'gamma1',
-                            'gamma2',
-                            # 'gamma3',
-                            'theta1',
-                            'theta2',
-                            # 'theta3',
+                   pars = c('beta',
                             'sigma',
-                            # 'nu',
                             'mu_obs',
                             'mu_imp',
                             'y_iv'),
@@ -276,11 +283,6 @@ resid_comb <- y_comb - mu_comb
 
 # phylo signal in resids --------------------------------------------------
 
-#NOTE: picante::phylosignal is quite slow. At least 30min for one tree...
-#Seems to be some memory pressure
-#https://cran.r-project.org/web/packages/picante/vignettes/picante-intro.pdf
-#no strong phylo signal detected in tree 1 (K ~ 0.05). "K values closer to zero correspond to a random or convergent pattern of evolution, while K values greater than 1 indicate strong phylogenetic signal and conservatism of traits" (picante vignette)
-
 #df with names and idx
 idx_df <- data.frame(idx = 1:length(y_comb), 
                      name = stringr::str_to_title(gsub(' ', '_', 
@@ -294,58 +296,36 @@ resid_srt <- resid_comb[j_idx$idx]
 
 
 #K ~ 0.3
-#lambda ~ 
 # library(phytools)
-# phytools::phylosig(pr_tree, resid_srt, method = 'K') #quit slow
-# phytools::phylosig(pr_tree, resid_srt, method = 'lambda') #wouldn't finish??? (many hours)
+# phytools::phylosig(pr_tree, resid_srt, method = 'K') #quit3 slow
+# phytools::phylosig(pr_tree, resid_srt, method = 'lambda')
 
-
-#fit alternative model - no measures err - using nlme
-j_idx2 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
-                           data.frame(idx = 1:NROW(bird_df3), bird_df3), 
-                          by = 'species')
-#apply
-# bird_gls <- bird_df3[j_idx2$idx,]
+# #just measured
+# bird_ms <- dplyr::filter(bird_df3, !is.na(Measured_survival))
+# 
+# #prune specified tips from tree
+# pr_tree2 <- ape::drop.tip(pr_tree, nm)
+# 
+# #get index for name order on tips
+# j_idx <- dplyr::left_join(data.frame(name = pr_tree2$tip.label), idx_df, 
+#                           by = 'name')
+# 
+# #apply
+# bird_gls2 <- bird_ms[j_idx3$idx,]
+# 
 # library(nlme)
-# pgls_fit <- nlme::gls(Phylo_survival ~ lMass +
-#                          temp_sd_season +
-#                          temp_sd_year +
-#                          precip_cv_season +
-#                          precip_cv_year,
-#                        correlation = ape::corPagel(1, pr_tree, fixed = FALSE),
-#                        data = bird_gls,
-#                        method = "ML")
-# summary(pgls_fit)
-# car::vif(pgls_fit)
-
-
-#just measured
-bird_ms <- dplyr::filter(bird_df3, !is.na(Measured_survival))
-
-#prune specified tips from tree
-pr_tree2 <- ape::drop.tip(pr_tree, nm)
-
-#get index for name order on tips
-j_idx <- dplyr::left_join(data.frame(name = pr_tree2$tip.label), idx_df, 
-                          by = 'name')
-
-#apply
-bird_gls2 <- bird_ms[j_idx3$idx,]
-
-library(nlme)
-pgls_fit2 <- nlme::gls(Measured_survival ~ lMass +
-                        temp_sd_season +
-                        temp_sd_year +
-                        precip_cv_season +
-                        precip_cv_year,
-                      # correlation = ape::corBrownian(phy = tree_n),
-                      correlation = ape::corPagel(1, pr_tree2, fixed = FALSE),
-                      data = bird_gls2,
-                      method = "ML")
-summary(pgls_fit2)
-car::vif(pgls_fit2)
+# pgls_fit2 <- nlme::gls(Measured_survival ~ lMass +
+#                         temp_sd_season +
+#                         temp_sd_year +
+#                         precip_cv_season +
+#                         precip_cv_year,
+#                       # correlation = ape::corBrownian(phy = tree_n),
+#                       correlation = ape::corPagel(1, pr_tree2, fixed = FALSE),
+#                       data = bird_gls2,
+#                       method = "ML")
+# summary(pgls_fit2)
+# car::vif(pgls_fit2)
 #Pagel
-
 
 
 # Summary -----------------------------------------------------------------
@@ -392,7 +372,7 @@ theta2_rs_ch <- (exp(theta2_ch * sd(c(DATA$precip_cv_year_obs,
 
 # added variable and partial resid plots ------------------------------------------------
 
-fig_dir <- paste0('bird-surv-oe-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-surv-oe-', run_date, '/')
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
@@ -433,7 +413,6 @@ pr_fun(num = 5, nm = 'precip-year') #precip year
 
 # cat plots ---------------------------------------------------------------
 
-#temp
 pdf(paste0(fig_dir, 'param-cat-raw-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(fit,
