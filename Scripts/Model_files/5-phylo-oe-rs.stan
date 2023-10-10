@@ -28,7 +28,7 @@ functions {
 }
 
 data {
-  // int<lower=1> N;  // total number of observations
+  int<lower=1> N;  // total number of observations
   // int<lower=1> No;
   // int<lower=1> Ni;
   vector[N] y_obs;  // response variable
