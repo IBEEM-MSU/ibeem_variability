@@ -186,24 +186,25 @@ bird_df3 <- readRDS(paste0(sc_dir, 'Scripts/5-model/bird_df3.rds'))
 # phylo -------------------------------------------------------------------
 
 #subset of imp
-set.seed(1)
-Nsel <- 3000
-stidx <- sample(x = 1:NROW(bird_df3), size = Nsel)
-bird_df4 <- bird_df3[stidx,]
+# set.seed(1)
+# Nsel <- 3000
+# stidx <- sample(x = 1:NROW(bird_df3), size = Nsel)
+# bird_df4 <- bird_df3[stidx,]
+bird_df4 <- bird_df3
 
-#prune tree
-#df with names and idx
-idx_df2 <- data.frame(idx = 1:NROW(bird_df4), 
-                      name = stringr::str_to_title(gsub(' ', '_', bird_df4$species)))
-
-#species not found in both datasets (species to drop from tree)
-nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
-
-#prune specified tips from tree
-pr_tree2 <- ape::drop.tip(pr_tree, nm2)
+# #prune tree
+# #df with names and idx
+# idx_df2 <- data.frame(idx = 1:NROW(bird_df4), 
+#                       name = stringr::str_to_title(gsub(' ', '_', bird_df4$species)))
+# 
+# #species not found in both datasets (species to drop from tree)
+# nm2 <- setdiff(pr_tree$tip.label, bird_df4$species)
+# 
+# #prune specified tips from tree
+# pr_tree2 <- ape::drop.tip(pr_tree, nm2)
 
 #get idx
-j_idx3 <- dplyr::left_join(data.frame(species = pr_tree2$tip.label), 
+j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
                            data.frame(idx = 1:NROW(bird_df4), bird_df4), 
                            by = 'species')
 
@@ -215,7 +216,8 @@ obs_idx <- which(bird_df5$SD_survival == 0)
 imp_idx <- which(bird_df5$SD_survival != 0)
 
 #get corr matrix
-V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
+# V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
+V <- ape::vcv.phylo(pr_tree, corr = TRUE)
 
 
 # scale/prep data ---------------------------------------------------------
@@ -302,7 +304,7 @@ MCMCvis::MCMCdiag(fit,
                   round = 4,
                   file_name = paste0('bird-surv-phylo-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-phylo-oe-', Nsel, '-', run_date),
+                  mkdir = paste0('bird-surv-phylo-oe-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
@@ -371,10 +373,10 @@ tt_comb2 <- rbind(tt_obs2, tt_imp2)
 #scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
 beta1_rs_ch <- (exp(beta1_ch * sd(tt_comb2[,1] / lMass_scalar)) - 1) * 100
-beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar) - 1) * 100
-beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb2[,3] / temp_sd_year_scalar) - 1) * 100
-beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb2[,4] / precip_cv_season_scalar) - 1) * 100
-beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar) - 1) * 100
+beta2_rs_ch <- (exp(beta2_ch * sd(tt_comb2[,2] / temp_sd_season_scalar)) - 1) * 100
+beta3_rs_ch <- (exp(beta3_ch * sd(tt_comb2[,3] / temp_sd_year_scalar)) - 1) * 100
+beta4_rs_ch <- (exp(beta4_ch * sd(tt_comb2[,4] / precip_cv_season_scalar)) - 1) * 100
+beta5_rs_ch <- (exp(beta5_ch * sd(tt_comb2[,5] / precip_cv_year_scalar)) - 1) * 100
 
 
 # added variable and partial resid plots ------------------------------------------------
