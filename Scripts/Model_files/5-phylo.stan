@@ -23,17 +23,12 @@ model {
   // likelihood not including constants
   // optimized call for glm
   target += normal_id_glm_lupdf(Y | X, kappa + alpha, beta, sigma);
-  // target += normal_lupdf(Y | kappa + alpha + (X * beta), sigma);
 
   // priors not including constants
-  // lprior += std_normal_lupdf(beta);
-  // lprior += beta_lupdf(kappa | 2, 2);
-  // lprior += std_normal_lupdf(sigma);
-  // lprior += std_normal_lupdf(sigma_phylo);
   lprior += std_normal_lupdf(beta);
-  lprior += normal_lupdf(kappa | 5, 2);
+  lprior += normal_lupdf(kappa | 6, 3);
   lprior += std_normal_lupdf(sigma);
-  lprior += normal_lupdf(sigma_phylo | 0, 2);
+  lprior += std_normal_lupdf(sigma_phylo);
   target += lprior;
   target += std_normal_lupdf(z);
 }
