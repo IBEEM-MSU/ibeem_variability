@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - survival ~ env + phylo + oe
+# Fit Bayes model - survival ~ env + phylo + oe + varyiny int by niche
 ####################
 
 
@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-10'
+run_date <- '2023-10-11'
 
 
 # load packages -----------------------------------------------------------
@@ -55,11 +55,6 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
   dplyr::ungroup()
-
-#how many species in each family
-dplyr::group_by(bird_df, Family) %>%
-  dplyr::count() %>%
-  dplyr::arrange(desc(n))
 
 #survival etc from Bird et al.
 bs <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
@@ -118,8 +113,8 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 
 
 # #run phylo imputation - not working properly on cluster - read in bird_df3 instead
-# ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,], 
-#                             tree = pr_tree, 
+# ir <- Rphylopars::phylopars(trait_data = tri[j_idx$idx,],
+#                             tree = pr_tree,
 #                             phylo_correlated = TRUE,
 #                             # model = "BM") # AIC = ???
 #                             # model = "OU") # AIC = ???
@@ -136,21 +131,21 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 # ridx <- which(row.names(ir$anc_rec) %in% tri$species)
 # 
 # #variance (uncertainty)
-# ir_unc <- data.frame(species = tri$species[j_idx$idx], 
+# ir_unc <- data.frame(species = tri$species[j_idx$idx],
 #                      ir$anc_var[ridx,]) %>%
 #   dplyr::mutate(SD_survival = sqrt(Measured_survival),
 #                 SD_log_age_first_breeding = sqrt(Measured_log_age_first_breeding),
 #                 SD_log_max_longevity = sqrt(Measured_log_max_longevity),
 #                 SD_log_clutch_size = sqrt(Measured_log_clutch_size)) %>%
 #   dplyr::arrange(species) %>%
-#   dplyr::select(species, 
-#                 SD_survival, 
+#   dplyr::select(species,
+#                 SD_survival,
 #                 SD_log_age_first_breeding,
 #                 SD_log_max_longevity,
 #                 SD_log_clutch_size)
 # 
 # #merge imputed values with unc and env data
-# ir_mrg <- data.frame(species = tri$species[j_idx$idx], 
+# ir_mrg <- data.frame(species = tri$species[j_idx$idx],
 #                      ir$anc_rec[ridx,]) %>%
 #   dplyr::arrange(species) %>%
 #   dplyr::rename(Phylo_survival = Measured_survival,
@@ -174,10 +169,15 @@ j_idx <- dplyr::left_join(data.frame(name = pr_tree$tip.label), idx_df,
 #                 precip_cv_year,
 #                 precip_cv_season,
 #                 precip_sp_color_month,
+#                 Trophic_niche = Trophic.Niche,
+#                 lGL,
 #                 Modeled_survival,
 #                 Modeled_age_first_breeding,
 #                 Modeled_max_longevity) %>%
 #   dplyr::left_join(ir_mrg, by = 'species')
+# 
+# #assign missing species (owls) to Vertivore
+# bird_df3$Trophic_niche[which(is.na(bird_df3$Trophic_niche))] <- "Vertivore"
 
 # saveRDS(bird_df3, paste0(dir, 'Scripts/5-model/bird_df3.rds'))
 bird_df3 <- readRDS(paste0(sc_dir, 'Scripts/5-model/bird_df3.rds'))
@@ -187,14 +187,14 @@ bird_df3 <- readRDS(paste0(sc_dir, 'Scripts/5-model/bird_df3.rds'))
 
 #subset of imp
 # set.seed(1)
-# Nsel <- 3000
+# Nsel <- 500
 # stidx <- sample(x = 1:NROW(bird_df3), size = Nsel)
 # bird_df4 <- bird_df3[stidx,]
 bird_df4 <- bird_df3
 
 # #prune tree
 # #df with names and idx
-# idx_df2 <- data.frame(idx = 1:NROW(bird_df4), 
+# idx_df2 <- data.frame(idx = 1:NROW(bird_df4),
 #                       name = stringr::str_to_title(gsub(' ', '_', bird_df4$species)))
 # 
 # #species not found in both datasets (species to drop from tree)
@@ -210,6 +210,10 @@ j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
 
 #apply
 bird_df5 <- bird_df4[j_idx3$idx,]
+
+#niche levels
+bird_df5$niche_idx <- as.numeric(factor(bird_df5$Trophic_niche))
+niche_names <- levels(factor(bird_df5$Trophic_niche))
 
 #separate obs and imp values
 obs_idx <- which(bird_df5$SD_survival == 0)
@@ -270,10 +274,13 @@ DATA <- list(N = NROW(bird_df5),
              y_imp = bird_df5$Phylo_survival[imp_idx] * y_scalar,
              sd_y = bird_df5$SD_survival[imp_idx] * y_scalar,
              K = NCOL(tt_obs),
+             J = length(unique(niche_idx)),
              X_obs = tt_obs2,
              X_imp = tt_imp2,
-             imp_idx = imp_idx,
              obs_idx = obs_idx,
+             imp_idx = imp_idx,
+             niche_obs_idx = bird_df5$niche_idx[obs_idx],
+             niche_imp_idx = bird_df5$niche_idx[imp_idx],
              LRho = chol(V)) #cholesky factor of corr matrix
 
 options(mc.cores = parallel::detectCores())
@@ -285,7 +292,7 @@ CHAINS <- 4
 ITER <- 2000
 
 #compile model
-mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'))
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-vint.stan'))
 
 #sample
 fit <- mod$sample(
@@ -302,21 +309,21 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-surv-phylo-oe-results-', run_date),
+                  file_name = paste0('bird-surv-phylo-oe-vint-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-phylo-oe-', run_date),
+                  mkdir = paste0('bird-surv-phylo-oe-vint-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-surv-phylo-oe-fit-', run_date),
+                  obj_name = paste0('bird-surv-phylo-oe-vint-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-surv-phylo-oe-data-', run_date),
-                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-surv-phylo-oe.R')),
-                  cp_file_names = c(paste0('5-phylo-oe-', run_date, '.stan'),
-                                    paste0('5-surv-phylo-oe-', run_date, '.R')))
+                  add_obj_names = paste0('bird-surv-phylo-oe-vint-data-', run_date),
+                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-vint.stan'), 
+                              paste0(sc_dir, 'Scripts/5-model/5-surv-phylo-oe-vint.R')),
+                  cp_file_names = c(paste0('5-phylo-oe-vint-', run_date, '.stan'),
+                                    paste0('5-surv-phylo-oe-vint-', run_date, '.R')))
 
-fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', run_date)
+fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-vint-', run_date)
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -336,10 +343,11 @@ fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-', run_date)
 
 beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
 kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
+gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
 alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
 
-mu_obs <- kappa_mn + alpha_mn[DATA$obs_idx] + as.matrix(DATA$X_obs) %*% beta_mn
-mu_imp <- kappa_mn + alpha_mn[DATA$imp_idx] + as.matrix(DATA$X_imp) %*% beta_mn
+mu_obs <- kappa_mn + gamma_mn[niche_obs_idx] + alpha_mn[DATA$obs_idx] + as.matrix(DATA$X_obs) %*% beta_mn
+mu_imp <- kappa_mn + gamma_mn[niche_imp_idx] + alpha_mn[DATA$imp_idx] + as.matrix(DATA$X_imp) %*% beta_mn
 
 resid_obs <- DATA$y_obs - mu_obs
 resid_imp <- DATA$y_imp - mu_imp
@@ -461,6 +469,19 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
                   sz_thick = 3,
                   sz_thin = 3,
                   main = '% change Surv for 1 sd change in cov',
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+    height = 5, width = 5)
+MCMCvis::MCMCplot(fit, 
+                  params = 'gamma',
+                  labels = niche_names,
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  main = 'Niche group intercept',
                   guide_lines = TRUE)
 dev.off()
 
