@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-11'
+run_date <- '2023-10-12'
 
 
 # load packages -----------------------------------------------------------
@@ -99,6 +99,9 @@ j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
 #apply
 bird_df4 <- bird_df3[j_idx3$idx,]
 #niche levels
+#assign missing species (owls) to Vertivore
+bird_df4$Trophic_niche[which(is.na(bird_df4$Trophic_niche))] <- "Vertivore"
+
 bird_df4$niche_idx <- as.numeric(factor(bird_df4$Trophic_niche))
 niche_names <- levels(factor(bird_df4$Trophic_niche))
 
@@ -135,7 +138,7 @@ tt <- data.frame(lMass = bird_df4$lMass *
 DATA <- list(N = NROW(bird_df4),
              Y = bird_df4$lGL * y_scalar,
              K = NCOL(tt),
-             J = length(unique(niche_idx)),
+             J = length(unique(bird_df4$niche_idx)),
              X = tt,
              niche_idx = bird_df4$niche_idx,
              LRho = chol(V)) #cholesky factor of corr matrix

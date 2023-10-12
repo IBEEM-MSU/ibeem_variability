@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-11'
+run_date <- '2023-10-12'
 
 
 # load packages -----------------------------------------------------------
@@ -274,7 +274,7 @@ DATA <- list(N = NROW(bird_df5),
              y_imp = bird_df5$Phylo_log_clutch_size[imp_idx] * y_scalar,
              sd_y = bird_df5$SD_log_clutch_size[imp_idx] * y_scalar,
              K = NCOL(tt_obs),
-             J = length(unique(niche_idx)),
+             J = length(unique(bird_df5$niche_idx)),
              X_obs = tt_obs2,
              X_imp = tt_imp2,
              obs_idx = obs_idx,
