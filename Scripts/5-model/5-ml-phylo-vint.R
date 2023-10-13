@@ -19,6 +19,7 @@ library(cmdstanr)
 library(MCMCvis)
 library(ape)
 library(geiger)
+library(phytools)
 
 
 # load bird data ---------------------------------------------------------------
@@ -114,7 +115,7 @@ row.names(dd) <- bird_df4$species
 fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lMl'], model = "kappa")
 
 #rescale tree
-pr_tree_k <- rescale(pr_tree, 'kappa', 
+pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
                      kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
 
 #get corr matrix of rescaled tree
