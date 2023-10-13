@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gl ~ env + phylo
+# Fit Bayes model - ml ~ env + phylo + vint
 ####################
 
 
@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-11'
+run_date <- '2023-10-13'
 
 
 # load packages -----------------------------------------------------------
@@ -18,6 +18,7 @@ library(tidyverse)
 library(cmdstanr)
 library(MCMCvis)
 library(ape)
+library(geiger)
 
 
 # load bird data ---------------------------------------------------------------
@@ -43,10 +44,10 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
                 Migration == 1) %>%
   #filter out precip outlier
   dplyr::filter(precip_cv_season < 2.5) %>%
-  #sample a subset of species
-  # dplyr::slice_sample(n = 2000) %>%
   dplyr::mutate(lMass = log(Mass),
-                lGL = log(GenLength)) %>%
+                lGL = log(GenLength),
+                lAb = log(Modeled_age_first_breeding),
+                lMl = log(Modeled_max_longevity)) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
@@ -54,17 +55,19 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
 
 #subset out just traits of interest
 bird_df2 <- dplyr::mutate(bird_df,
-                     species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+                          species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   dplyr::select(species,
                 lMass,
                 lGL,
+                Modeled_survival,
+                lAb,
+                lMl,
+                Trophic_niche = Trophic.Niche,
                 temp_mean,
                 temp_sd_year,
                 temp_sd_season,
-                temp_sp_color_month,
                 precip_cv_year,
-                precip_cv_season,
-                precip_sp_color_month)
+                precip_cv_season)
 
 
 # phylo -------------------------------------------------------------------
@@ -98,41 +101,68 @@ j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
 #apply
 bird_df4 <- bird_df3[j_idx3$idx,]
 
-#get corr matrix
-V <- ape::vcv.phylo(pr_tree, corr = TRUE)
+#make tree binary
+pr_tree2 <- ape::multi2di(pr_tree)
+
+#make response into matrix with species as rownames
+dd <- dplyr::select(bird_df4, 
+                    lMl) %>%
+  as.matrix()
+row.names(dd) <- bird_df4$species
+
+#get estimate of Pagel's kappa to scale phylogeny
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lMl'], model = "kappa")
+
+#rescale tree
+pr_tree_k <- rescale(pr_tree, 'kappa', 
+                     kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
+
+#get corr matrix of rescaled tree
+Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
+
+
+# niche levels ------------------------------------------------------------
+
+#assign missing species (owls) to Vertivore
+bird_df4$Trophic_niche[which(is.na(bird_df4$Trophic_niche))] <- "Vertivore"
+
+bird_df4$niche_idx <- as.numeric(factor(bird_df4$Trophic_niche))
+niche_names <- levels(factor(bird_df4$Trophic_niche))
 
 
 # scale/prep data ---------------------------------------------------------
 
 #scalars for data
 lMass_scalar <- 1
-temp_sd_season_scalar <- 0.1
-temp_sd_year_scalar <- 0.05
-precip_cv_season_scalar <- 0.05
-precip_cv_year_scalar <- 0.05
-y_scalar <- 5
+temp_sd_season_scalar <- 0.2
+temp_sd_year_scalar <- 0.1
+precip_cv_season_scalar <- 0.1
+precip_cv_year_scalar <- 0.5
+y_scalar <- 2
 
-#split predictors into obs and imp
+#center predictors
 tt <- data.frame(lMass = bird_df4$lMass * 
-                       lMass_scalar,
-                     temp_sd_season = bird_df4$temp_sd_season * 
-                       temp_sd_season_scalar,
-                     temp_sd_year = bird_df4$temp_sd_year * 
-                       temp_sd_year_scalar,
-                     precip_cv_season = bird_df4$precip_cv_season * 
-                       precip_cv_season_scalar,
-                     precip_cv_year = bird_df4$precip_cv_year * 
-                       precip_cv_year_scalar) %>%
+                   lMass_scalar,
+                 temp_sd_season = bird_df4$temp_sd_season * 
+                   temp_sd_season_scalar,
+                 temp_sd_year = bird_df4$temp_sd_year * 
+                   temp_sd_year_scalar,
+                 precip_cv_season = bird_df4$precip_cv_season * 
+                   precip_cv_season_scalar,
+                 precip_cv_year = bird_df4$precip_cv_year * 
+                   precip_cv_year_scalar) %>%
   apply(2, function(x) scale(x, scale = FALSE)[,1])
 
 
 # fit model ---------------------------------------------------------------
 
 DATA <- list(N = NROW(bird_df4),
-             Y = bird_df4$lGL * y_scalar,
+             Y = bird_df4$lMl * y_scalar,
              K = NCOL(tt),
+             J = length(unique(bird_df4$niche_idx)),
              X = tt,
-             LRho = chol(V)) #cholesky factor of corr matrix
+             niche_idx = bird_df4$niche_idx,
+             Rho = Rho) #corr matrix
 
 options(mc.cores = parallel::detectCores())
 
@@ -143,7 +173,7 @@ CHAINS <- 4
 ITER <- 2000
 
 #compile model
-mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo.stan'))
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'))
 
 #sample
 fit <- mod$sample(
@@ -160,21 +190,21 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-gl-phylo-results-', run_date),
+                  file_name = paste0('bird-ml-phylo-vint-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-gl-phylo-', run_date),
+                  mkdir = paste0('bird-ml-phylo-vint-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-gl-phylo-fit-', run_date),
+                  obj_name = paste0('bird-ml-phylo-vint-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-gl-phylo-data-', run_date),
-                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-gl-phylo.R')),
-                  cp_file_names = c(paste0('5-phylo-', run_date, '.stan'),
-                                    paste0('5-gl-phylo-', run_date, '.R')))
+                  add_obj_names = paste0('bird-ml-phylo-vint-data-', run_date),
+                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'), 
+                              paste0(sc_dir, 'Scripts/5-model/5-ml-phylo-vint.R')),
+                  cp_file_names = c(paste0('5-phylo-vint-', run_date, '.stan'),
+                                    paste0('5-ml-phylo-vint-', run_date, '.R')))
 
-fig_dir <- paste0(dir, 'Results/bird-gl-phylo-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-ml-phylo-vint-', run_date, '/')
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -195,7 +225,7 @@ fig_dir <- paste0(dir, 'Results/bird-gl-phylo-', run_date, '/')
 
 #model summary
 MCMCvis::MCMCsummary(fit, round = 3, 
-                     params = c('beta', 'kappa', 'sigma', 'sigma_phylo'),
+                     params = c('beta', 'kappa', 'gamma', 'sigma', 'sigma_phylo'),
                      pg0 = TRUE)
 
 
@@ -303,7 +333,21 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = '% change Surv for 1 sd change in cov',
+                  main = '% change ML for 1 sd change in cov',
+                  guide_lines = TRUE)
+dev.off()
+
+
+pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+    height = 5, width = 5)
+MCMCvis::MCMCplot(fit, 
+                  params = 'gamma',
+                  labels = niche_names,
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  main = 'Niche group intercept',
                   guide_lines = TRUE)
 dev.off()
 

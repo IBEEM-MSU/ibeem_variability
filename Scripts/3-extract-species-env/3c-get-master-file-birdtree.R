@@ -88,11 +88,32 @@ avonet.dat2 <- dplyr::group_by(avonet.dat1, ID) %>%
 # Bird et al data
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(birdtreeID)) %>%
-  dplyr::select(birdtreeID, GenLength) %>%
+  dplyr::select(birdtreeID, 
+                GenLength,
+                Measured_survival,
+                Measured_age_first_breeding,
+                Measured_max_longevity,
+                Modeled_survival,
+                Modeled_age_first_breeding,
+                Modeled_max_longevity) %>%
+  #correct for incorrect scaling in data
+  dplyr::mutate(Measured_survival = Measured_survival * 0.01) %>%
   dplyr::rename(ID = birdtreeID) %>%
   #average genlength across dups
   dplyr::group_by(ID) %>%
-  dplyr::summarize(GenLength = mean(GenLength)) %>%
+  dplyr::summarize(GenLength = mean(GenLength),
+                   Measured_survival = mean(Measured_survival, 
+                                            na.rm = TRUE),
+                   Measured_age_first_breeding = mean(Measured_age_first_breeding, 
+                                                      na.rm = TRUE),
+                   Measured_max_longevity = mean(Measured_max_longevity, 
+                                                 na.rm = TRUE),
+                   Modeled_survival = mean(Modeled_survival, 
+                                           na.rm = TRUE),
+                   Modeled_age_first_breeding = mean(Modeled_age_first_breeding, 
+                                                     na.rm = TRUE),
+                   Modeled_max_longevity = mean(Modeled_max_longevity, 
+                                                na.rm = TRUE)) %>%
   dplyr::ungroup()
 
 
@@ -120,7 +141,7 @@ main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
 
 
 #write to file
-write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree.csv'), 
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'), 
           row.names = FALSE)
 
 # write.csv(main.dat, file = paste0('~/main-bird-data.csv'),

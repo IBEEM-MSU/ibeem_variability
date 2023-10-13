@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - survival ~ env + phylo + oe + varyiny int by niche
+# Fit Bayes model - clutch size ~ env + phylo + oe + varyiny int by niche
 ####################
 
 
@@ -44,31 +44,18 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
                 Migration == 1) %>%
   #filter out precip outlier
   dplyr::filter(precip_cv_season < 2.5) %>%
-  #sample a subset of species
-  # dplyr::slice_sample(n = 2000) %>%
-  dplyr::mutate(fac_Family = factor(Family),
-                fac_Order = factor(Order),
-                lMass = log(Mass),
-                lGL = log(GenLength),
-                f_id = as.numeric(fac_Family)) %>%
+  dplyr::mutate(lMass = log(Mass),
+                lGL = log(GenLength)) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
   dplyr::ungroup()
 
-#survival etc from Bird et al.
-bs <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
-  dplyr::select(-Order, -Family, -GenLength)
-
 #clutch size from Bird et al.
 bcs <- read.csv(paste0(dir, 'data/L1/trait/bird_et_al_clutch_size.csv'))
 
 #join
-bird_df2 <- dplyr::left_join(bird_df, bs, by = c('Birdtree_name' = 'Sci_name')) %>%
-  dplyr::arrange(Birdtree_name) %>%
-  dplyr::mutate(Scientific.name = stringr::str_to_sentence(Birdtree_name),
-                #correct for incorrect scaling in data
-                Measured_survival = Measured_survival * 0.01) %>%
+bird_df2 <- dplyr::mutate(bird_df, Scientific.name = stringr::str_to_sentence(Birdtree_name)) %>%
   dplyr::left_join(dplyr::select(bcs, -Order, -Family, -Genus), 
                    by = 'Scientific.name') %>%
   dplyr::select(ID, Birdtree_name, Avonet_name, Family, Order, Trophic.Niche,
@@ -76,14 +63,13 @@ bird_df2 <- dplyr::left_join(bird_df, bs, by = c('Birdtree_name' = 'Sci_name')) 
                 precip_mean, precip_cv_year, precip_cv_season, precip_sp_color_month,
                 Mass, GenLength, lMass, lGL, Mean.clutch.size, Measured_survival, 
                 Measured_age_first_breeding, Measured_max_longevity, 
-                Modeled_survival, Modeled_age_first_breeding, Modeled_max_longevity)
+                Modeled_survival, Modeled_age_first_breeding, Modeled_max_longevity) %>%
+  dplyr::mutate(species = stringr::str_to_title(gsub(' ', '_', Birdtree_name)))
 
-#subset out just traits of interest
-tri <- dplyr::mutate(bird_df2,
-                     species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-dplyr::mutate(Measured_log_age_first_breeding = log(Measured_age_first_breeding),
-                Measured_log_max_longevity = log(Measured_max_longevity),
-                Measured_log_clutch_size = log(Mean.clutch.size)) %>%
+#subset out just traits of interest for phylo imputation
+tri <- dplyr::mutate(bird_df2, Measured_log_age_first_breeding = log(Measured_age_first_breeding),
+                     Measured_log_max_longevity = log(Measured_max_longevity),
+                     Measured_log_clutch_size = log(Mean.clutch.size)) %>%
   dplyr::select(species, 
                 lMass,
                 Measured_survival,
@@ -216,8 +202,8 @@ bird_df5$niche_idx <- as.numeric(factor(bird_df5$Trophic_niche))
 niche_names <- levels(factor(bird_df5$Trophic_niche))
 
 #separate obs and imp values
-obs_idx <- which(bird_df5$SD_survival == 0)
-imp_idx <- which(bird_df5$SD_survival != 0)
+obs_idx <- which(bird_df5$SD_log_clutch_size == 0)
+imp_idx <- which(bird_df5$SD_log_clutch_size != 0)
 
 #get corr matrix
 # V <- ape::vcv.phylo(pr_tree2, corr = TRUE)
@@ -270,9 +256,9 @@ tt_imp2 <- sweep(tt_imp, 2, tt_mns)
 DATA <- list(N = NROW(bird_df5),
              No = length(obs_idx),
              Ni = length(imp_idx),
-             y_obs = bird_df5$Phylo_survival[obs_idx] * y_scalar,
-             y_imp = bird_df5$Phylo_survival[imp_idx] * y_scalar,
-             sd_y = bird_df5$SD_survival[imp_idx] * y_scalar,
+             y_obs = bird_df5$Phylo_log_clutch_size[obs_idx] * y_scalar,
+             y_imp = bird_df5$Phylo_log_clutch_size[imp_idx] * y_scalar,
+             sd_y = bird_df5$SD_log_clutch_size[imp_idx] * y_scalar,
              K = NCOL(tt_obs),
              J = length(unique(bird_df5$niche_idx)),
              X_obs = tt_obs2,
@@ -309,21 +295,21 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-surv-phylo-oe-vint-results-', run_date),
+                  file_name = paste0('bird-clutch-phylo-oe-vint-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-surv-phylo-oe-vint-', run_date),
+                  mkdir = paste0('bird-clutch-phylo-oe-vint-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-surv-phylo-oe-vint-fit-', run_date),
+                  obj_name = paste0('bird-clutch-phylo-oe-vint-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-surv-phylo-oe-vint-data-', run_date),
+                  add_obj_names = paste0('bird-clutch-phylo-oe-vint-data-', run_date),
                   cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-oe-vint.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-surv-phylo-oe-vint.R')),
+                              paste0(sc_dir, 'Scripts/5-model/5-clutch-phylo-oe-vint.R')),
                   cp_file_names = c(paste0('5-phylo-oe-vint-', run_date, '.stan'),
-                                    paste0('5-surv-phylo-oe-vint-', run_date, '.R')))
+                                    paste0('5-clutch-phylo-oe-vint-', run_date, '.R')))
 
-fig_dir <- paste0(dir, 'Results/bird-surv-phylo-oe-vint-', run_date)
+fig_dir <- paste0(dir, 'Results/bird-clutch-phylo-oe-vint-', run_date)
 
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
@@ -367,19 +353,19 @@ MCMCvis::MCMCsummary(fit, round = 3,
 #((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
-                               exact = TRUE, ISB = FALSE) * 
+                                exact = TRUE, ISB = FALSE) * 
   lMass_scalar * y_scalar
 beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
-                                 exact = TRUE, ISB = FALSE) * 
+                                exact = TRUE, ISB = FALSE) * 
   temp_sd_season_scalar * y_scalar
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
-                                 exact = TRUE, ISB = FALSE) * 
+                                exact = TRUE, ISB = FALSE) * 
   temp_sd_year_scalar * y_scalar
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
-                                 exact = TRUE, ISB = FALSE) * 
+                                exact = TRUE, ISB = FALSE) * 
   precip_cv_season_scalar * y_scalar
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
-                                 exact = TRUE, ISB = FALSE) * 
+                                exact = TRUE, ISB = FALSE) * 
   precip_cv_year_scalar * y_scalar
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)

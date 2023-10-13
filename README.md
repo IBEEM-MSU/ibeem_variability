@@ -48,22 +48,28 @@
     * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
     * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
   * `5-model/` - * = working scripts
-    * `5-clutch-oe.R` - imputed clutch size ~ var with observation error
+    * `Archive/` - old model scripts
+      * `5-clutch-oe.R` - imputed clutch size ~ var with observation error
+      * `5-gl-pc.R` - gen length ~ PC var
+      * `5-gl-varfam.R` - gen length ~ var varying intercepts, varying slopes by family  
+      * `5-surv-phylo.R` - imputed survival ~ var with phylo
+      * `5-surv-pc-oe.R` - imputed survival ~ PC var with observation error
+      * `5-surv-oe.R` - imputed survival ~ var with observation error
+      * `5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
+      * `5-surv-phylo-oe.R` - imputed survival ~ var with phylo and observation error  
+      * `5-surv-phylo-oe-rs.R` - as above but check benchmarking reduce_sum
+      * `5-surv-phylo-oe.slurm` - to run `5-surv-phylo-oe.R`  
+      * `bird_df3.rds` - data to avoid running first part of `5-...R` scripts
+      * `brms.R` - benchmarking brms models with rstan models
+    * `5-ab-phylo-vint.R` - age first breeding ~ var varying intercepts, phylo kappa
     * `5-gl-intvar.R` - gen length ~ var - varying int (by fam/niche) model - not that useful since it's ignoring var across fams/niches
     * `5-gl-mam.R` - gen length ~ var for mammals
-    * `5-gl-pc.R` - gen length ~ PC var
-    * `5-gl-varfam.R` - gen length ~ var varying intercepts, varying slopes by family
-    * `5-gl-varniche.R` - gen length ~ var varying intercepts, varying slopes by niche
-    * `5-gl.R` - gen length ~ var simple
-    * `5-surv-pc-oe.R` - imputed survival ~ PC var with observation error
-    * `5-surv-oe.R` - imputed survival ~ var with observation error
-    * `5-surv-pc-phylo.R` -imputed surv ~ PC var with phylo
-    * `*5-surv-phylo-oe.R` - imputed survival ~ var with phylo and observation error
-    * `5-surv-phylo-oe-rs.R` - as above but check benchmarking reduce_sum
-    * `5-surv-phylo-oe.slurm` - to run `5-surv-phylo-oe.R`
-    * `5-surv-phylo.R` - imputed survival ~ var with phylo
-    * `bird_df3.rds` - data to avoid running first part of `5-...R` scripts
-    * `brms.R` - benchmarking brms models with rstan models
+    * `5-gl-phylo-vint.R` - gen length ~ var varying intercepts, phylo kappa
+    * `5-gl-phylo.R` - gen length ~ var + phylo
+    * `5-gl-varniche.R` - gen length ~ var + varying intercepts, varying slopes by niche
+    * `5-gl.R` - gen length ~ var
+    * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
+    * `5-surv-phylo-vint.R` - survival ~ var + varying int + phylo kappa
   * `X-explore/`
     * `X-explore-bird.R` - exploratory analyses birds
     * `X-explore-mammal.R` - exploratory analyses mammals

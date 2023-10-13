@@ -42,6 +42,7 @@ BL_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'BOTW.gdb/a0000000a.gdbt
 
 #bird life history data (processed to L1)
 #data location: https://drive.google.com/drive/u/1/folders/18p2Zn3dMA78hdwrCVQBtJ8dnnLEYa7_w
+#'Modeled' values are from Table 4 (some were 'modeled' and others 'hierarchically imputed' - see Bird et al. methods)
 LH_data <- read.csv(paste0(life_history_dir, 'Bird_et_al_gen_length_birds.csv'))
 
 # Avonet trait data
