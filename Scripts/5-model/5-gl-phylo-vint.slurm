@@ -3,7 +3,7 @@
 #SBATCH -N 1 #number of tasks
 #SBATCH -n 1 #number of nodes
 #SBATCH -c 6 #cpus
-#SBATCH --time=168:00:00
+#SBATCH --time=96:00:00
 #SBATCH --mail-type=FAIL,END
 #SBATCH --mail-user=ccy@msu.edu
 #SBATCH --mem=80G #memory requested
