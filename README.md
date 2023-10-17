@@ -41,7 +41,8 @@
     * `3b-extract-compile-mammal.sh` - bash script to iterate through all pieces of data and run `3b-extract-mammal.sbatch`
     * `3b-extract-mammal.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-terrestrial-mammal.R` on HPCC
     * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
-    * `3c-get-master-file.R` - generate master file with rows for species and columns for environmental and life history data
+    * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data. Also pulls in IUCN data.
+    + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`, since pulling the IUCN data takes a few hours.
   * `4-rasterize` - rasterize ranges
     * `4a-create-rasters.R` - create .tif files birds
     * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`

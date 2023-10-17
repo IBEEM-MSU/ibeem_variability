@@ -8,6 +8,7 @@ rm(list = ls())
 # load packages ------------------------------------------------------------
 
 library(tidyverse)
+library(rredlist)
 
 
 # Specify directories -----------------------------------------------------
@@ -139,10 +140,24 @@ main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
 #   dplyr::select(Accepted_name, ID, 
 #                 GenLength, temp_mean, Migration)
 
+# Get IUCN status ---------------------------------------------------------
+# Note this takes a while (6h), since IUCN requires a 2 second delay between 
+# calls when using the same API key, so can't really do any parallelization...
+main.dat$iucn <- NA
+for (i in 1:nrow(main.dat)) {
+  print(paste0("Currently on row ", i, " out of ", nrow(main.dat)))
+  try({
+    tmp <- rl_search(main.dat$Avonet_name[i])
+    main.dat$iucn[i] <- tmp$result$category
+  })
+  # Need two second delay to avoid getting API key shut down
+  Sys.sleep(2)	
+}
 
-#write to file
-write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'), 
+# write to file
+write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'),
           row.names = FALSE)
+
 
 # write.csv(main.dat, file = paste0('~/main-bird-data.csv'),
 #           row.names = FALSE)
