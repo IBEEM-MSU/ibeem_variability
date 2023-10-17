@@ -40,5 +40,5 @@ model {
   gamma ~ normal(0, sigma_gamma);
   
   // optimized call for glm
-  Y ~ normal_id_glm_lupdf(X, kappa + gamma[niche_idx] + alpha, beta, sigma);
+  Y ~ normal_id_glm(X, kappa + gamma[niche_idx] + alpha, beta, sigma);
 }
