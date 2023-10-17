@@ -21,6 +21,7 @@ library(lme4)
 # read in data -------------------------------------------------
 
 mam_df <- read.csv(paste0(dir, 'Data/L3/main-mammal-data.csv')) %>%
+  dplyr::filter(PH_Terrestrial == 0) %>%
   dplyr::mutate(Family = PH_Family,
                 Order = PH_Order,
                 # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
@@ -42,18 +43,18 @@ mam_df$precip_cv_season[which(!is.finite(mam_df$precip_cv_season))] <- 0
 f1 <- lme4::lmer(lGL ~ lMass + 
                    temp_sd_season + 
                    temp_sd_year +
-                   temp_sp_color_month +
+                   # temp_sp_color_month +
                    precip_cv_season +
                    precip_cv_year +
-                   precip_sp_color_month +
+                   # precip_sp_color_month +
                    (1 + lMass | fac_Family) +
                    (-1 + temp_sd_season | fac_Family) +
                    (-1 + temp_sd_year | fac_Family) +
-                   (-1 + temp_sp_color_month | fac_Family) +
+                   # (-1 + temp_sp_color_month | fac_Family) +
                    (-1 + precip_cv_season | fac_Family) +
-                   (-1 + precip_cv_year | fac_Family) +
-                   (-1 + precip_sp_color_month | fac_Family),
-                 data = mam_df)
+                   (-1 + precip_cv_year | fac_Family),# +
+                   # (-1 + precip_sp_color_month | fac_Family),
+                 data = mam_df4)
 f2 <- lme4::lmer(lGL ~ lMass + 
                    precip_cv_season + 
                    precip_cv_year +
@@ -120,6 +121,7 @@ AIC(f4)
 AIC(f5)
 AIC(f6) #best ()
 AIC(f7)
+AIC(fx)
 
 summary(f1)
 summary(f4)

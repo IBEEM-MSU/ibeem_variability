@@ -21,17 +21,13 @@ library(picante)
 
 # load mammal data --------------------------------------------------------
 
-mam_df <- read.csv(paste0(dir, 'Data/L3/main-mammal-data.csv')) %>%
+mam_df <- read.csv(paste0(dir, 'data/L3/main-mammal-data.csv')) %>%
   dplyr::filter(PH_Terrestrial == 1) %>%
   dplyr::mutate(Family = PH_Family,
                 Order = PH_Order,
                 # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
                 Mass = PH_Mass.g, #Phylacine mass
                 GenLength = LH_GenerationLength_d / 365,
-                lGL = log(GenLength),
-                lMass = log(Mass),
-                fac_Family = factor(Family),
-                fac_Order = factor(Order),
                 lMass = log(Mass),
                 lGL = log(GenLength))
 

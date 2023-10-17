@@ -24,7 +24,6 @@ library(phytools)
 
 # load bird data ---------------------------------------------------------------
 
-#laod bird data, merge with surv and clutch size data
 or_excl <- c('Sphenisciformes', #penguins 
              'Procellariiformes', #tubenoses
              'Pelecaniformes', #pelicans
@@ -135,7 +134,7 @@ niche_names <- levels(factor(bird_df4$Trophic_niche))
 
 #scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
-temp_sd_season_scalar <- 0.2
+temp_sd_season_scalar <- 0.1
 temp_sd_year_scalar <- 0.1
 precip_cv_season_scalar <- 0.1
 precip_cv_year_scalar <- 0.5
@@ -179,7 +178,7 @@ options(mc.cores = parallel::detectCores())
 # TREE_DEPTH <- 12
 # STEP_SIZE <- 0.03
 CHAINS <- 4
-ITER <- 2000
+ITER <- 4000
 
 #compile model
 mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'))

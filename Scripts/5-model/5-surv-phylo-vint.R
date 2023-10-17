@@ -24,7 +24,6 @@ library(phytools)
 
 # load bird data ---------------------------------------------------------------
 
-#laod bird data, merge with surv and clutch size data
 or_excl <- c('Sphenisciformes', #penguins 
              'Procellariiformes', #tubenoses
              'Pelecaniformes', #pelicans
