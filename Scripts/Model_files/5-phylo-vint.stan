@@ -7,6 +7,8 @@ data {
   int<lower=1> J;  // number of niche groups
   array[N] int<lower=1> niche_idx; // niche id of obs value
   matrix[N, N] Rho;  // known correlation matrix
+  real mu_kappa;  // to set prior mu_kappa
+  real sigma_kappa;  // to set prior sigma_kappa
 }
 transformed data {
   matrix[N, N] LRho = cholesky_decompose(Rho); // get cholesky factor of known corr matrix
@@ -15,7 +17,6 @@ parameters {
   vector[K] beta;  // regression coefficients
   real kappa;  // global int
   vector[J] gamma; // intercept for niche
-  real mu_gamma; // mean gammas
   real<lower=0> sigma_gamma; // mean gammas
   real<lower=0> sigma;  // process error
   real<lower=0> sigma_phylo;  // phylo sd
@@ -23,23 +24,21 @@ parameters {
 }
 transformed parameters {
   vector[N] alpha;  // phylo intercepts (per species)
-  // implies alpha ~ MVN(0, Rho) * sigma_phylo
+  // implies alpha ~ MVN(0, Rho) * sigma_phylo^2
   alpha = (sigma_phylo^2 * (LRho * z));
 }
 model {
-  real lprior = 0;  // prior contributions to the log posterior
-  // likelihood not including constants
-  target += normal_lupdf(gamma | 0, sigma_gamma);
+  // priors
+  beta ~ std_normal();
+  kappa ~ normal(mu_kappa, sigma_kappa); // hard coded mu_kappa and sigma_kappa
+  sigma ~ std_normal();
+  sigma_phylo ~ std_normal();
+  sigma_gamma ~ std_normal();
+  z ~ std_normal();
+  
+  // niche intercepts
+  gamma ~ normal(0, sigma_gamma);
   
   // optimized call for glm
-  target += normal_id_glm_lupdf(Y | X, kappa + gamma[niche_idx] + alpha, beta, sigma);
-
-  // priors not including constants
-  lprior += std_normal_lupdf(beta);
-  lprior += normal_lupdf(kappa | 2, 2);
-  lprior += std_normal_lupdf(sigma);
-  lprior += std_normal_lupdf(sigma_phylo);
-  lprior += std_normal_lupdf(sigma_gamma);
-  target += lprior;
-  target += std_normal_lupdf(z);
+  Y ~ normal_id_glm_lupdf(X, kappa + gamma[niche_idx] + alpha, beta, sigma);
 }
