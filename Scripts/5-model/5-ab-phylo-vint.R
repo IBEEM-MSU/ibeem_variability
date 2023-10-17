@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - Ab ~ env + phylo + vint
+# Fit Bayes model - ab ~ env + phylo + vint
 ####################
 
 
@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-13'
+run_date <- '2023-10-17'
 
 
 # load packages -----------------------------------------------------------
@@ -133,7 +133,7 @@ niche_names <- levels(factor(bird_df4$Trophic_niche))
 
 # scale/prep data ---------------------------------------------------------
 
-#scalars for data
+#scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
 temp_sd_season_scalar <- 0.2
 temp_sd_year_scalar <- 0.1
@@ -163,7 +163,15 @@ DATA <- list(N = NROW(bird_df4),
              J = length(unique(bird_df4$niche_idx)),
              X = tt,
              niche_idx = bird_df4$niche_idx,
+             mu_kappa = 1,
+             sigma_kappa = 1,
              Rho = Rho) #corr matrix
+
+# summary(lm(DATA$Y ~ DATA$X[,1] +
+#              DATA$X[,2] +
+#              DATA$X[,3] +
+#              DATA$X[,4] +
+#              DATA$X[,5]))
 
 options(mc.cores = parallel::detectCores())
 
@@ -184,6 +192,9 @@ fit <- mod$sample(
   iter_warmup = ITER / 2,
   parallel_chains = CHAINS,
   refresh = 500)
+# max_treedepth = TREE_DEPTH
+# adapt_delta = DELTA
+# step_size = STEP_SIZE
 
 
 # save summary space ------------------------------------------------------------
@@ -207,10 +218,10 @@ MCMCvis::MCMCdiag(fit,
 
 fig_dir <- paste0(dir, 'Results/bird-ab-phylo-vint-', run_date, '/')
 
+# fit <- readRDS(paste0(dir, '/Results/bird-ab-phylo-vint-', run_date,
+#                       '/bird-ab-phylo-vint-fit-', run_date, '.rds'))
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
-# fit <- readRDS(paste0(dir, '/Results/se-bird-novar-oe-sep-', run_date,
-#                       '/se-bird-novar-oe-sep-fit-', run_date, '.rds'))
 
 
 # # residuals ---------------------------------------------------------------
