@@ -78,6 +78,8 @@
   * `6-phylo-cor` - get phylogenetic correlation matrix
     * `6a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `6b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
+    * `6a-mammal-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for mammals
+    * `6b-mammal-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for mammals 
   * `Model_files` - Stan model files
 * `Archive/` - ununsed scripts  
 * `Data/` (ignored)
