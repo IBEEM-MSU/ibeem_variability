@@ -33,8 +33,7 @@ bird.phylo <- consensus.edges(
 is.ultrametric(bird.phylo)
 
 # write out tree
-# saveRDS(bird.phylo, paste0(out.dir, 'bird-phylo-tree.rds'))
-save(bird.phylo, paste0(out.dir, 'bird-consensus-tree.rda'))
+save(bird.phylo, file = paste0(out.dir, 'bird-consensus-tree.rda'))
 
 # Calculate covariance matrix
 cov.mat <- ape::vcv.phylo(bird.phylo)
