@@ -83,10 +83,6 @@ load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 bird_df3 <- bird_df2
 
 #prune tree
-#df with names and idx
-idx_df2 <- data.frame(idx = 1:NROW(bird_df3),
-                      name = stringr::str_to_title(gsub(' ', '_', bird_df3$species)))
-
 #species not found in both datasets (species to drop from tree)
 nm <- setdiff(bird.phylo$tip.label, bird_df3$species)
 

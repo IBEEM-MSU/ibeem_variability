@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-17'
+run_date <- '2023-10-23'
 
 
 # load packages -----------------------------------------------------------
@@ -32,7 +32,8 @@ mam_df <- read.csv(paste0(dir, 'data/L3/main-mammal-data.csv')) %>%
                 Mass = PH_Mass.g, #Phylacine mass
                 GenLength = LH_GenerationLength_d / 365,
                 lMass = log(Mass),
-                lGL = log(GenLength))
+                lGL = log(GenLength)) %>%
+  dplyr::mutate(species = gsub(' ', '_', Accepted_name))
 
 #one species with Inf precip_cv_season (due to precip_mean = 0 and using median)
 dplyr::filter(mam_df, !is.finite(precip_cv_season))
@@ -42,68 +43,55 @@ mam_df$precip_cv_season[which(!is.finite(mam_df$precip_cv_season))] <- 0
 # phylo -------------------------------------------------------------------
 
 #load consensus tree - MAMMALS
-# load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
-# 
-# #subset of imp
-# # set.seed(1)
-# # Nsel <- 1000
-# # stidx <- sample(x = 1:NROW(bird_df2), size = Nsel)
-# # bird_df3 <- bird_df2[stidx,]
-# bird_df3 <- bird_df2
-# 
-# #prune tree
-# #df with names and idx
-# idx_df2 <- data.frame(idx = 1:NROW(bird_df3),
-#                       name = stringr::str_to_title(gsub(' ', '_', bird_df3$species)))
-# 
-# #species not found in both datasets (species to drop from tree)
-# nm <- setdiff(bird.phylo$tip.label, bird_df3$species)
-# 
-# #prune specified tips from tree
-# pr_tree <- ape::drop.tip(bird.phylo, nm)
-# 
-# #get idx
-# j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
-#                            data.frame(idx = 1:NROW(bird_df3), bird_df3), 
-#                            by = 'species')
-# 
-# #apply
-# bird_df4 <- bird_df3[j_idx3$idx,]
-# 
-# #make tree binary
-# pr_tree2 <- ape::multi2di(pr_tree)
-# 
-# #make response into matrix with species as rownames
-# dd <- dplyr::select(bird_df4, 
-#                     lGL) %>%
-#   as.matrix()
-# row.names(dd) <- bird_df4$species
-# 
-# #get estimate of Pagel's kappa to scale phylogeny
-# fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "kappa")
-# 
-# #rescale tree
-# pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
-#                                kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
-# 
-# #get corr matrix of rescaled tree
-# Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
+load(paste0(dir, 'data/L3/mammal-consensus-tree.rda'))
 
-mam_df4 <- mam_df
+#prune tree
+#species not found in both datasets (species to drop from tree)
+nm <- setdiff(mammal.phylo$tip.label, mam_df$species)
+
+#prune specified tips from tree
+pr_tree <- ape::drop.tip(mammal.phylo, nm)
+
+#get idx
+j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label),
+                           data.frame(idx = 1:NROW(mam_df), mam_df),
+                           by = 'species')
+
+#apply
+mam_df2 <- mam_df[j_idx3$idx,]
+
+#make tree binary
+pr_tree2 <- ape::multi2di(pr_tree)
+
+#make response into matrix with species as rownames
+dd <- dplyr::select(mam_df2,
+                    lGL) %>%
+  as.matrix()
+row.names(dd) <- mam_df2$species
+
+#get estimate of Pagel's kappa to scale phylogeny
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "kappa")
+
+#rescale tree
+pr_tree_k <- phytools::rescale(pr_tree, 'kappa',
+                               kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
+
+#get corr matrix of rescaled tree
+Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
 
 
 # niche levels ------------------------------------------------------------
 
 #at least 70% of diet from source, while Omnivore is relatively equal proportions. (following Pigot et al. 2020, which was used for AVONET Tobias et al. 2022). 
 #some species will be just vertebrates and inverts, while others all 3 though
-mam_df4$Trophic_niche <- NA
-mam_df4$Trophic_niche[which(mam_df4$PH_Diet.Plant >= 70)] <- 'Herbivore'
-mam_df4$Trophic_niche[which(mam_df4$PH_Diet.Vertebrate >= 70)] <- 'Vertivore'
-mam_df4$Trophic_niche[which(mam_df4$PH_Diet.Invertebrate >= 70)] <- 'Invertivore'
-mam_df4$Trophic_niche[which(is.na(mam_df4$Trophic_niche))] <- 'Omnivore'
+mam_df2$Trophic_niche <- NA
+mam_df2$Trophic_niche[which(mam_df2$PH_Diet.Plant >= 70)] <- 'Herbivore'
+mam_df2$Trophic_niche[which(mam_df2$PH_Diet.Vertebrate >= 70)] <- 'Vertivore'
+mam_df2$Trophic_niche[which(mam_df2$PH_Diet.Invertebrate >= 70)] <- 'Invertivore'
+mam_df2$Trophic_niche[which(is.na(mam_df2$Trophic_niche))] <- 'Omnivore'
 
-mam_df4$niche_idx <- as.numeric(factor(mam_df4$Trophic_niche))
-niche_names <- levels(factor(mam_df4$Trophic_niche))
+mam_df2$niche_idx <- as.numeric(factor(mam_df2$Trophic_niche))
+niche_names <- levels(factor(mam_df2$Trophic_niche))
 
 
 # scale/prep data ---------------------------------------------------------
@@ -117,27 +105,27 @@ precip_cv_year_scalar <- 0.5
 y_scalar <- 2
 
 #center predictors
-tt <- data.frame(lMass = mam_df4$lMass * 
+tt <- data.frame(lMass = mam_df2$lMass * 
                    lMass_scalar,
-                 temp_sd_season = mam_df4$temp_sd_season * 
+                 temp_sd_season = mam_df2$temp_sd_season * 
                    temp_sd_season_scalar,
-                 temp_sd_year = mam_df4$temp_sd_year * 
+                 temp_sd_year = mam_df2$temp_sd_year * 
                    temp_sd_year_scalar,
-                 precip_cv_season = mam_df4$precip_cv_season * 
+                 precip_cv_season = mam_df2$precip_cv_season * 
                    precip_cv_season_scalar,
-                 precip_cv_year = mam_df4$precip_cv_year * 
+                 precip_cv_year = mam_df2$precip_cv_year * 
                    precip_cv_year_scalar) %>%
   apply(2, function(x) scale(x, scale = FALSE)[,1])
 
 
 # fit model ---------------------------------------------------------------
 
-DATA <- list(N = NROW(mam_df4),
-             Y = mam_df4$lGL * y_scalar,
+DATA <- list(N = NROW(mam_df2),
+             Y = mam_df2$lGL * y_scalar,
              K = NCOL(tt),
-             J = length(unique(mam_df4$niche_idx)),
+             J = length(unique(mam_df2$niche_idx)),
              X = tt,
-             niche_idx = mam_df4$niche_idx,
+             niche_idx = mam_df2$niche_idx,
              mu_kappa = 2,
              sigma_kappa = 1,
              Rho = Rho) #corr matrix

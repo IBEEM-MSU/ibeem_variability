@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=gl-pv-bird
+#SBATCH --job-name=gl-pv-mam
 #SBATCH -N 1 #number of tasks
 #SBATCH -n 1 #number of nodes
 #SBATCH -c 6 #cpus
@@ -21,4 +21,4 @@ module load R/4.1.0
 #manually specify R lib
 export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
 
-Rscript /mnt/home/ccy/variability/Scripts/5-model/5-gl-phylo-vint.R
+Rscript /mnt/home/ccy/variability/Scripts/5-model/5-gl-phylo-vint-mam.R
