@@ -45,8 +45,8 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   #filter out precip outlier
   dplyr::filter(precip_cv_season < 2.5) %>%
   dplyr::mutate(lMass = log(Mass),
-                # lGL = log(GenLength),
-                lGL = GenLength,
+                lGL = log(GenLength),
+                # lGL = GenLength,
                 # lGL = 1/GenLength,
                 lAb = log(Modeled_age_first_breeding),
                 lMl = log(Modeled_max_longevity),
@@ -276,7 +276,7 @@ beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4] / precip_cv_season_scalar)) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
 
 
-# added variable and partial resid plots ------------------------------------------------
+# partial resid plots ------------------------------------------------
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
@@ -411,27 +411,27 @@ dev.off()
 #covariates as a function of other covariates
 # tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season +
 #             precip_cv_year + precip_cv_season, 
-#           data = bird_df)
+#           data = bird_df4)
 # stf1 <- summary(tf1)
 # 
 # tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season +
 #             precip_cv_year + precip_cv_season, data = 
-#             bird_df)
+#             bird_df4)
 # stf2 <- summary(tf2)
 # 
 # tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year +
 #             precip_cv_year + precip_cv_season, 
-#           data = bird_df)
+#           data = bird_df4)
 # stf3 <- summary(tf3)
 # 
 # tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
 #             precip_cv_season, 
-#           data = bird_df)
+#           data = bird_df4)
 # stf4 <- summary(tf4)
 # 
 # tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
 #             precip_cv_year, 
-#           data = bird_df)
+#           data = bird_df4)
 # stf5 <- summary(tf5)
 # 
 # 
@@ -443,7 +443,7 @@ dev.off()
 # 1 / (1 - stf5$r.squared) #precip_cv_season
 # 
 # #correlation
-# cor(as.matrix(dplyr::select(bird_df3,
+# cor(as.matrix(dplyr::select(bird_df4,
 #                             lMass, temp_sd_year, temp_sd_season,
 #                             precip_cv_year, precip_cv_season)))
 

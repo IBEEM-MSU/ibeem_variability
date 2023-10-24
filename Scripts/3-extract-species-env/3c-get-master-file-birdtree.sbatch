@@ -18,12 +18,13 @@
 #SBATCH --mail-type=FAIL,END
 #
 # Mail user:
-#SBATCH --mail-user=doserjef@msu.edu
-# #SBATCH --mail-user=ccy@msu.edu
+# #SBATCH --mail-user=doserjef@msu.edu
+#SBATCH --mail-user=ccy@msu.edu
 #SBATCH --account plzbuyin #Space lab node
 
 module load GCC/8.3.0
 module load OpenMPI/3.1.4
 module load R/4.1.0
 
-Rscript /mnt/home/doserjef/ibeem_variability/Scripts/3-extract-species-env/3c-get-master-file-birdtree.R
+# Rscript /mnt/home/doserjef/ibeem_variability/Scripts/3-extract-species-env/3c-get-master-file-birdtree.R
+Rscript /mnt/home/ccy/variability/Scripts/3-extract-species-env/3c-get-master-file-birdtree.R

@@ -2,6 +2,7 @@
 # Create rasterized range maps for birds
 #
 # One raster for GenLength, one for delta haldane
+# Add Ab, Cs, and Ml, resids?
 #############################
 
 

@@ -43,11 +43,11 @@
     * `3c-get-master-file-terrestrial-mammal.R` - generate master file with rows for species and columns for environmental and life history data
     * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data. Also pulls in IUCN data.
     + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`, since pulling the IUCN data takes a few hours.
-  * `4-rasterize` - rasterize ranges
-    * `4a-create-rasters.R` - create .tif files birds
-    * `4a-raster-comile.sh` - bash script to iterate through all pieces of data and run `4a-raster.sbatch`
-    * `4a-raster.sbatch` - bash script to load one piece of data and run `4a-create-rasters.R` on HPCC
-    * `4b-stack-rasters.R` - script to stack rasters and produce main .tif
+  * `4-phylo-cor` - get phylogenetic correlation matrix
+    * `4a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
+    * `4b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
+    * `4a-mammal-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for mammals
+    * `4b-mammal-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for mammals 
   * `5-model/` - * = working scripts
     * `Archive/` - old model scripts
       * `5-clutch-oe.R` - imputed clutch size ~ var with observation error
@@ -71,20 +71,21 @@
     * `5-gl.R` - gen length ~ var
     * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
     * `5-surv-phylo-vint.R` - survival ~ var + varying int + phylo kappa
+  * `6-rasterize` - rasterize ranges
+    * `6a-create-rasters.R` - create .tif files birds
+    * `6a-raster-comile.sh` - bash script to iterate through all pieces of data and run `6a-raster.sbatch`
+    * `6a-raster.sbatch` - bash script to load one piece of data and run `6a-create-rasters.R` on HPCC
+    * `6b-stack-rasters.R` - script to stack rasters and produce main .tif
+  * `7-figures` - figures
   * `X-explore/`
     * `X-explore-bird.R` - exploratory analyses birds
     * `X-explore-mammal.R` - exploratory analyses mammals
     * `X-explore-env-var.R` - explore environmental variability
-  * `6-phylo-cor` - get phylogenetic correlation matrix
-    * `6a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
-    * `6b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
-    * `6a-mammal-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for mammals
-    * `6b-mammal-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for mammals 
   * `Model_files` - Stan model files
-* `Archive/` - ununsed scripts  
+* `Archive/` - unused scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
-    * `DHI/` - Dynamic Habitati Index data
+    * `DHI/` - Dynamic Habitat Index data
     * `climate/era5/` - raw ERA5 reanalysis data
     * `ranges/BOTW.gdb` - BirdLife range maps
     * `trait/` - raw trait data

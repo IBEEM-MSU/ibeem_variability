@@ -5,5 +5,5 @@ n="ras" # job name
 # Should probably not hardcode this...
 for i in {1..110}
 do
-  sbatch --job-name=$n.$i --output=$n.$i.SLURMout --export=fileName=BLIDsPiece-$i.rda 4a-raster.sbatch
+  sbatch --job-name=$n.$i --output=$n.$i.SLURMout --export=fileName=BLIDsPiece-$i.rda 6a-raster.sbatch
 done

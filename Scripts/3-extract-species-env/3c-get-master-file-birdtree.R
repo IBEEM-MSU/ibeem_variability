@@ -91,6 +91,7 @@ gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv'
   dplyr::filter(!is.na(birdtreeID)) %>%
   dplyr::select(birdtreeID, 
                 GenLength,
+                Measured_clutch_size,
                 Measured_survival,
                 Measured_age_first_breeding,
                 Measured_max_longevity,
@@ -103,6 +104,8 @@ gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv'
   #average genlength across dups
   dplyr::group_by(ID) %>%
   dplyr::summarize(GenLength = mean(GenLength),
+                   Measured_clutch_size = mean(Measured_clutch_size, 
+                                            na.rm = TRUE),
                    Measured_survival = mean(Measured_survival, 
                                             na.rm = TRUE),
                    Measured_age_first_breeding = mean(Measured_age_first_breeding, 
@@ -147,7 +150,7 @@ main.dat$iucn <- NA
 for (i in 1:nrow(main.dat)) {
   print(paste0("Currently on row ", i, " out of ", nrow(main.dat)))
   try({
-    tmp <- rl_search(main.dat$Avonet_name[i])
+    tmp <- rredlist::rl_search(main.dat$Avonet_name[i])
     main.dat$iucn[i] <- tmp$result$category
   })
   # Need two second delay to avoid getting API key shut down

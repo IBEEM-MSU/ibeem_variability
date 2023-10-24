@@ -34,10 +34,12 @@ NROW(table3) == NROW(table4)
 
 #rename cols and keep only necessary ones
 t3_mod <- dplyr::rename(table3, 
-              Measured_survival = Survival,
-              Measured_age_first_breeding = 'Age at first breeding',
-              Measured_max_longevity = 'Max longevity') %>%
-  dplyr::select(Measured_survival, Measured_age_first_breeding, Measured_max_longevity)
+                        Measured_clutch_size = 'Mean clutch size',
+                        Measured_survival = Survival,
+                        Measured_age_first_breeding = 'Age at first breeding',
+                        Measured_max_longevity = 'Max longevity') %>%
+  dplyr::select(Measured_clutch_size, Measured_survival, 
+                Measured_age_first_breeding, Measured_max_longevity)
 
 t4_mod <- dplyr::rename(table4, 
                         Modeled_survival = 'Adult survival',
@@ -56,6 +58,6 @@ comb <- cbind(t4_mod, t3_mod) %>%
 
 # write out ---------------------------------------------------------------
 
-write.csv(comb, paste0(dir, 'Data/L1/Bird_et_al_gen_length_birds.csv'))
+write.csv(comb, paste0(dir, 'Data/L0/trait/Bird_et_al_gen_length_birds.csv'))
 
           
