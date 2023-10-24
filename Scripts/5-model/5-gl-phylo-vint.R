@@ -45,29 +45,31 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   #filter out precip outlier
   dplyr::filter(precip_cv_season < 2.5) %>%
   dplyr::mutate(lMass = log(Mass),
-                lGL = log(GenLength),
+                # lGL = log(GenLength),
+                lGL = GenLength,
+                # lGL = 1/GenLength,
                 lAb = log(Modeled_age_first_breeding),
-                lMl = log(Modeled_max_longevity)) %>%
+                lMl = log(Modeled_max_longevity),
+                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   #drop duplicated species (for now)
-  dplyr::group_by(Birdtree_name) %>%
+  dplyr::group_by(species) %>%
   dplyr::slice_head() %>%
   dplyr::ungroup()
 
 #subset out just traits of interest
-bird_df2 <- dplyr::mutate(bird_df,
-                          species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  dplyr::select(species,
-                lMass,
-                lGL,
-                Modeled_survival,
-                lAb,
-                lMl,
-                Trophic_niche = Trophic.Niche,
-                temp_mean,
-                temp_sd_year,
-                temp_sd_season,
-                precip_cv_year,
-                precip_cv_season)
+bird_df2 <- dplyr::select(bird_df, 
+                          species,
+                          lMass,
+                          lGL,
+                          Modeled_survival,
+                          lAb,
+                          lMl,
+                          Trophic_niche = Trophic.Niche,
+                          temp_mean,
+                          temp_sd_year,
+                          temp_sd_season,
+                          precip_cv_year,
+                          precip_cv_season)
 
 
 # phylo -------------------------------------------------------------------
@@ -219,13 +221,15 @@ fig_dir <- paste0(dir, 'Results/bird-gl-phylo-vint-', run_date, '/')
 # shinystan::launch_shinystan(fit)
 
 
-# # residuals ---------------------------------------------------------------
-# 
-# # extract residuals and calc phylo signal
-# mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
-# 
-# #calc resid
-# resid <- DATA$y_obs - mu_obs_mn
+# residuals ---------------------------------------------------------------
+
+alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
+kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
+gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
+beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
+
+mu_mn <- kappa_mn + gamma_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
+resid <- DATA$Y - mu_mn
 
 
 # Summary -----------------------------------------------------------------
@@ -274,41 +278,31 @@ beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
 
 # added variable and partial resid plots ------------------------------------------------
 
-# # https://www.wikiwand.com/en/Partial_residual_plot
-# pr_fun <- function(num, nm)
-# {
-#   tm <- cbind(tt_comb2[,1],
-#               c(DATA$temp_sd_season_obs, DATA$temp_sd_season_imp),
-#               c(DATA$temp_sd_year_obs, DATA$temp_sd_year_imp),
-#               c(DATA$precip_cv_season_obs, DATA$precip_cv_season_imp),
-#               c(DATA$precip_cv_year_obs, DATA$precip_cv_year_imp))
-# 
-#   pch <- cbind(beta_ch,
-#                gamma1_ch, gamma2_ch,
-#                theta1_ch, theta2_ch)
-# 
-#   names <- c('Mass', 'Temp seasonality', 'Temp interannual',
-#              'Precip seasonality', 'Precip interannual')
-# 
-#   #partial residuals
-#   pr <- resid_comb + (median(pch[,num]) * tm[,num])
-# 
-#   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
-#       height = 5, width = 5)
-#   plot(tm[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
-#        xlab = 'Predictor',
-#        ylab = 'Partial residual',
-#        main = names[num])
-#   abline(h = 0, col = 'grey', lwd = 4, lty = 2)
-#   abline(a = 0, b = median(pch[,num]), col = rgb(1,0,0,0.5), lwd = 4)
-#   dev.off()
-# }
-# 
-# pr_fun(num = 1, nm = 'mass') #Mass
-# pr_fun(num = 2, nm = 'temp-season') #temp season
-# pr_fun(num = 3, nm = 'temp-year') #temp year
-# pr_fun(num = 4, nm = 'precip-season') #precip season
-# pr_fun(num = 5, nm = 'precip-year') #precip year
+# https://www.wikiwand.com/en/Partial_residual_plot
+pr_fun <- function(num, nm)
+{
+  names <- c('Mass', 'Temp seasonality', 'Temp interannual',
+             'Precip seasonality', 'Precip interannual')
+  
+  #partial residuals
+  pr <- resid + (beta_mn[num] * DATA$X[,num])
+  
+  pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
+      height = 5, width = 5)
+  plot(DATA$X[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
+       xlab = 'Predictor',
+       ylab = 'Partial residual',
+       main = names[num])
+  abline(h = 0, col = 'grey', lwd = 4, lty = 2)
+  abline(a = 0, b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
+  dev.off()
+}
+
+pr_fun(num = 1, nm = 'mass') #Mass
+pr_fun(num = 2, nm = 'temp-season') #temp season
+pr_fun(num = 3, nm = 'temp-year') #temp year
+pr_fun(num = 4, nm = 'precip-season') #precip season
+pr_fun(num = 5, nm = 'precip-year') #precip year
 
 
 # cat plots ---------------------------------------------------------------
@@ -361,40 +355,42 @@ dev.off()
 
 # PPC ---------------------------------------------------------------------
 
-# PPC - t
-# mu_ch <- MCMCvis::MCMCchains(fit, params = 'mu')
-# sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
-# nu_ch <- MCMCvis::MCMCchains(fit, params = 'nu')
-
 # PPC - normal model
-# mu_obs_ch <- MCMCvis::MCMCchains(fit, params = 'mu_obs')
-# mu_imp_ch <- MCMCvis::MCMCchains(fit, params = 'mu_imp')
-# sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
-# mu_comb_ch <- cbind(mu_obs_ch, mu_imp_ch)
-# 
-# #500 iterations
-# sidx <- sample(1:NROW(mu_comb_ch), size = 500)
-# y_rep <- matrix(NA, nrow = length(sidx), ncol = NCOL(mu_comb_ch))
-# for (i in 1:length(sidx))
-# {
-#   #i <- 1
-#   print(paste0('iter: ', i, ' of ', length(sidx)))
-#   for (j in 1:NCOL(mu_comb_ch))
-#   {
-#     #t-dis
-#     # eps <- rt(n = 1, df = nu_ch[sidx[i],1]) * sigma_ch[sidx[i],1]
-#     # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
-#     y_rep[i,j] <- rnorm(1, mu_comb_ch[sidx[i],j], sigma_ch[sidx[i],1])
-#   }
-# }
-# 
-# pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
-# plot(density(y_comb), col = 'black', lwd = 3, ylim = c(0, 5))#, xlim = c(0, 3.5))
-# for (i in 1:500)
-# {
-#   lines(density(y_rep[i,]), col = rgb(1,0,0,0.2))
-# }
-# dev.off()
+sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
+alpha_ch <- MCMCvis::MCMCchains(fit, params = 'alpha')
+kappa_ch <- MCMCvis::MCMCchains(fit, params = 'kappa')
+gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma')
+beta_ch <- MCMCvis::MCMCchains(fit, params = 'beta')
+
+#500 iterations
+sidx <- sample(1:NROW(sigma_ch), size = 500)
+mu_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
+y_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
+for (i in 1:length(sidx))
+{
+  #i <- 1
+  print(paste0('iter: ', i, ' of ', length(sidx)))
+  for (j in 1:length(DATA$Y))
+  {
+    #j <- 1
+    #t-dis
+    # eps <- rt(n = 1, df = nu_ch[sidx[i],1]) * sigma_ch[sidx[i],1]
+    # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
+    
+    mu_rep[i, j] <- kappa_ch[sidx[i], 1] + gamma_ch[sidx[i], DATA$niche_idx[j]] + 
+      alpha_ch[sidx[i], 1] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
+    
+    y_rep[i,j] <- rnorm(1, mu_rep[i, j], sigma_ch[sidx[i], 1])
+  }
+}
+
+pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
+plot(density(DATA$Y), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
+for (i in 1:500)
+{
+  lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))
+}
+dev.off()
 
 
 # R^2 ---------------------------------------------------------------------
@@ -404,18 +400,10 @@ dev.off()
 #in other words:
 #explained var / (explained var + resid var)
 
-#with mass - 0.16
-# var_pred <- apply(mu_comb_ch, 1, var)
-# var_resid <- apply(sweep(mu_comb_ch, 2, y_comb), 1, var)
+# var_pred <- apply(mu_rep, 1, var)
+# var_resid <- apply(sweep(mu_rep, 2, DATA$Y), 1, var)
 # r2_ch <- var_pred / (var_pred + var_resid)
 # hist(r2_ch)
-
-# #no mass - ???
-# mu_nm_ch <- MCMCvis::MCMCchains(fit, params = 'mu_nm')
-# var_pred_nm <- apply(mu_nm_ch, 1, var)
-# var_resid_nm <- apply(sweep(mu_nm_ch, 2, DATA$y), 1, var)
-# r2_ch_nm <- var_pred_nm / (var_pred_nm + var_resid_nm)
-# hist(r2_ch_nm)
 
 
 # VIF ---------------------------------------------------------------------
