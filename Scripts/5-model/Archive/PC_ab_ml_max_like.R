@@ -38,7 +38,7 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Podicipediformes') #grebes
 
 '%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
                 Migration == 1) %>%
@@ -48,6 +48,7 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
                 lGL = log(GenLength),
                 lAb = log(Modeled_age_first_breeding),
                 lMl = log(Modeled_max_longevity),
+                lCs = log(Measured_clutch_size),
                 # lMl = log(Measured_max_longevity),
                 species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   #drop duplicated species (for now)
@@ -60,47 +61,43 @@ bird_df2 <- dplyr::select(bird_df, species,
                           lMass,
                           lGL,
                           Modeled_survival,
+                          Measured_max_longevity,
+                          Measured_age_first_breeding,
                           lAb,
                           lMl,
+                          lCs,
                           Trophic_niche = Trophic.Niche,
                           Order,
                           Family,
+                          cen_lon,
+                          cen_lat,
                           temp_mean,
                           temp_sd_year,
                           temp_sd_season,
                           precip_cv_year,
-                          precip_cv_season) #%>%
-# dplyr::filter(!is.na(lMl))
-
-#clutch size from Bird et al.
-bcs <- read.csv(paste0(dir, 'data/L1/trait/bird_et_al_clutch_size.csv'))
-
-bird_df3 <- dplyr::mutate(bird_df2, Scientific.name = gsub('_', ' ', 
-                                                           species)) %>%
-  dplyr::left_join(dplyr::select(bcs, -Order, -Family, -Genus), 
-                   by = 'Scientific.name') %>%
-  dplyr::mutate(lCs = log(Mean.clutch.size))
+                          precip_cv_season)
 
 
 # niche levels ------------------------------------------------------------
 
 #assign missing species (owls) to Vertivore
-bird_df3$Trophic_niche[which(is.na(bird_df3$Trophic_niche))] <- "Vertivore"
+bird_df2$Trophic_niche[which(is.na(bird_df2$Trophic_niche))] <- "Vertivore"
 
-bird_df3$niche_idx <- as.numeric(factor(bird_df3$Trophic_niche))
-niche_names <- levels(factor(bird_df3$Trophic_niche))
+bird_df2$niche_idx <- as.numeric(factor(bird_df2$Trophic_niche))
+niche_names <- levels(factor(bird_df2$Trophic_niche))
 
 
 # clutch size -------------------------------------------------------------
 
-# plot(bird_df3$lCs, bird_df3$lAb)
-# plot(bird_df3$lCs, bird_df3$lMl)
+# plot(bird_df2$lCs, bird_df2$lAb)
+# plot(bird_df2$lCs, bird_df2$lMl)
 
 
 # PCA ---------------------------------------------------------------------
 
-bird_df4 <- dplyr::filter(bird_df3, !is.na(lCs))
-# bird_df4 <- bird_df3
+# bird_df4 <- dplyr::filter(bird_df2, !is.na(lCs))
+bird_df4 <- dplyr::filter(bird_df2, !is.na(Measured_age_first_breeding))
+# bird_df4 <- bird_df2
 
 #stronger cor between Ab and Ml than between Lh and Cs
 cor(dplyr::select(bird_df4, lMl, lAb, lCs))
@@ -168,12 +165,12 @@ pr_tree2 <- ape::multi2di(pr_tree)
 
 #make response into matrix with species as rownames
 dd <- dplyr::select(bird_df5, 
-                    PC1) %>%
+                    lAb) %>%
   as.matrix()
 row.names(dd) <- bird_df5$species
 
 #get estimate of Pagel's kappa to scale phylogeny
-fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'PC1'], model = "kappa")
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lAb'], model = "kappa")
 
 #rescale tree
 pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
@@ -185,13 +182,50 @@ Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
 CM <- nlme::corSymm(Rho[lower.tri(Rho)], fixed = T)
 
 library(nlme)
-pgls_fit1 <- nlme::gls(PC1 ~ lMass + temp_sd_season + temp_sd_year + precip_cv_season + precip_cv_year,
+pgls_fit1 <- nlme::gls(lAb ~ lMass + temp_sd_season + temp_sd_year + precip_cv_season + precip_cv_year,
                        correlation = CM,
                        data = bird_df5,
                        method = "REML")
 summary(pgls_fit1)
 
+bird_df5$residA <- residuals(lm(lAb ~ lMass, data = bird_df5))
+bird_df5$residM <- residuals(lm(lMl ~ lMass, data = bird_df5))
+plot(bird_df5$temp_sd_season, bird_df5$residM)
 
+
+
+
+#from Morrow et al. 2021 Proc B (originally from Charnov pubs)
+# LRE (Lifetime Reproductive Effort) represents the energetic trade-off of reproductive effort versus adult mortality
+# - clutch size x clutches per year x (mass at independence / adult mass) x adult lifespan
+# RRL (Relative Reproductive Lifespan) captures the trade-off in time spent in growth/development versus reproduction
+# - adult lifespan / age maturity
+# ROS (Relative Offspring Size) is related to trade-offs in the size, number and survivorship of offspring. 
+# - mass at independence / adult mass
+
+#RRL 
+rrl <- (exp(bird_df5$lMl) - exp(bird_df5$lAb)) / exp(bird_df5$lAb)
+
+rrl <- (bird_df5$Measured_max_longevity - bird_df5$Measured_age_first_breeding) / 
+          bird_df5$Measured_age_first_breeding
+
+f1 <- lm(log(rrl) ~ lMass + 
+             temp_sd_season + temp_sd_year + 
+             precip_cv_season + precip_cv_year,
+           data = bird_df5)
+summary(f1)
+#greater env var, longer repro lifespan
+car::crPlots(f1)
+
+#similar to LRE from Morrow et al. 2021 Proc B
+lre <- exp(bird_df5$lCs) * (exp(bird_df5$lMl) - exp(bird_df5$lAb))
+
+f2 <- lm(log(lre) ~ lMass + 
+           temp_sd_season + temp_sd_year + 
+           precip_cv_season + precip_cv_year,
+         data = bird_df5)
+summary(f2)
+plot(bird_df5$lMass, log(lre))
 # More var associated with greater max long and later age first breeding
 
 # Coefficients:
@@ -203,10 +237,52 @@ summary(pgls_fit1)
 # precip_cv_season -0.0258687 0.0335943 -0.77003  0.4413
 # precip_cv_year    0.2927592 0.1492433  1.96162  0.0498
 
+str(bird_df5)
+bird_na <- dplyr::filter(bird_df5, Order == 'Passeriformes',
+              cen_lon < -60, cen_lon > -130,
+              cen_lat > 30)
 
+bird_sa <- dplyr::filter(bird_df5, Order == 'Passeriformes',
+                         cen_lon < -60, cen_lon > -130,
+                         cen_lat > -20, cen_lat < 20)
 
+f <- lm(bird_na$lGL ~ bird_na$lMass)
+naf <- residuals(f)
+f2 <- lm(bird_sa$lGL ~ bird_sa$lMass)
+saf <- residuals(f2)
 
+ml_f <- lm(bird_na$lMl ~ bird_na$lMass)
+ml_naf <- residuals(ml_f)
+ml_f2 <- lm(bird_sa$lMl ~ bird_sa$lMass)
+ml_saf <- residuals(ml_f2)
 
+ab_f <- lm(bird_na$lAb ~ bird_na$lMass)
+ab_naf <- residuals(ab_f)
+ab_f2 <- lm(bird_sa$lAb ~ bird_sa$lMass)
+ab_saf <- residuals(ab_f2)
+
+plot(density(bird_na$lMass))
+lines(density(bird_sa$lMass), col = 'red')
+
+plot(density(naf))
+lines(density(saf), col = 'red')
+
+plot(density(ml_naf))
+lines(density(ml_saf), col = 'red')
+
+plot(density(ab_naf))
+lines(density(ab_saf), col = 'red')
+
+t1 <- lm(lMl ~ lMass + temp_sd_season + temp_sd_year, data = bird_na)
+t2 <- lm(lMl ~ lMass + temp_sd_season + temp_sd_year, data = bird_sa)
+summary(lm(lCs ~ abs(cen_lat) + lMass, data = bird_df5))
+plot(bird_df5$cen_lat, bird_df5$lCs)
+plot(bird_na$temp_sd_year, ab_naf)
+plot(density(bird_na$temp_sd_season))
+lines(density(bird_sa$temp_sd_season), col = 'red')
+
+plot(density(bird_na$temp_sd_year))
+lines(density(bird_sa$temp_sd_year), col = 'red')
 
 
 # PC2

@@ -2,7 +2,7 @@
 # Create rasterized range maps for birds
 #
 # One raster for GenLength, one for delta haldane
-# Add Ab, Cs, and Ml, resids?
+# Add Ab, Cs, and Ml
 #############################
 
 
@@ -44,7 +44,37 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
   terra::rast(crs = "epsg:4326")
 
 #read in life history and other traits
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
+
+or_excl <- c('Sphenisciformes', #penguins 
+             'Procellariiformes', #tubenoses
+             'Pelecaniformes', #pelicans
+             'Suliformes', #gannets/boobies
+             'Phaethontiformes', #tropicbirds
+             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
+#'Anseriformes', #waterfowl
+#'Ciconiiformes', #storks
+#'Gaviiformes', #aquatic birds (loons and divers)
+#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
+#'Phoenicopteriformes', #flamingos and relatives
+#'Podicipediformes') #grebes
+
+'%ni%' <- Negate('%in%')
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
+  dplyr::arrange(Birdtree_name) %>%
+  dplyr::filter(Order %ni% or_excl,
+                Migration == 1) %>%
+  #filter out precip outlier
+  dplyr::filter(precip_cv_season < 2.5) %>%
+  dplyr::mutate(lMass = log(Mass),
+                lGL = log(GenLength),
+                lAb = log(Modeled_age_first_breeding),
+                # lAb = log(Measured_age_first_breeding),
+                lMl = log(Modeled_max_longevity),
+                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+  #drop duplicated species (for now)
+  dplyr::group_by(Birdtree_name) %>%
+  dplyr::slice_head() %>%
+  dplyr::ungroup() %>%
   #ex = number of years before temp exceeds 2 sd
   #AND
   #delta_t = how much temp will change in 1 generation (in sds)
@@ -118,13 +148,19 @@ for (i in 1:length(ids))
                                         env.dat.rast, 
                                         touches = TRUE)
     #two layers
-    curr.range.rast2 <- c(curr.range.rast, curr.range.rast)
+    curr.range.rast2 <- c(curr.range.rast, curr.range.rast,
+                          curr.range.rast, curr.range.rast,
+                          curr.range.rast)
     
     #change layer names
-    names(curr.range.rast2) <- c('GenLength', 'delta_haldane')
+    names(curr.range.rast2) <- c('GenLength', 'delta_haldane',
+                                 'Ab', 'Ml', 'Cs')
     
     curr.range.rast2[['GenLength']][curr.range.rast2['GenLength'] == 1] <-  tdf$GenLength
     curr.range.rast2[['delta_haldane']][curr.range.rast2['delta_haldane'] == 1] <- tdf$delta_haldane
+    curr.range.rast2[['Ab']][curr.range.rast2['Ab'] == 1] <- tdf$Modeled_age_first_breeding
+    curr.range.rast2[['Ml']][curr.range.rast2['Ml'] == 1] <- tdf$Modeled_max_longevity
+    curr.range.rast2[['Cs']][curr.range.rast2['Cs'] == 1] <- tdf$Measured_clutch_size
     
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
@@ -137,6 +173,24 @@ for (i in 1:length(ids))
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.sp),
                                        '-breeding-delta_haldane.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['Ab']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-Ab.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['Ml']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-Ml.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['Cs']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-Cs.tif'),
                        overwrite = TRUE)
   }
 }
