@@ -147,7 +147,8 @@ CHAINS <- 4
 ITER <- 4000
 
 #compile model
-mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'))
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'),
+                               force_recompile = TRUE)
 
 #sample
 fit <- mod$sample(
