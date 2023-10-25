@@ -26,5 +26,7 @@ module load GCC/8.3.0
 module load OpenMPI/3.1.4
 module load R/4.1.0
 
+export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
+
 # Rscript /mnt/home/doserjef/ibeem_variability/Scripts/3-extract-species-env/3c-get-master-file-birdtree.R
 Rscript /mnt/home/ccy/variability/Scripts/3-extract-species-env/3c-get-master-file-birdtree.R
