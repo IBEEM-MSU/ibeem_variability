@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - gl ~ env + phylo + vint
+# Fit Bayes model - rl ~ env + phylo + vint
 ####################
 
 
@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-17'
+run_date <- '2023-10-25'
 
 
 # load packages -----------------------------------------------------------
@@ -38,7 +38,7 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Podicipediformes') #grebes
 
 '%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
                 Migration == 1) %>%
@@ -46,30 +46,29 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::filter(precip_cv_season < 2.5) %>%
   dplyr::mutate(lMass = log(Mass),
                 lGL = log(GenLength),
-                # lGL = GenLength,
-                # lGL = 1/GenLength,
                 lAb = log(Modeled_age_first_breeding),
+                # lAb = log(Measured_age_first_breeding),
                 lMl = log(Modeled_max_longevity),
                 species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   #drop duplicated species (for now)
-  dplyr::group_by(species) %>%
+  dplyr::group_by(Birdtree_name) %>%
   dplyr::slice_head() %>%
   dplyr::ungroup()
 
 #subset out just traits of interest
-bird_df2 <- dplyr::select(bird_df, 
-                          species,
+bird_df2 <- dplyr::select(bird_df, species,
                           lMass,
-                          lGL,
-                          Modeled_survival,
-                          lAb,
-                          lMl,
+                          Modeled_age_first_breeding,
+                          Modeled_max_longevity,
                           Trophic_niche = Trophic.Niche,
                           temp_mean,
                           temp_sd_year,
                           temp_sd_season,
                           precip_cv_year,
-                          precip_cv_season)
+                          precip_cv_season) %>%
+  #calculate Relative Reproductive Lifespan (RRL from Morrow et al. 2021 Proc B)
+  dplyr::mutate(Rl = (Modeled_max_longevity - Modeled_age_first_breeding) / Modeled_age_first_breeding,
+                lRl = log(Rl))
 
 
 # phylo -------------------------------------------------------------------
@@ -104,16 +103,16 @@ pr_tree2 <- ape::multi2di(pr_tree)
 
 #make response into matrix with species as rownames
 dd <- dplyr::select(bird_df4, 
-                    lGL) %>%
+                    lRl) %>%
   as.matrix()
 row.names(dd) <- bird_df4$species
 
 #get estimate of Pagel's kappa to scale phylogeny
-fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "kappa")
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lRl'], model = "kappa")
 
 #rescale tree
 pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
-                     kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
+                               kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
 
 #get corr matrix of rescaled tree
 Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
@@ -132,10 +131,10 @@ niche_names <- levels(factor(bird_df4$Trophic_niche))
 
 #scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
-temp_sd_season_scalar <- 0.2
-temp_sd_year_scalar <- 0.1
-precip_cv_season_scalar <- 0.1
-precip_cv_year_scalar <- 0.5
+temp_sd_season_scalar <- 0.1
+temp_sd_year_scalar <- 1
+precip_cv_season_scalar <- 0.5
+precip_cv_year_scalar <- 1
 y_scalar <- 2
 
 #center predictors
@@ -155,13 +154,13 @@ tt <- data.frame(lMass = bird_df4$lMass *
 # fit model ---------------------------------------------------------------
 
 DATA <- list(N = NROW(bird_df4),
-             Y = bird_df4$lGL * y_scalar,
+             Y = bird_df4$lRl * y_scalar,
              K = NCOL(tt),
              J = length(unique(bird_df4$niche_idx)),
              X = tt,
              niche_idx = bird_df4$niche_idx,
-             mu_kappa = 2,
-             sigma_kappa = 1,
+             mu_kappa = 4,
+             sigma_kappa = 2,
              Rho = Rho) #corr matrix
 
 # summary(lm(DATA$Y ~ DATA$X[,1] +
@@ -173,7 +172,7 @@ DATA <- list(N = NROW(bird_df4),
 options(mc.cores = parallel::detectCores())
 
 # DELTA <- 0.92
-# TREE_DEPTH <- 10
+# TREE_DEPTH <- 12
 # STEP_SIZE <- 0.03
 CHAINS <- 4
 ITER <- 4000
@@ -200,24 +199,24 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-gl-phylo-vint-results-', run_date),
+                  file_name = paste0('bird-rl-phylo-vint-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  mkdir = paste0('bird-gl-phylo-vint-', run_date),
+                  mkdir = paste0('bird-rl-phylo-vint-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-gl-phylo-vint-fit-', run_date),
+                  obj_name = paste0('bird-rl-phylo-vint-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-gl-phylo-vint-data-', run_date),
+                  add_obj_names = paste0('bird-rl-phylo-vint-data-', run_date),
                   cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-gl-phylo-vint.R')),
+                              paste0(sc_dir, 'Scripts/5-model/5-rl-phylo-vint.R')),
                   cp_file_names = c(paste0('5-phylo-vint-', run_date, '.stan'),
-                                    paste0('5-gl-phylo-vint-', run_date, '.R')))
+                                    paste0('5-rl-phylo-vint-', run_date, '.R')))
 
-fig_dir <- paste0(dir, 'Results/bird-gl-phylo-vint-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-rl-phylo-vint-', run_date, '/')
 
-# fit <- readRDS(paste0(dir, '/Results/bird-gl-phylo-vint-', run_date,
-#                       '/bird-gl-phylo-vint-fit-', run_date, '.rds'))
+# fit <- readRDS(paste0(dir, '/Results/bird-rl-phylo-vint-', run_date,
+#                       '/bird-rl-phylo-vint-fit-', run_date, '.rds'))
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
 
@@ -335,7 +334,7 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = '% change GL for 1 sd change in cov',
+                  main = '% change Rl for 1 sd change in cov',
                   guide_lines = TRUE)
 dev.off()
 
@@ -409,29 +408,29 @@ dev.off()
 
 # VIF ---------------------------------------------------------------------
 
-#covariates as a function of other covariates
+# #covariates as a function of other covariates
 # tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season +
-#             precip_cv_year + precip_cv_season, 
+#             precip_cv_year + precip_cv_season,
 #           data = bird_df4)
 # stf1 <- summary(tf1)
 # 
 # tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season +
-#             precip_cv_year + precip_cv_season, data = 
+#             precip_cv_year + precip_cv_season, data =
 #             bird_df4)
 # stf2 <- summary(tf2)
 # 
 # tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year +
-#             precip_cv_year + precip_cv_season, 
+#             precip_cv_year + precip_cv_season,
 #           data = bird_df4)
 # stf3 <- summary(tf3)
 # 
-# tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
-#             precip_cv_season, 
+# tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season +
+#             precip_cv_season,
 #           data = bird_df4)
 # stf4 <- summary(tf4)
 # 
-# tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
-#             precip_cv_year, 
+# tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season +
+#             precip_cv_year,
 #           data = bird_df4)
 # stf5 <- summary(tf5)
 # 

@@ -70,9 +70,10 @@
       * `brms.R` - benchmarking brms models with rstan models
     * `5-ab-phylo-vint.R` - age first breeding ~ var varying intercepts, phylo kappa
     * `5-gl-phylo-vint.R` - gen length ~ var varying intercepts, phylo kappa
+    * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
+    * `5-rl-phylo-vint.R` - rel repro lifespan ~ var + varying int + phylo kappa
     * `5-gl-phylo-vint-gamma.R` - gen length ~ var varying intercepts, phylo kappa with gamma instead of normal
     * `5-gl-phylo-vint-mam.R` - gen length ~ var varying intercepts, phylo kappa mammals
-    * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
   * `6-rasterize` - rasterize ranges
     * `6a-create-rasters.R` - create .tif files birds
     * `6a-raster-comile.sh` - bash script to iterate through all pieces of data and run `6a-raster.sbatch`
