@@ -17,6 +17,7 @@ library(rnaturalearth)
 # devtools::install_github("wmurphyrd/colorplaner")
 library(colorplaner)
 
+
 ### Data ----
 
 # Environmental data 
@@ -54,11 +55,25 @@ temp_rast <- dplyr::select(env_data, lon, lat,
 # plot example:
 plot(temp_rast$temp_sd_season)
 
+### Make raster with precip data ----
+
+precip_rast <- dplyr::select(env_data, lon, lat,
+                           grep('precip', colnames(env_data), value = TRUE)) %>%
+  # use "EPSG:4326" projection
+  terra::rast(crs = "EPSG:4326")
+
+# plot example:
+plot(precip_rast$precip_cv_season)
+
 ### Transform data to Robinson projection ----
 
 # Transform temp raster to Robinson ("ESRI:54030")
 temp_rast_proj <- terra::project(temp_rast, "ESRI:54030")
 plot(temp_rast_proj$temp_sd_season)
+
+# Transform precip raster to Robinson ("ESRI:54030")
+precip_rast_proj <- terra::project(precip_rast, "ESRI:54030")
+plot(precip_rast_proj$precip_cv_season)
 
 # Transform land vector to Robinson
 land_50m_robinson <- st_transform(st_wrap_dateline(land_50m), "ESRI:54030")
@@ -66,7 +81,7 @@ land_50m_robinson <- st_transform(st_wrap_dateline(land_50m), "ESRI:54030")
 # Transform bb to Robinson
 bb_robinson <- st_transform(bb, crs= "ESRI:54030", type = "robin")
 
-### Map ----
+### Temp variability map ----
 
 # Make data frame with projected env data 
 temp_df <- terra::as.data.frame(temp_rast_proj, xy = T, cells = F, na.rm = T)
@@ -121,5 +136,52 @@ ggplot() +
                          breaks = c(0,0.5,1.0,1.5,2),
                          breaks_y = c(5,10,15,20)) 
 
+### Precip variability map ----
 
+# Make data frame with projected env data 
+precip_df <- terra::as.data.frame(precip_rast_proj, xy = T, cells = F, na.rm = T)
+head(precip_df)
 
+precip_df %>%
+  filter(precip_cv_season == Inf)
+# 5613 Inf values
+
+precip_df <- precip_df %>%
+  mutate(precip_cv_season = ifelse(precip_cv_season == Inf, NA, precip_cv_season)) 
+
+# Get precip quantiles to set vertical and horizontal color scales
+py_q <- quantile(precip_df$precip_cv_year, seq(0, 1, by = 0.05))
+ps_q <- quantile(precip_df$precip_cv_season, seq(0, 1, by = 0.05), na.rm = T)
+
+# Map with ggplot 
+ggplot() +
+  # Map background
+  geom_sf(data = land_50m_robinson,
+          color = "gray80",
+          fill = "gray95",
+          linetype = "solid",
+          size = 0.2) +
+  geom_sf(data = bb_robinson,
+          color = "white",
+          fill = NA,
+          linetype = "solid") +
+  theme_minimal() +
+  # Temp variation
+  # geom_tile will through warning for fill2--it's ok, ignore.
+  geom_tile(data = precip_df, 
+            aes(x = x,
+                y = y, 
+                fill = precip_cv_year,
+                fill2 = precip_cv_season)) +
+  # remove X and Y labels from map (it also removes legend labels :S )  
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  # bivariate color scale 
+  scale_fill_colourplane(name = "", 
+                         na.color = "#FAFAFA",
+                         color_projection = "interpolate",
+                         vertical_color = "#FF0000",
+                         horizontal_color = "#0000FF",
+                         zero_color = "#E8E8E8",
+                         limits = c(0, py_q[20]),
+                         limits_y = c(0, ps_q[20]))
