@@ -164,7 +164,7 @@ fit <- mod$sample(
 
 
 # save summary space ------------------------------------------------------------
-=
+
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,

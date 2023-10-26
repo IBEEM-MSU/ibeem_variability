@@ -223,13 +223,13 @@ fig_dir <- paste0(dir, 'Results/bird-gl-phylo-vint-gamma-', run_date, '/')
 
 
 # residuals ---------------------------------------------------------------
-# 
+
 # alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
 # kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
-# gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
+# theta_mn <- MCMCvis::MCMCpstr(fit, params = 'theta')[[1]]
 # beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
 # 
-# mu_mn <- kappa_mn + gamma_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
+# mu_mn <- kappa_mn + theta_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
 # resid <- DATA$Y - mu_mn
 
 
@@ -237,7 +237,7 @@ fig_dir <- paste0(dir, 'Results/bird-gl-phylo-vint-gamma-', run_date, '/')
 
 #model summary
 MCMCvis::MCMCsummary(fit, round = 3, 
-                     params = c('beta', 'kappa', 'gamma', 'a', 'sigma_phylo'),
+                     params = c('beta', 'kappa', 'theta', 'a', 'sigma_phylo'),
                      pg0 = TRUE)
 
 
@@ -340,10 +340,10 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
 dev.off()
 
 
-pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+pdf(paste0(fig_dir, 'theta-cat-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(fit, 
-                  params = 'gamma',
+                  params = 'theta',
                   labels = niche_names,
                   sz_labels = 1.5,
                   ci = c(89, 89),
