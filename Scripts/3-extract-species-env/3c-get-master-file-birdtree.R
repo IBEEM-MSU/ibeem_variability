@@ -40,7 +40,11 @@ climate.df <- do.call("rbind", climate.list)
 sum(apply(dplyr::select(climate.df, temp_sd_year), 
           1, function(a) sum(is.na(a))) > 0)
 
+#read in IUCN key
+IUCN_api_key <- read.table(paste0(dir, 'data/iucn_api_key.txt'), 
+                           header = FALSE)[,1]
 
+                         
 # Load in trait data ------------------------------------------
 
 # AVONET data - keep only necessary fields
@@ -151,12 +155,14 @@ main.dat$iucn <- NA
 for (i in 1:nrow(main.dat)) {
   print(paste0("Currently on row ", i, " out of ", nrow(main.dat)))
   try({
-    tmp <- rredlist::rl_search(main.dat$Avonet_name[i])
+    tmp <- rredlist::rl_search(main.dat$Avonet_name[i],
+                               key = IUCN_api_key)
     main.dat$iucn[i] <- tmp$result$category
   })
   # Need two second delay to avoid getting API key shut down
   Sys.sleep(2)	
-}
+}tmp <- rredlist::rl_search('beillia abeillei',
+                               key = IUCN_api_key)
 
 # write to file
 write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'),
