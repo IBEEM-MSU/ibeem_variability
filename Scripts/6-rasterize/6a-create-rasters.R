@@ -1,8 +1,13 @@
 #############################
 # Create rasterized range maps for birds
 #
-# One raster for GenLength, one for delta haldane
-# Add Ab, Cs, and Ml
+# Rasters for: 
+# - Gl (gen length)
+# - delta haldane
+# - Ab (age first breeding)
+# - Cs (clutch size)
+# - Ml (maximum longevity)
+# - S (survival)
 #############################
 
 
@@ -150,17 +155,18 @@ for (i in 1:length(ids))
     #two layers
     curr.range.rast2 <- c(curr.range.rast, curr.range.rast,
                           curr.range.rast, curr.range.rast,
-                          curr.range.rast)
+                          curr.range.rast, curr.range.rast)
     
     #change layer names
     names(curr.range.rast2) <- c('GenLength', 'delta_haldane',
-                                 'Ab', 'Ml', 'Cs')
+                                 'Ab', 'Ml', 'Cs', 'S')
     
     curr.range.rast2[['GenLength']][curr.range.rast2['GenLength'] == 1] <-  tdf$GenLength
     curr.range.rast2[['delta_haldane']][curr.range.rast2['delta_haldane'] == 1] <- tdf$delta_haldane
     curr.range.rast2[['Ab']][curr.range.rast2['Ab'] == 1] <- tdf$Modeled_age_first_breeding
     curr.range.rast2[['Ml']][curr.range.rast2['Ml'] == 1] <- tdf$Modeled_max_longevity
     curr.range.rast2[['Cs']][curr.range.rast2['Cs'] == 1] <- tdf$Measured_clutch_size
+    curr.range.rast2[['S']][curr.range.rast2['S'] == 1] <- tdf$Modeled_survival
     
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
@@ -191,6 +197,12 @@ for (i in 1:length(ids))
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.sp),
                                          '-breeding-Cs.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['S']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-S.tif'),
                        overwrite = TRUE)
   }
 }
