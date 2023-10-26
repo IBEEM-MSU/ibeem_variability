@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - ab ~ env + phylo + vint
+# Fit Bayes model - s ~ env + phylo + vint + oe
 ####################
 
 
@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-17'
+run_date <- '2023-10-26'
 
 
 # load packages -----------------------------------------------------------
@@ -47,8 +47,9 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
   dplyr::mutate(lMass = log(Mass),
                 lGL = log(GenLength),
                 lAb = log(Modeled_age_first_breeding),
-                # lAb = log(Measured_age_first_breeding),
+                mlAb = log(Measured_age_first_breeding),
                 lMl = log(Modeled_max_longevity),
+                mlMl = log(Measured_max_longevity),
                 species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
@@ -56,19 +57,21 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
   dplyr::ungroup()
 
 #subset out just traits of interest
-bird_df2 <- dplyr::select(bird_df, species,
-                lMass,
-                lGL,
-                Modeled_survival,
-                lAb,
-                lMl,
-                Trophic_niche = Trophic.Niche,
-                temp_mean,
-                temp_sd_year,
-                temp_sd_season,
-                precip_cv_year,
-                precip_cv_season) # %>%
-  # dplyr::filter(!is.na(lAb))
+bird_df2 <- dplyr::select(bird_df, 
+                          species,
+                          lGL,
+                          S = Modeled_survival,
+                          lAb,
+                          lMl,
+                          mS = Measured_survival,
+                          mlAb,
+                          mlMl,
+                          Trophic_niche = Trophic.Niche,
+                          lMass,
+                          temp_sd_year,
+                          temp_sd_season,
+                          precip_cv_year,
+                          precip_cv_season)
 
 
 # phylo -------------------------------------------------------------------
@@ -76,43 +79,36 @@ bird_df2 <- dplyr::select(bird_df, species,
 #load consensus tree - bird.phylo
 load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 
-#subset of imp
-# set.seed(1)
-# Nsel <- 1000
-# stidx <- sample(x = 1:NROW(bird_df2), size = Nsel)
-# bird_df3 <- bird_df2[stidx,]
-bird_df3 <- bird_df2
-
 #prune tree
 #species not found in both datasets (species to drop from tree)
-nm <- setdiff(bird.phylo$tip.label, bird_df3$species)
+nm <- setdiff(bird.phylo$tip.label, bird_df2$species)
 
 #prune specified tips from tree
 pr_tree <- ape::drop.tip(bird.phylo, nm)
 
 #get idx
-j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
-                           data.frame(idx = 1:NROW(bird_df3), bird_df3), 
-                           by = 'species')
+j_idx <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
+                          data.frame(idx = 1:NROW(bird_df2), bird_df2), 
+                          by = 'species')
 
 #apply
-bird_df4 <- bird_df3[j_idx3$idx,]
+bird_df3 <- bird_df2[j_idx$idx,]
 
 #make tree binary
 pr_tree2 <- ape::multi2di(pr_tree)
 
 #make response into matrix with species as rownames
-dd <- dplyr::select(bird_df4, 
-                    lAb) %>%
+dd <- dplyr::select(bird_df3, 
+                    S) %>%
   as.matrix()
-row.names(dd) <- bird_df4$species
+row.names(dd) <- bird_df3$species
 
 #get estimate of Pagel's kappa to scale phylogeny
-fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lAb'], model = "kappa")
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'S'], model = "kappa")
 
 #rescale tree
 pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
-                     kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
+                               kappa = fit_ka$opt$kappa, sigsq = fit_ka$opt$sigsq)
 
 #get corr matrix of rescaled tree
 Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
@@ -121,13 +117,22 @@ Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
 # niche levels ------------------------------------------------------------
 
 #assign missing species (owls) to Vertivore
-bird_df4$Trophic_niche[which(is.na(bird_df4$Trophic_niche))] <- "Vertivore"
+bird_df3$Trophic_niche[which(is.na(bird_df3$Trophic_niche))] <- "Vertivore"
 
-bird_df4$niche_idx <- as.numeric(factor(bird_df4$Trophic_niche))
-niche_names <- levels(factor(bird_df4$Trophic_niche))
+bird_df3$niche_idx <- as.numeric(factor(bird_df3$Trophic_niche))
+niche_names <- levels(factor(bird_df3$Trophic_niche))
 
 
-# scale/prep data ---------------------------------------------------------
+# scale/predp data --------------------------------------------------------
+
+#observed and modeled values
+obs_idx <- which(!is.na(bird_df3$mS))
+mod_idx <- which(is.na(bird_df3$mS))
+
+#fit between modeled and observed for uncertainty - r2 = 0.76
+om_fit <- lm(bird_df3$S ~ bird_df3$mS)
+#get sd of residuals
+sd_Y <- sd(residuals(om_fit))
 
 #scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
@@ -138,27 +143,52 @@ precip_cv_year_scalar <- 0.5
 y_scalar <- 2
 
 #center predictors
-tt <- data.frame(lMass = bird_df4$lMass * 
-                   lMass_scalar,
-                 temp_sd_season = bird_df4$temp_sd_season * 
-                   temp_sd_season_scalar,
-                 temp_sd_year = bird_df4$temp_sd_year * 
-                   temp_sd_year_scalar,
-                 precip_cv_season = bird_df4$precip_cv_season * 
-                   precip_cv_season_scalar,
-                 precip_cv_year = bird_df4$precip_cv_year * 
-                   precip_cv_year_scalar) %>%
-  apply(2, function(x) scale(x, scale = FALSE)[,1])
+tt_obs <- data.frame(lMass = bird_df3$lMass[obs_idx] * 
+                       lMass_scalar,
+                     temp_sd_season = bird_df3$temp_sd_season[obs_idx] * 
+                       temp_sd_season_scalar,
+                     temp_sd_year = bird_df3$temp_sd_year[obs_idx] * 
+                       temp_sd_year_scalar,
+                     precip_cv_season = bird_df3$precip_cv_season[obs_idx] * 
+                       precip_cv_season_scalar,
+                     precip_cv_year = bird_df3$precip_cv_year[obs_idx] * 
+                       precip_cv_year_scalar)
+
+tt_mod <- data.frame(lMass = bird_df3$lMass[mod_idx] * 
+                       lMass_scalar,
+                     temp_sd_season = bird_df3$temp_sd_season[mod_idx] * 
+                       temp_sd_season_scalar,
+                     temp_sd_year = bird_df3$temp_sd_year[mod_idx] * 
+                       temp_sd_year_scalar,
+                     precip_cv_season = bird_df3$precip_cv_season[mod_idx] * 
+                       precip_cv_season_scalar,
+                     precip_cv_year = bird_df3$precip_cv_year[mod_idx] * 
+                       precip_cv_year_scalar)
+
+#subtract off mean to center vars
+tt_mns <- rbind(tt_obs, tt_mod) %>%
+  apply(2, mean)
+
+tt_obs2 <- sweep(tt_obs, 2, tt_mns)
+tt_mod2 <- sweep(tt_mod, 2, tt_mns)
 
 
 # fit model ---------------------------------------------------------------
 
-DATA <- list(N = NROW(bird_df4),
-             Y = bird_df4$lAb * y_scalar,
-             K = NCOL(tt),
-             J = length(unique(bird_df4$niche_idx)),
-             X = tt,
-             niche_idx = bird_df4$niche_idx,
+DATA <- list(N = NROW(bird_df3),
+             No = length(obs_idx),
+             Nm = length(mod_idx),
+             Y_obs = bird_df3$S[obs_idx] * y_scalar,
+             Y_mod = bird_df3$S[mod_idx] * y_scalar,
+             sd_Y = sd_Y,
+             K = NCOL(tt_obs2),
+             J = length(unique(bird_df3$niche_idx)),
+             X_obs = tt_obs2,
+             X_mod = tt_mod2,
+             obs_idx = obs_idx,
+             mod_idx = mod_idx,
+             niche_obs_idx = bird_df3$niche_idx[obs_idx],
+             niche_mod_idx = bird_df3$niche_idx[mod_idx],
              mu_kappa = 1,
              sigma_kappa = 1,
              Rho = Rho) #corr matrix
@@ -178,7 +208,7 @@ CHAINS <- 4
 ITER <- 4000
 
 #compile model
-mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'),
+mod <- cmdstanr::cmdstan_model(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint-oe.stan'),
                                force_recompile = TRUE)
 
 #sample
@@ -199,26 +229,25 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-ab-phylo-vint-results-', run_date),
+                  file_name = paste0('bird-s-phylo-vint-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  # mkdir = paste0('bird-ab-phylo-vint-measured-', run_date),
-                  mkdir = paste0('bird-ab-phylo-vint-', run_date),
+                  # mkdir = paste0('bird-s-phylo-vint-measured-', run_date),
+                  mkdir = paste0('bird-s-phylo-vint-oe-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-ab-phylo-vint-fit-', run_date),
+                  obj_name = paste0('bird-s-phylo-vint-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-ab-phylo-vint-data-', run_date),
-                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-ab-phylo-vint.R')),
-                  cp_file_names = c(paste0('5-phylo-vint-', run_date, '.stan'),
-                                    paste0('5-ab-phylo-vint-', run_date, '.R')))
+                  add_obj_names = paste0('bird-s-phylo-vint-oe-data-', run_date),
+                  cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint-oe.stan'), 
+                              paste0(sc_dir, 'Scripts/5-model/5-s-phylo-vint-oe.R')),
+                  cp_file_names = c(paste0('5-phylo-vint-oe-', run_date, '.stan'),
+                                    paste0('5-s-phylo-vint-oe-', run_date, '.R')))
 
-# fig_dir <- paste0(dir, 'Results/bird-ab-phylo-vint-measured-', run_date, '/')
-fig_dir <- paste0(dir, 'Results/bird-ab-phylo-vint-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-s-phylo-vint-oe-', run_date, '/')
 
-# fit <- readRDS(paste0(dir, '/Results/bird-ab-phylo-vint-', run_date,
-#                       '/bird-ab-phylo-vint-fit-', run_date, '.rds'))
+# fit <- readRDS(paste0(dir, '/Results/bird-s-phylo-vint-oe-', run_date,
+#                       '/bird-s-phylo-vint-oe-fit-', run_date, '.rds'))
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
 
@@ -230,8 +259,27 @@ kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
 gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
 beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
 
-mu_mn <- kappa_mn + gamma_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
-resid <- DATA$Y - mu_mn
+#combine linear predictor
+mu_mn <- rep(NA, DATA$N)
+mu_mn[DATA$obs_idx] <- kappa_mn + gamma_mn[DATA$niche_obs_idx] + 
+  alpha_mn[DATA$obs_idx] + (as.matrix(DATA$X_obs) %*% beta_mn)[,1]
+mu_mn[DATA$mod_idx] <- kappa_mn + gamma_mn[DATA$niche_mod_idx] +
+  alpha_mn[DATA$mod_idx] + (as.matrix(DATA$X_mod) %*% beta_mn)[,1]
+
+#combine reponse
+Y_comb <- rep(NA, length(obs_idx) + length(mod_idx))
+Y_comb[DATA$obs_idx] <- DATA$Y_obs
+Y_comb[DATA$mod_idx] <- DATA$Y_mod
+
+#residuals
+resid <- Y_comb - mu_mn
+
+#combine predictors
+X_comb <- matrix(NA, nrow = NROW(rbind(DATA$X_obs, DATA$X_mod)),
+                 ncol = NCOL(DATA$X_obs))
+
+X_comb[DATA$obs_idx,] <- as.matrix(DATA$X_obs)
+X_comb[DATA$mod_idx,] <- as.matrix(DATA$X_mod)
 
 
 # Summary -----------------------------------------------------------------
@@ -271,11 +319,11 @@ beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]',
 
 #scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
-beta1_rs_ch <- (exp(beta1_ch * sd(tt[,1] / lMass_scalar)) - 1) * 100
-beta2_rs_ch <- (exp(beta2_ch * sd(tt[,2] / temp_sd_season_scalar)) - 1) * 100
-beta3_rs_ch <- (exp(beta3_ch * sd(tt[,3] / temp_sd_year_scalar)) - 1) * 100
-beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4] / precip_cv_season_scalar)) - 1) * 100
-beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
+beta1_rs_ch <- (exp(beta1_ch * sd(X_comb[,1] / lMass_scalar)) - 1) * 100
+beta2_rs_ch <- (exp(beta2_ch * sd(X_comb[,2] / temp_sd_season_scalar)) - 1) * 100
+beta3_rs_ch <- (exp(beta3_ch * sd(X_comb[,3] / temp_sd_year_scalar)) - 1) * 100
+beta4_rs_ch <- (exp(beta4_ch * sd(X_comb[,4] / precip_cv_season_scalar)) - 1) * 100
+beta5_rs_ch <- (exp(beta5_ch * sd(X_comb[,5] / precip_cv_year_scalar)) - 1) * 100
 
 
 # partial resid plots ------------------------------------------------
@@ -287,11 +335,11 @@ pr_fun <- function(num, nm)
              'Precip seasonality', 'Precip interannual')
   
   #partial residuals
-  pr <- resid + (beta_mn[num] * DATA$X[,num])
+  pr <- resid + (beta_mn[num] * X_comb[,num])
   
   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
       height = 5, width = 5)
-  plot(DATA$X[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
+  plot(X_comb[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
        xlab = 'Predictor',
        ylab = 'Partial residual',
        main = names[num])
@@ -336,7 +384,7 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = '% change Ab for 1 sd change in cov',
+                  main = '% change S for 1 sd change in cov',
                   guide_lines = TRUE)
 dev.off()
 
@@ -366,28 +414,39 @@ beta_ch <- MCMCvis::MCMCchains(fit, params = 'beta')
 
 #500 iterations
 sidx <- sample(1:NROW(sigma_ch), size = 500)
-mu_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
-y_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
+mu_rep <- matrix(NA, nrow = length(sidx), ncol = length(Y_comb))
+y_rep <- matrix(NA, nrow = length(sidx), ncol = length(Y_comb))
 for (i in 1:length(sidx))
 {
   #i <- 1
   print(paste0('iter: ', i, ' of ', length(sidx)))
-  for (j in 1:length(DATA$Y))
+  for (j in 1:length(DATA$Y_obs))
   {
     #j <- 1
-    #t-dis
-    # eps <- rt(n = 1, df = nu_ch[sidx[i],1]) * sigma_ch[sidx[i],1]
-    # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
+    mu_rep[i, DATA$obs_idx[j]] <- kappa_ch[sidx[i], 1] + 
+      gamma_ch[sidx[i], DATA$niche_obs_idx[j]] + 
+      alpha_ch[sidx[i], DATA$obs_idx[j]] + 
+      (as.matrix(DATA$X_obs[j,]) %*% beta_ch[sidx[i],])[,1]
     
-    mu_rep[i, j] <- kappa_ch[sidx[i], 1] + gamma_ch[sidx[i], DATA$niche_idx[j]] + 
-      alpha_ch[sidx[i], j] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
+    y_rep[i, DATA$obs_idx[j]] <- rnorm(1, mu_rep[i, DATA$obs_idx[j]], 
+                                       sigma_ch[sidx[i], 1])
+  }
+  for (j in 1:length(DATA$Y_mod))
+  {
+    mu_rep[i, DATA$mod_idx[j]] <- kappa_ch[sidx[i], 1] + 
+      gamma_ch[sidx[i], DATA$niche_mod_idx[j]] + 
+      alpha_ch[sidx[i], DATA$mod_idx[j]] + 
+      (as.matrix(DATA$X_mod[j,]) %*% beta_ch[sidx[i],])[,1]
     
-    y_rep[i,j] <- rnorm(1, mu_rep[i, j], sigma_ch[sidx[i], 1])
+    y_mv <- rnorm(1, mu_rep[i, DATA$mod_idx[j]], 
+                  sigma_ch[sidx[i], 1])
+    
+    y_rep[i, DATA$mod_idx[j]] <- rnorm(1, y_mv, DATA$sd_Y)
   }
 }
 
 pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
-plot(density(DATA$Y), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
+plot(density(Y_comb), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
 for (i in 1:500)
 {
   lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))

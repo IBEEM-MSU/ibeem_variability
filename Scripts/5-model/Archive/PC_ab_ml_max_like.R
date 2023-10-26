@@ -61,6 +61,7 @@ bird_df2 <- dplyr::select(bird_df, species,
                           lMass,
                           lGL,
                           Modeled_survival,
+                          Measured_survival,
                           Measured_max_longevity,
                           Measured_age_first_breeding,
                           lAb,
@@ -76,6 +77,30 @@ bird_df2 <- dplyr::select(bird_df, species,
                           temp_sd_season,
                           precip_cv_year,
                           precip_cv_season)
+
+
+NROW(dplyr::filter(bird_df, !is.na(Measured_survival))) / NROW(bird_df)
+NROW(dplyr::filter(bird_df, !is.na(Measured_max_longevity))) / NROW(bird_df)
+NROW(dplyr::filter(bird_df, !is.na(Measured_age_first_breeding))) / NROW(bird_df)
+
+sum(bird_df$Measured_survival > 0.3, na.rm = TRUE) / 
+  NROW(dplyr::filter(bird_df, !is.na(Measured_survival)))
+
+hist(bird_df$Measured_survival^bird_df$Measured_max_longevity, 
+     breaks = 1000, xlim = c(0, 0.01))
+
+plot(bird_df$Measured_max_longevity, bird_df$Measured_survival^bird_df$Measured_max_longevity,
+     xlim = c(0, 40))
+hist(bird_df$Measured_max_longevity, breaks = 200)
+
+
+
+t3 <- dplyr::mutate(bird_df, 
+              lAb = log(Modeled_age_first_breeding),
+              lMl = log(Modeled_max_longevity)) %>%
+  dplyr::select(Modeled_survival, lAb, lMl)
+
+plot(t3)
 
 
 # niche levels ------------------------------------------------------------

@@ -378,7 +378,7 @@ for (i in 1:length(sidx))
     # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
     
     mu_rep[i, j] <- kappa_ch[sidx[i], 1] + gamma_ch[sidx[i], DATA$niche_idx[j]] + 
-      alpha_ch[sidx[i], 1] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
+      alpha_ch[sidx[i], j] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
     
     y_rep[i,j] <- rnorm(1, mu_rep[i, j], sigma_ch[sidx[i], 1])
   }

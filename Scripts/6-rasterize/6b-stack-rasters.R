@@ -29,17 +29,45 @@ or_excl <- c('Sphenisciformes', #penguins
              'Suliformes', #gannets/boobies
              'Phaethontiformes', #tropicbirds
              'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
-             #'Anseriformes', #waterfowl
-             #'Ciconiiformes', #storks
-             #'Gaviiformes', #aquatic birds (loons and divers)
-             #'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-             #'Phoenicopteriformes', #flamingos and relatives
-             #'Podicipediformes') #grebes
+#'Anseriformes', #waterfowl
+#'Ciconiiformes', #storks
+#'Gaviiformes', #aquatic birds (loons and divers)
+#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
+#'Phoenicopteriformes', #flamingos and relatives
+#'Podicipediformes') #grebes
 
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data.csv')) %>%
-  dplyr::arrange(Accepted_name) %>%
+'%ni%' <- Negate('%in%')
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
+  dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
-                Migration == 1)
+                Migration == 1) %>%
+  #filter out precip outlier
+  dplyr::filter(precip_cv_season < 2.5) %>%
+  dplyr::mutate(lMass = log(Mass),
+                lGL = log(GenLength),
+                lAb = log(Modeled_age_first_breeding),
+                # lAb = log(Measured_age_first_breeding),
+                lMl = log(Modeled_max_longevity),
+                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+  #drop duplicated species (for now)
+  dplyr::group_by(Birdtree_name) %>%
+  dplyr::slice_head() %>%
+  dplyr::ungroup() %>%
+  #ex = number of years before temp exceeds 2 sd
+  #AND
+  #delta_t = how much temp will change in 1 generation (in sds)
+  #AND
+  #delta_haldane = how much change (in sd) per generation
+  #AND
+  #n_gen = how many gens before temp will exceed 2 sd
+  dplyr::mutate(ex = 2 * temp_sd_year / temp_slope,
+                ex_season = 2 * temp_sd_season / temp_slope,
+                delta_t = temp_slope / temp_sd_year * GenLength,
+                delta_t_season = temp_slope / temp_sd_year * GenLength,
+                #(degrees / year) * (sd / degrees) * (year / gen) = sd / gen
+                delta_haldane = (temp_slope / temp_sd_year) * GenLength,
+                delta_haldane_season = (temp_slope / temp_sd_season) * GenLength,
+                n_gen = ex / GenLength)
 
 ids <- bird_df$ID
 
@@ -76,6 +104,9 @@ lf2 <- lf[mrg$idx]
 #two files separately
 lf_gl <- grep('GenLength', lf2, value = TRUE)
 lf_dh <- grep('delta_haldane', lf2, value = TRUE)
+lf_ab <- grep('-Ab', lf2, value = TRUE)
+lf_ml <- grep('-Ml', lf2, value = TRUE)
+lf_cs <- grep('-Cs', lf2, value = TRUE)
 
 
 # read in and process -----------------------------------------------------
@@ -83,8 +114,14 @@ lf_dh <- grep('delta_haldane', lf2, value = TRUE)
 #stack
 gl_stack <- terra::rast(lf_gl)
 dh_stack <- terra::rast(lf_dh)
+ab_stack <- terra::rast(lf_ab)
+ml_stack <- terra::rast(lf_ml)
+cs_stack <- terra::rast(lf_cs)
 names(gl_stack) <- unique(mrg$id)
 names(dh_stack) <- unique(mrg$id)
+names(ab_stack) <- unique(mrg$id)
+names(ml_stack) <- unique(mrg$id)
+names(cs_stack) <- unique(mrg$id)
 
 # #apply land mask
 # gl_stack2 <- terra::mask(tt, env.dat.rast)
@@ -94,8 +131,14 @@ names(dh_stack) <- unique(mrg$id)
 #https://www.wikiwand.com/en/Log-normal_distribution
 med_gl <- terra::app(gl_stack, fun = function(x) median(x, na.rm = TRUE))
 med_dh <- terra::app(dh_stack, fun = function(x) median(x, na.rm = TRUE))
+med_ab <- terra::app(ab_stack, fun = function(x) median(x, na.rm = TRUE))
+med_ml <- terra::app(ml_stack, fun = function(x) median(x, na.rm = TRUE))
+med_cs <- terra::app(cs_stack, fun = function(x) median(x, na.rm = TRUE))
 names(med_gl) <- 'median_gl'
 names(med_dh) <- 'median_dh'
+names(med_ab) <- 'median_ab'
+names(med_ml) <- 'median_ml'
+names(med_cs) <- 'median_cs'
 
 # #calculate mean
 # mn_gl <- terra::app(gl_stack, fun = function(x) mean(x, na.rm = TRUE))
@@ -106,8 +149,14 @@ names(med_dh) <- 'median_dh'
 #calculate sd
 sd_gl <- terra::app(gl_stack, fun = function(x) sd(x, na.rm = TRUE))
 sd_dh <- terra::app(dh_stack, fun = function(x) sd(x, na.rm = TRUE))
+sd_ab <- terra::app(ab_stack, fun = function(x) sd(x, na.rm = TRUE))
+sd_ml <- terra::app(ml_stack, fun = function(x) sd(x, na.rm = TRUE))
+sd_cs <- terra::app(cs_stack, fun = function(x) sd(x, na.rm = TRUE))
 names(sd_gl) <- 'sd_gl'
 names(sd_dh) <- 'sd_dh'
+names(sd_ab) <- 'sd_ab'
+names(sd_ml) <- 'sd_ml'
+names(sd_cs) <- 'sd_cs'
 
 #calculate number of species in each grid cell
 n_sp <- terra::app(gl_stack, fun = function(x) sum(!is.na(x)))
@@ -118,7 +167,8 @@ names(n_sp) <- 'n_sp'
 # plot(n_sp)
 
 #combine into one raster
-mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, n_sp)
+mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, med_ab, sd_ab, 
+             med_ml, sd_ml, med_cs, sd_cs, n_sp)
 
 
 # save out tifs -----------------------------------------------------------
@@ -127,8 +177,8 @@ mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, n_sp)
 # 1107 - Scissor-tailed kite
 # 2018 - Nile Valley sunbird
 # 9268 - brown-necked raven
-# 10487 - common ostrich -> locations in Sahara where this is the only species
+# 10487 - common ostrich -> locations in Sahara where this is the only resident species
 terra::writeRaster(mrg_ras,
-                   filename = paste0(dir, 'data/L3/raster-gl-dh-nsp.tif'),
+                   filename = paste0(dir, 'data/L3/raster-LH-nsp.tif'),
                    overwrite = TRUE)
 
