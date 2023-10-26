@@ -161,8 +161,7 @@ for (i in 1:nrow(main.dat)) {
   })
   # Need two second delay to avoid getting API key shut down
   Sys.sleep(2)	
-}tmp <- rredlist::rl_search('beillia abeillei',
-                               key = IUCN_api_key)
+}
 
 # write to file
 write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'),
