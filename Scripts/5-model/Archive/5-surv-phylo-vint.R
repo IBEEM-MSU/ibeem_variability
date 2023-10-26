@@ -223,13 +223,15 @@ fig_dir <- paste0(dir, 'Results/bird-surv-phylo-vint-', run_date, '/')
 # shinystan::launch_shinystan(fit)
 
 
-# # residuals ---------------------------------------------------------------
-# 
-# # extract residuals and calc phylo signal
-# mu_obs_mn <- MCMCvis::MCMCpstr(fit, params = 'mu_obs')[[1]]
-# 
-# #calc resid
-# resid <- DATA$y_obs - mu_obs_mn
+# residuals ---------------------------------------------------------------
+
+alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
+kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
+gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
+beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
+
+mu_mn <- kappa_mn + gamma_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
+resid <- DATA$Y - mu_mn
 
 
 # Summary -----------------------------------------------------------------
@@ -262,43 +264,33 @@ beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]',
   precip_cv_year_scalar * y_scalar
 
 
-# added variable and partial resid plots ------------------------------------------------
+# partial resid plots ------------------------------------------------
 
-# # https://www.wikiwand.com/en/Partial_residual_plot
-# pr_fun <- function(num, nm)
-# {
-#   tm <- cbind(tt_comb2[,1],
-#               c(DATA$temp_sd_season_obs, DATA$temp_sd_season_imp),
-#               c(DATA$temp_sd_year_obs, DATA$temp_sd_year_imp),
-#               c(DATA$precip_cv_season_obs, DATA$precip_cv_season_imp),
-#               c(DATA$precip_cv_year_obs, DATA$precip_cv_year_imp))
-# 
-#   pch <- cbind(beta_ch,
-#                gamma1_ch, gamma2_ch,
-#                theta1_ch, theta2_ch)
-# 
-#   names <- c('Mass', 'Temp seasonality', 'Temp interannual',
-#              'Precip seasonality', 'Precip interannual')
-# 
-#   #partial residuals
-#   pr <- resid_comb + (median(pch[,num]) * tm[,num])
-# 
-#   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
-#       height = 5, width = 5)
-#   plot(tm[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
-#        xlab = 'Predictor',
-#        ylab = 'Partial residual',
-#        main = names[num])
-#   abline(h = 0, col = 'grey', lwd = 4, lty = 2)
-#   abline(a = 0, b = median(pch[,num]), col = rgb(1,0,0,0.5), lwd = 4)
-#   dev.off()
-# }
-# 
-# pr_fun(num = 1, nm = 'mass') #Mass
-# pr_fun(num = 2, nm = 'temp-season') #temp season
-# pr_fun(num = 3, nm = 'temp-year') #temp year
-# pr_fun(num = 4, nm = 'precip-season') #precip season
-# pr_fun(num = 5, nm = 'precip-year') #precip year
+# https://www.wikiwand.com/en/Partial_residual_plot
+pr_fun <- function(num, nm)
+{
+  names <- c('Mass', 'Temp seasonality', 'Temp interannual',
+             'Precip seasonality', 'Precip interannual')
+  
+  #partial residuals
+  pr <- resid + (beta_mn[num] * DATA$X[,num])
+  
+  pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
+      height = 5, width = 5)
+  plot(DATA$X[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
+       xlab = 'Predictor',
+       ylab = 'Partial residual',
+       main = names[num])
+  abline(h = 0, col = 'grey', lwd = 4, lty = 2)
+  abline(a = 0, b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
+  dev.off()
+}
+
+pr_fun(num = 1, nm = 'mass') #Mass
+pr_fun(num = 2, nm = 'temp-season') #temp season
+pr_fun(num = 3, nm = 'temp-year') #temp year
+pr_fun(num = 4, nm = 'precip-season') #precip season
+pr_fun(num = 5, nm = 'precip-year') #precip year
 
 
 # cat plots ---------------------------------------------------------------
