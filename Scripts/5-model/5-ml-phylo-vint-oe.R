@@ -38,7 +38,7 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Podicipediformes') #grebes
 
 '%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
                 Migration == 1) %>%
