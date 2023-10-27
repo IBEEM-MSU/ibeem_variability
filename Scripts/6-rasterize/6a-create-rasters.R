@@ -8,6 +8,9 @@
 # - Cs (clutch size)
 # - Ml (maximum longevity)
 # - S (survival)
+# - LH PC1
+# - LH PC2
+# - LH PC3
 #############################
 
 
@@ -75,6 +78,7 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
                 lAb = log(Modeled_age_first_breeding),
                 # lAb = log(Measured_age_first_breeding),
                 lMl = log(Modeled_max_longevity),
+                S = Modeled_survival,
                 species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
   #drop duplicated species (for now)
   dplyr::group_by(Birdtree_name) %>%
@@ -97,15 +101,43 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
                 n_gen = ex / GenLength)
 
 
+# PCA ---------------------------------------------------------------------
+
+tt_pca <- dplyr::select(bird_df, 
+                        lAb, lMl, S) %>%
+  prcomp(center = TRUE, scale. = TRUE)
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(1,2),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+factoextra::fviz_pca_var(tt_pca,
+                         axes = c(2,3),
+                         #geom = 'arrow',
+                         col.var = "contrib", # Color by contributions to the PC
+                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+                         #repel = FALSE,
+                         title = 'PCA')
+
+# + PC 1 = long lives, high surv, late age first breeding
+# + PC 2 = long lives, low surv, 0 age first breeding
+# + PC 3 = short lives, low surv, late age first breeding
+bird_df$LH_PC1 <- tt_pca$x[,1]
+bird_df$LH_PC2 <- tt_pca$x[,2]
+bird_df$LH_PC3 <- tt_pca$x[,3]
+
+
 # loop through ranges -----------------------------------------------------
 
 #from 3b...R
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 42
+  #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
-  curr.sp <- ids[i]  
+  curr.sp <- ids[i]
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/', 
                                    curr.sp, '-breeding.shp'),
                             quiet = TRUE)
@@ -155,11 +187,14 @@ for (i in 1:length(ids))
     #two layers
     curr.range.rast2 <- c(curr.range.rast, curr.range.rast,
                           curr.range.rast, curr.range.rast,
-                          curr.range.rast, curr.range.rast)
+                          curr.range.rast, curr.range.rast,
+                          curr.range.rast, curr.range.rast,
+                          curr.range.rast)
     
     #change layer names
     names(curr.range.rast2) <- c('GenLength', 'delta_haldane',
-                                 'Ab', 'Ml', 'Cs', 'S')
+                                 'Ab', 'Ml', 'Cs', 'S',
+                                 'LH_PC1', 'LH_PC2', 'LH_PC3')
     
     curr.range.rast2[['GenLength']][curr.range.rast2['GenLength'] == 1] <-  tdf$GenLength
     curr.range.rast2[['delta_haldane']][curr.range.rast2['delta_haldane'] == 1] <- tdf$delta_haldane
@@ -167,6 +202,9 @@ for (i in 1:length(ids))
     curr.range.rast2[['Ml']][curr.range.rast2['Ml'] == 1] <- tdf$Modeled_max_longevity
     curr.range.rast2[['Cs']][curr.range.rast2['Cs'] == 1] <- tdf$Measured_clutch_size
     curr.range.rast2[['S']][curr.range.rast2['S'] == 1] <- tdf$Modeled_survival
+    curr.range.rast2[['LH_PC1']][curr.range.rast2['LH_PC1'] == 1] <- tdf$LH_PC1
+    curr.range.rast2[['LH_PC2']][curr.range.rast2['LH_PC2'] == 1] <- tdf$LH_PC2
+    curr.range.rast2[['LH_PC3']][curr.range.rast2['LH_PC3'] == 1] <- tdf$LH_PC3
     
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
@@ -203,6 +241,24 @@ for (i in 1:length(ids))
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.sp),
                                          '-breeding-S.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['LH_PC1']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-LH_PC1.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['LH_PC2']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-LH_PC2.tif'),
+                       overwrite = TRUE)
+    
+    terra::writeRaster(curr.range.rast2[['LH_PC3']],
+                       filename = paste0(dir, 'data/L2/range-raster/', 
+                                         gsub(' ', '_', curr.sp),
+                                         '-breeding-LH_PC3.tif'),
                        overwrite = TRUE)
   }
 }
