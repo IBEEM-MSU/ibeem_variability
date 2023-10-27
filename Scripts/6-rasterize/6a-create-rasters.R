@@ -106,20 +106,20 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
 tt_pca <- dplyr::select(bird_df, 
                         lAb, lMl, S) %>%
   prcomp(center = TRUE, scale. = TRUE)
-factoextra::fviz_pca_var(tt_pca,
-                         axes = c(1,2),
-                         #geom = 'arrow',
-                         col.var = "contrib", # Color by contributions to the PC
-                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         #repel = FALSE,
-                         title = 'PCA')
-factoextra::fviz_pca_var(tt_pca,
-                         axes = c(2,3),
-                         #geom = 'arrow',
-                         col.var = "contrib", # Color by contributions to the PC
-                         gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-                         #repel = FALSE,
-                         title = 'PCA')
+# factoextra::fviz_pca_var(tt_pca,
+#                          axes = c(1,2),
+#                          #geom = 'arrow',
+#                          col.var = "contrib", # Color by contributions to the PC
+#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                          #repel = FALSE,
+#                          title = 'PCA')
+# factoextra::fviz_pca_var(tt_pca,
+#                          axes = c(2,3),
+#                          #geom = 'arrow',
+#                          col.var = "contrib", # Color by contributions to the PC
+#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#                          #repel = FALSE,
+#                          title = 'PCA')
 
 # + PC 1 = long lives, high surv, late age first breeding
 # + PC 2 = long lives, low surv, 0 age first breeding
