@@ -102,6 +102,42 @@ t3 <- dplyr::mutate(bird_df,
 
 plot(t3)
 
+bd2 <- dplyr::filter(bird_df, iucn != 'DD', !is.na(iucn))
+bd3 <- dplyr::filter(bd2, range_size_km2 > 0)
+bd3$dh <- bd3$temp_rel_slope * exp(bd3$lGL)
+bd3$is <- ordered(bd3$iucn, levels = c('LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX'))
+
+library(MASS)
+#more relative temp change, more likely to be endangered
+plot(bd3$is, bd3$temp_rel_slope)
+f1 <- polr(bd3$is ~ bd3$temp_rel_slope + log(bd3$range_size_km2))
+summary(f1)
+# plot(bd2$temp_rel_slope, is)
+# abline(f1, col = 'red', lwd = 3)
+#same as above, though accounting for range size (smaller ranges more likely to be endangered)
+f2 <- polr(bd3$is ~ bd3$temp_slope + log(bd3$range_size_km2))
+summary(f2)
+#more delta haldane, more likely to be endangered
+f3 <- polr(bd3$is ~ scale(bd3$dh, scale = TRUE) + log(bd3$range_size_km2))
+summary(f3)
+#better AIC, longer gens and more rapid temp change, more likely to be endangered
+#range size used in RL assessment
+#GL is used in the sense that it's threshold for pop decline in 10 years or 3 gens, whichever is longer
+# http://datazone.birdlife.org/species/spcredcrit
+f4 <- polr(bd3$is ~ scale(bd3$lGL, scale = TRUE) + 
+             scale(bd3$temp_rel_slope, scale = TRUE) + 
+             log(bd3$range_size_km2))
+summary(f4)
+exp(coef(f4))
+
+# for every 1 sd change in lGL, species are 90% more likely to be threatened
+# for every 1 sd change in relative temperature change (temperature slope / intrinsic variation), species are about 9% more likely to be threatened
+
+tmp <- rredlist::rl_search(bd3$Avonet_name[6],
+                           key = IUCN_api_key)
+tmp$result$criteria
+tmp$result$population_trend
+
 
 # niche levels ------------------------------------------------------------
 

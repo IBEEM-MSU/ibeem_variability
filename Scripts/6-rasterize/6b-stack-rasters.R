@@ -210,7 +210,7 @@ names(n_sp) <- 'n_sp'
 #combine into one raster
 mrg_ras <- c(med_gl, sd_gl, med_dh, sd_dh, med_ab, sd_ab, 
              med_ml, sd_ml, med_cs, sd_cs, med_s, sd_s, 
-             med_pc1, sd_pc1, med_pc2, sd_pc2, med_pc3, sd_pc4, 
+             med_pc1, sd_pc1, med_pc2, sd_pc2, med_pc3, sd_pc3, 
              n_sp)
 
 #mask out non-land
