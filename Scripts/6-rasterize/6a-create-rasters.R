@@ -120,13 +120,23 @@ tt_pca <- dplyr::select(bird_df,
 #                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
 #                          #repel = FALSE,
 #                          title = 'PCA')
+# 
+# factoextra::fviz_pca_biplot(tt_pca,
+#                             axes = c(1,2), 
+#                             label = "var",
+#                             habillage = bird_df$Order)
 
 # + PC 1 = long lives, high surv, late age first breeding
 # + PC 2 = long lives, low surv, 0 age first breeding
 # + PC 3 = short lives, low surv, late age first breeding
+
 bird_df$LH_PC1 <- tt_pca$x[,1]
 bird_df$LH_PC2 <- tt_pca$x[,2]
 bird_df$LH_PC3 <- tt_pca$x[,3]
+
+# ggplot(bird_df, aes(S, lMl, col = Order)) +
+#   geom_point(alpha = 0.8) +
+#   theme_bw()
 
 
 # loop through ranges -----------------------------------------------------
