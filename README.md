@@ -68,15 +68,16 @@
       * `5-gl-mam.R` - gen length ~ var for mammals
       * `bird_df3.rds` - data to avoid running first part of `5-...R` scripts
       * `brms.R` - benchmarking brms models with rstan models
-    * `5-ab-phylo-vint.R` - age first breeding ~ var varying intercepts, phylo kappa
+      * `5-gl-phylo-vint.R` - gen length ~ var varying intercepts, phylo kappa
+      * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
+      * `5-ab-phylo-vint.R` - age first breeding ~ var varying intercepts, phylo kappa
+      * `5-rl-phylo-vint.R` - rel repro lifespan ~ var + varying int + phylo kappa
+      * `5-gl-phylo-vint-gamma.R` - gen length ~ var varying intercepts, phylo kappa with gamma instead of normal
     * `5-ab-phylo-vint-oe.R`* - age first breeding ~ var varying intercepts, phylo kappa; modeled (from Bird et al.) rather than imputed values as in `Archive`
-    * `5-gl-phylo-vint.R` - gen length ~ var varying intercepts, phylo kappa
-    * `5-ml-phylo-vint.R` - max long ~ var + varying int + phylo kappa
     * `5-ml-phylo-vint-oe.R`* - max long ~ var varying intercepts, phylo kappa; modeled (from Bird et al.) rather than imputed values as in `Archive`
     * `5-s-phylo-vint-oe.R`* - survival ~ var varying intercepts, phylo kappa; modeled (from Bird et al.) rather than imputed values as in `Archive`
-    * `5-rl-phylo-vint.R` - rel repro lifespan ~ var + varying int + phylo kappa
-    * `5-gl-phylo-vint-gamma.R` - gen length ~ var varying intercepts, phylo kappa with gamma instead of normal
-    * `5-gl-phylo-vint-mam.R` - gen length ~ var varying intercepts, phylo kappa mammals
+    * `5-gl-phylo-vint-mam.R`* - gen length ~ var varying intercepts, phylo kappa mammals
+    * `5-iucn-threat.R`* - IUCN threat status ~ variation
   * `6-rasterize` - rasterize ranges
     * `6a-create-rasters.R` - create .tif files birds
     * `6a-raster-comile.sh` - bash script to iterate through all pieces of data and run `6a-raster.sbatch`
