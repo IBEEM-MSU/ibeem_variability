@@ -9,7 +9,7 @@
 # sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 dir <- '/mnt/research/ibeem/variability/'
 sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-26'
+run_date <- '2023-10-31'
 
 
 # load packages -----------------------------------------------------------
@@ -27,6 +27,8 @@ library(phytools)
 mam_df <- read.csv(paste0(dir, 'data/L3/main-mammal-data.csv')) %>%
   dplyr::filter(PH_Terrestrial == 1) %>%
   # dplyr::filter(PH_Aerial == 1) %>%
+  #filter out precip outlier
+  dplyr::filter(precip_cv_season < 2.5) %>%
   dplyr::mutate(Family = PH_Family,
                 Order = PH_Order,
                 # LH_Mass = LH_AdultBodyMass_g, #Pacifici mass
