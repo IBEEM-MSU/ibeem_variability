@@ -129,10 +129,11 @@ niche_names <- levels(factor(bird_df3$Trophic_niche))
 obs_idx <- which(!is.na(bird_df3$mS))
 mod_idx <- which(is.na(bird_df3$mS))
 
-#fit between modeled and observed for uncertainty - r2 = 0.76
-om_fit <- lm(bird_df3$S ~ bird_df3$mS)
-#get sd of residuals
-sd_Y <- sd(residuals(om_fit))
+#Bird et al. r2 between modeled and observed for uncertainty = 0.754
+#r2 = 1 - (resid var / total var)
+#resid var / total var = 1 - r2
+#0.246 * total var = resid var
+sd_Y <- sqrt(0.246 * var(bird_df3$mS, na.rm = TRUE))
 
 #scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
