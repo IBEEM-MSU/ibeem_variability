@@ -292,9 +292,6 @@ MCMCvis::MCMCsummary(fit, round = 3,
 
 # covariate effect on LH trait -----------------------------------------------
 
-#INTERPRETATION
-#((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
-#((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
                                 exact = TRUE, ISB = FALSE) * 
   lMass_scalar * y_scalar
@@ -310,20 +307,6 @@ beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]',
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
                                 exact = TRUE, ISB = FALSE) * 
   precip_cv_year_scalar * y_scalar
-
-# median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
-# median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
-# median((exp(gamma2_ch * diff(range(DATA$temp_sd_year))) - 1) * 100)
-# median((exp(theta1_ch * diff(range(DATA$precip_cv_season))) - 1) * 100)
-# median((exp(theta2_ch * diff(range(DATA$precip_cv_year))) - 1) * 100)
-
-#scaling cov to measured scale bc transformed param est
-#% change in LH trait for 1 sd change in covariate
-beta1_rs_ch <- (exp(beta1_ch * sd(X_comb[,1] / lMass_scalar)) - 1) * 100
-beta2_rs_ch <- (exp(beta2_ch * sd(X_comb[,2] / temp_sd_season_scalar)) - 1) * 100
-beta3_rs_ch <- (exp(beta3_ch * sd(X_comb[,3] / temp_sd_year_scalar)) - 1) * 100
-beta4_rs_ch <- (exp(beta4_ch * sd(X_comb[,4] / precip_cv_season_scalar)) - 1) * 100
-beta5_rs_ch <- (exp(beta5_ch * sd(X_comb[,5] / precip_cv_year_scalar)) - 1) * 100
 
 
 # partial resid plots ------------------------------------------------
@@ -369,25 +352,6 @@ MCMCvis::MCMCplot(fit,
                   main = 'Param estimates',
                   guide_lines = TRUE)
 dev.off()
-
-pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
-    height = 5, width = 5)
-MCMCvis::MCMCplot(cbind(beta2_rs_ch,
-                        beta3_rs_ch,
-                        beta4_rs_ch,
-                        beta5_rs_ch),
-                  labels = c('T seasonality',
-                             'T interannual var',
-                             'P seasonality',
-                             'P interannual var'),
-                  sz_labels = 1.5,
-                  ci = c(89, 89),
-                  sz_thick = 3,
-                  sz_thin = 3,
-                  main = '% change S for 1 sd change in cov',
-                  guide_lines = TRUE)
-dev.off()
-
 
 pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
     height = 5, width = 5)
@@ -446,7 +410,7 @@ for (i in 1:length(sidx))
 }
 
 pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
-plot(density(Y_comb), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
+plot(density(Y_comb), col = 'black', lwd = 3, ylim = c(0, 2))#, xlim = c(0, 3.5))
 for (i in 1:500)
 {
   lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))

@@ -1,148 +1,177 @@
-range_size_km2
+####################
+# Model residuals - no clear axes of unexplained variation
+####################
 
-str(bird_df)
-bdf <- dplyr::select(bird_df,
-              Birdtree_name,
-              lGL,
-              Habitat, Habitat.Density, 
-              Trophic.Level, Trophic.Niche, 
-              Tail.Length, Primary.Lifestyle, 
-              Mass, Wing.Length, range_size_km2) %>%
-  dplyr::mutate(species = stringr::str_to_sentence(gsub(' ', '_', Birdtree_name)))
 
-str(bird_df5)
-str(bdf)
+# specify dir -------------------------------------------------------------
 
-t2 <- dplyr::left_join(bird_df5, bdf, by = 'species')
-obs_data <- t2[DATA$obs_idx,]
-imp_data <- t2[DATA$imp_idx,]
+dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# dir <- '/mnt/research/ibeem/variability/'
+# sc_dir <- '/mnt/home/ccy/variability/'
 
-obs_data$resid <- resid_obs
-imp_data$resid <- resid_imp
 
-dd <- rbind(obs_data, imp_data)
+# load packages -----------------------------------------------------------
 
-plot(factor(obs_data$Habitat), obs_data$resid)
-plot(factor(obs_data$Habitat.Density), obs_data$resid)
-plot(factor(obs_data$Trophic.Level), obs_data$resid)
-plot(factor(obs_data$Trophic.Niche), obs_data$resid) #*
-plot(obs_data$Tail.Length, obs_data$resid)
-plot(factor(obs_data$Primary.Lifestyle), obs_data$resid)
-plot(log(obs_data$Wing.Length), obs_data$resid)
-plot(log(obs_data$range_size_km2), obs_data$resid)
+library(tidyverse)
+library(cmdstanr)
+library(MCMCvis)
 
-ggplot(dd, aes(Trophic.Niche, resid)) +
-  geom_boxplot() +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust=1,vjust=0.5)) +
-  xlab('') +
-  ylab('Residual') +
-  ggtitle('Survival ~ Env + Phylo')
-  
 
-jpeg('~/Desktop/niche.jpeg', width = 500, height = 500)
-plot(factor(dd$Trophic.Niche), dd$resid, las = 2) #*
-dev.off()
+# load bird data ---------------------------------------------------------------
 
-str(dd)
-dplyr::group_by(dd, Trophic.Niche) %>%
-  dplyr::summarize(mr = mean(resid),
-                   m_t_season = mean(temp_sd_season),
-                   m_t_year = mean(temp_sd_year),
-                   m_p_season = mean(precip_cv_season),
-                   m_p_year = mean(precip_cv_year))
-str(dd)
+or_excl <- c('Sphenisciformes', #penguins 
+             'Procellariiformes', #tubenoses
+             'Pelecaniformes', #pelicans
+             'Suliformes', #gannets/boobies
+             'Phaethontiformes', #tropicbirds
+             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
+#'Anseriformes', #waterfowl
+#'Ciconiiformes', #storks
+#'Gaviiformes', #aquatic birds (loons and divers)
+#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
+#'Phoenicopteriformes', #flamingos and relatives
+#'Podicipediformes') #grebes
 
-ggplot(dd, aes(temp_sd_season, Phylo_survival, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
+'%ni%' <- Negate('%in%')
+bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
+  dplyr::arrange(Birdtree_name) %>%
+  dplyr::filter(Order %ni% or_excl,
+                Migration == 1) %>%
+  #filter out precip outlier
+  dplyr::filter(precip_cv_season < 2.5) %>%
+  dplyr::mutate(lMass = log(Mass),
+                lGL = log(GenLength),
+                lAb = log(Modeled_age_first_breeding),
+                mlAb = log(Measured_age_first_breeding),
+                lMl = log(Modeled_max_longevity),
+                mlMl = log(Measured_max_longevity),
+                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
+  #drop duplicated species (for now)
+  dplyr::group_by(Birdtree_name) %>%
+  dplyr::slice_head() %>%
+  dplyr::ungroup()
 
-ggplot(dd, aes(temp_sd_year, Phylo_survival, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
+#subset out just traits of interest
+bird_df2 <- dplyr::select(bird_df, 
+                          species,
+                          Order,
+                          Family,
+                          lGL,
+                          S = Modeled_survival,
+                          lAb,
+                          lMl,
+                          mS = Measured_survival,
+                          mlAb,
+                          mlMl,
+                          Trophic_niche = Trophic.Niche,
+                          lMass,
+                          temp_sd_year,
+                          temp_sd_season,
+                          precip_cv_year,
+                          precip_cv_season) %>% 
+  dplyr::left_join(read.csv(paste0(dir, 'data/L0/trait/pnas.2121467120.sd01(2).csv')), 
+                 by = c('species' = 'tip_label'))
 
-ggplot(dd, aes(temp_sp_color_month, lGL, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
 
-ggplot(dd, aes(precip_cv_season, Phylo_log_clutch_size, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
+# load fit model ----------------------------------------------------------
 
-ggplot(dd, aes(precip_cv_year, Phylo_log_clutch_size, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
+#SURVIVAL
+# run_date <- '2023-10-28'
+# fit <- readRDS(paste0(dir, '/Results/bird-s-phylo-vint-oe-', run_date,
+#                       '/bird-s-phylo-vint-oe-fit-', run_date, '.rds'))
+# DATA <- readRDS(paste0(dir, '/Results/bird-s-phylo-vint-oe-', run_date,
+#                       '/bird-s-phylo-vint-oe-data-', run_date, '.rds'))
 
-ggplot(dd, aes(precip_sp_color_month, lGL, color = Trophic.Niche)) +
-  geom_point(alpha = 0.08) +
-  geom_line(stat = 'smooth', method = 'lm',
-            linewidth = 2, alpha = 0.5) +
-  theme_bw()
+#AGE FIRST BREEDING
+run_date <- '2023-10-26'
+fit <- readRDS(paste0(dir, '/Results/bird-ab-phylo-vint-oe-', run_date,
+                      '/bird-ab-phylo-vint-oe-fit-', run_date, '.rds'))
+DATA <- readRDS(paste0(dir, '/Results/bird-ab-phylo-vint-oe-', run_date,
+                      '/bird-ab-phylo-vint-oe-data-', run_date, '.rds'))
 
-unique(dd$Trophic.Niche)
-dplyr::filter(dd, is.na(Trophic.Niche))$species
+#MAX LONGEVITY
+# run_date <- '2023-10-28'
+# fit <- readRDS(paste0(dir, '/Results/bird-ml-phylo-vint-oe-', run_date,
+#                       '/bird-ml-phylo-vint-oe-fit-', run_date, '.rds'))
+# DATA <- readRDS(paste0(dir, '/Results/bird-ml-phylo-vint-oe-', run_date,
+#                       '/bird-ml-phylo-vint-oe-data-', run_date, '.rds'))
 
-      
-plot(factor(obs_data$Trophic.Niche), obs_data$resid, ylim = c(-3, 3)) #*
-plot(factor(dd$Trophic.Niche), dd$resid, ylim = c(-3, 3)) #*
 
-plot(alpha_mn, DATA$Y)
-plot(DATA$X[,1], DATA$Y)
+# get resids --------------------------------------------------------------
 
 alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
 kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
 gamma_mn <- MCMCvis::MCMCpstr(fit, params = 'gamma')[[1]]
 beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
 
-mu_mn <- kappa_mn + gamma_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
-resid <- DATA$Y - mu_mn
+#combine linear predictor
+mu_mn <- rep(NA, DATA$N)
+mu_mn[DATA$obs_idx] <- kappa_mn + gamma_mn[DATA$niche_obs_idx] + 
+  alpha_mn[DATA$obs_idx] + (as.matrix(DATA$X_obs) %*% beta_mn)[,1]
+mu_mn[DATA$mod_idx] <- kappa_mn + gamma_mn[DATA$niche_mod_idx] +
+  alpha_mn[DATA$mod_idx] + (as.matrix(DATA$X_mod) %*% beta_mn)[,1]
 
-plot(DATA$Y, resid)
-summary(lm(resid ~ DATA$Y))
-plot(DATA$X[,1], resid)
-plot(mu_mn, resid)
+#combine reponse
+Y_comb <- rep(NA, length(DATA$obs_idx) + length(DATA$mod_idx))
+Y_comb[DATA$obs_idx] <- DATA$Y_obs
+Y_comb[DATA$mod_idx] <- DATA$Y_mod
 
-tt <- dplyr::left_join(bird_df4, dplyr::select(bird_df, species, cen_lon, cen_lat),
-                 by = 'species') %>%
-  dplyr::mutate(resid = resid)
-plot(tt$resid, tt$cen_lon)
-
-ggplot(tt, aes(cen_lon, cen_lat, color = resid)) +
-  geom_point(alpha = 0.3) +
-  theme_bw()
-
-
-ff <- lm(lGL ~ lMass + temp_sd_season + temp_sd_year + precip_cv_season + precip_cv_year,
-         data = mam_df2)
-summary(ff)
+#residuals
+resid <- Y_comb - mu_mn
+bird_df2$resid <- resid
 
 
+# look at resids ----------------------------------------------------------
 
-mam_df2$resid <- residuals(pgls_fit)
-
-plot(mam_df2$lMass, mam_df2$resid)
-plot(mam_df2$lGL, mam_df2$resid)
-plot(mam_df2$lMass, residuals(ff))
-
-str(mam_df2)
-
-#mam
-plot(factor(mam_df2$PH_Island.Endemicity), mam_df2$resid)
-plot(factor(mam_df2$PH_Order), mam_df2$resid)
-plot(factor(mam_df2$PH_Family), mam_df2$resid)
-plot(log(mam_df2$range_size_km2), mam_df2$resid)
-plot(factor(mam_df2$Trophic_niche), mam_df2$resid)
+plot(factor(bird_df$Habitat), resid)
+plot(factor(bird_df$Habitat.Density), resid)
+plot(factor(bird_df$Trophic.Level), resid)
+plot(bird_df$Hand.Wing.Index, resid)
+plot(factor(bird_df$Primary.Lifestyle), resid)
+plot(log(bird_df$range_size_km2), resid)
+plot(bird_df$cen_lat, resid)
+plot(bird_df$cen_lon, resid)
+plot(bird_df$temp_skew, resid)
+plot(bird_df$Measured_clutch_size, resid)
 
 
+plot(factor(bird_df2$devo_mode), resid)
+plot(log(bird_df2$egg_mass), resid)
+#brain size does not explain
+bd3 <- dplyr::filter(bird_df2, !is.na(brain))
+plot(residuals(lm(log(brain) ~ log(weight), data = bd3)), bd3$resid)
+summary(lm(bd3$resid ~ residuals(lm(log(brain) ~ log(weight), data = bd3))))
+plot(bird_df2$time_fed, resid)
+summary(lm(resid ~ bird_df2$time_fed))
+plot(bird_df2$caretakers, resid)
+summary(lm(resid ~ bird_df2$caretakers))
+plot(factor(bird_df2$social_bonds), resid)
+plot(bird_df2$food_energy, resid)
+summary(lm(resid ~ bird_df2$food_energy))
+plot(bird_df2$food_h_level, resid)
+plot(bird_df2$fibres, resid)
+plot(factor(bird_df2$foraging), resid)
+plot(factor(bird_df2$sedentariness), resid)
+plot(factor(bird_df2$insularity), resid)
+plot(factor(bird_df2$colonial), resid)
+plot(factor(bird_df2$grouping), resid)
+
+par(mar = c(7, 4, 2, 2) + 1)
+plot(factor(bird_df$Order), resid, las = 2)
 
 
+
+plot(factor(bd3$Trophic_niche), 
+     residuals(lm(log(brain) ~ log(weight), data = bd3)), 
+     las = 2)
+
+plot(factor(bd3$Order), 
+     residuals(lm(log(brain) ~ log(weight), data = bd3)), 
+     las = 2)
+
+ggplot(bd3, aes(log(weight), log(brain), color = Trophic_niche)) + 
+  geom_point()
+
+ggplot(bd3, aes(log(weight), log(brain), color = Order)) + 
+  geom_point()
