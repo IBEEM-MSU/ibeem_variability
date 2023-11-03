@@ -43,7 +43,7 @@ model {
   // niche intercepts
   gamma ~ normal(0, sigma_gamma);
   // phylo intercepts (unscaled)
-  theta ~ multi_normal_cholesky(0, LRho)
+  theta ~ multi_normal_cholesky(rep_vector(0, N), LRho);
   
   // optimized call for glm
   Y ~ normal_id_glm(X, kappa + gamma[niche_idx] + alpha, beta, sigma);
