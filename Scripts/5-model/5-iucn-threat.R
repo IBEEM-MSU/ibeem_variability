@@ -117,3 +117,25 @@ f5 <- MASS::polr(bd3$is ~ scale(bd3$lGL, scale = TRUE) +
 summary(f5)
 car::vif(f5)
 
+
+# SEM ---------------------------------------------------------------------
+
+library(lavaan)
+
+bd4 <- dplyr::mutate(bd3,
+                     iv = as.numeric(bd3$is),
+                     sc_temp_sd_year = scale(bd3$temp_sd_year, 
+                                            scale = TRUE),
+                     sc_temp_rel_slope = scale(bd3$temp_rel_slope, 
+                                               scale = TRUE),
+                     sc_log_range_size_km2 = scale(log(bd3$range_size_km2), 
+                                                   scale = TRUE))
+
+model1 <- '
+  iv ~ lGL + sc_temp_sd_year + sc_temp_rel_slope + sc_log_range_size_km2
+  sc_temp_rel_slope ~ sc_temp_sd_year
+  lGL ~ sc_temp_sd_year'
+
+model1.fit <- lavaan::sem(model1, data = bd4) 
+summary(model1.fit)
+
