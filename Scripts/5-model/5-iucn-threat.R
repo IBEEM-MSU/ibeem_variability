@@ -34,53 +34,78 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Podicipediformes') #grebes
 
 '%ni%' <- Negate('%in%')
+#subset out just traits of interest
+#calculate temp change by generation and relative temp change by generation
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
-                Migration == 1) %>%
-  #filter out precip outlier
-  dplyr::filter(precip_cv_season < 2.5) %>%
-  dplyr::mutate(lMass = log(Mass),
-                lGL = log(GenLength),
-                lAb = log(Modeled_age_first_breeding),
-                lMl = log(Modeled_max_longevity),
-                lCs = log(Measured_clutch_size),
-                S = Modeled_survival,
-                # lMl = log(Measured_max_longevity),
-                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  #drop duplicated species (for now)
-  dplyr::group_by(Birdtree_name) %>%
-  dplyr::slice_head() %>%
-  dplyr::ungroup()
+                Migration == 1,
+                range_size_km2 > 0,
+                iucn != 'DD',
+                !is.na(iucn)) %>%
+  dplyr::mutate(species = stringr::str_to_title(gsub(' ', '_', Birdtree_name)),
+                iucn_level = ordered(iucn, levels = c('LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX'))) %>%
+  dplyr::select(species,
+                Birdtree_name,
+                Mass,
+                GenLength,
+                range_size_km2,
+                temp_slope,
+                temp_sd_year,
+                temp_rel_slope,
+                iucn_level) %>%
+  #keep duplicated species (for now)
+  # dplyr::group_by(Birdtree_name) %>%
+  # dplyr::slice_head() %>%
+  # dplyr::ungroup() %>%
+  dplyr::mutate(temp_slope_gen = temp_slope*GenLength,
+                temp_rel_slope_gen = temp_rel_slope*GenLength)
 
-#subset out just traits of interest
-bird_df2 <- dplyr::select(bird_df, species,
-                          lMass,
-                          lGL,
-                          S,
-                          Measured_survival,
-                          Measured_max_longevity,
-                          Measured_age_first_breeding,
-                          lAb,
-                          lMl,
-                          lCs,
-                          Trophic_niche = Trophic.Niche,
-                          Order,
-                          Family,
-                          cen_lon,
-                          cen_lat,
-                          temp_mean,
-                          temp_sd_year,
-                          temp_sd_season,
-                          precip_cv_year,
-                          precip_cv_season)
+# run ordinal regressions ---------------------------------------------------------------
 
-bd2 <- dplyr::filter(bird_df, iucn != 'DD', !is.na(iucn))
-bd3 <- dplyr::filter(bd2, range_size_km2 > 0)
-bd3$dh <- bd3$temp_rel_slope * exp(bd3$lGL)
-bd3$temp_rel_slope_season <- bd3$temp_slope / bd3$temp_sd_season
-bd3$is <- ordered(bd3$iucn, levels = c('LC', 'NT', 'VU', 'EN', 'CR', 'EW', 'EX'))
+plot(bird_df$iucn_level, log(bird_df$range_size_km2))
+f1 <- MASS::polr(iucn_level ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) + 
+                   scale(temp_slope), data=bird_df)
+f2 <- MASS::polr(iucn_level ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) + 
+                   scale(temp_rel_slope), data=bird_df)
+f3 <- MASS::polr(iucn_level ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+                   scale(temp_slope_gen), data=bird_df)
+f4 <- MASS::polr(iucn_level ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+                   scale(temp_rel_slope_gen), data=bird_df)
+summary(f1)
+summary(f2)
+summary(f3)
+summary(f4)
 
+# Check temp_sd_year
+f0 <- MASS::polr(iucn_level ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+                   scale(temp_sd_year), data=bird_df)
+summary(f0)
+
+# run logistic regressions ---------------------------------------------------------------
+
+bird_df2 <- bird_df %>%
+  dplyr::filter(iucn_level %in% c("LC","NT","VU","EN","CR")) %>%
+  dplyr::mutate(threatened = ifelse(iucn_level %in% c("LC","NT"),0,1))
+f1 <- glm(threatened ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+                   scale(temp_slope), data=bird_df2, family = "binomial")
+f2 <- glm(threatened ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+            scale(temp_rel_slope), data=bird_df2, family = "binomial")
+f3 <- glm(threatened ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+            scale(temp_slope_gen), data=bird_df2, family = "binomial")
+f4 <- glm(threatened ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+            scale(temp_rel_slope_gen), data=bird_df2, family = "binomial")
+summary(f1)
+summary(f2)
+summary(f3)
+summary(f4)
+
+# Check temp_sd_year
+f0 <- glm(threatened ~ scale(log(Mass)) + scale(log(GenLength)) + scale(log(range_size_km2)) +
+            scale(temp_sd_year), data=bird_df2, family = "binomial")
+summary(f0)
+
+################# earlier code ###############
 
 #more relative temp change, more likely to be endangered
 plot(bd3$is, bd3$temp_rel_slope)
@@ -115,27 +140,4 @@ f5 <- MASS::polr(bd3$is ~ scale(bd3$lGL, scale = TRUE) +
                    # scale(bd3$temp_slope, scale = TRUE) +
                    log(bd3$range_size_km2))
 summary(f5)
-car::vif(f5)
-
-
-# SEM ---------------------------------------------------------------------
-
-library(lavaan)
-
-bd4 <- dplyr::mutate(bd3,
-                     iv = as.numeric(bd3$is),
-                     sc_temp_sd_year = scale(bd3$temp_sd_year, 
-                                            scale = TRUE),
-                     sc_temp_rel_slope = scale(bd3$temp_rel_slope, 
-                                               scale = TRUE),
-                     sc_log_range_size_km2 = scale(log(bd3$range_size_km2), 
-                                                   scale = TRUE))
-
-model1 <- '
-  iv ~ lGL + sc_temp_sd_year + sc_temp_rel_slope + sc_log_range_size_km2
-  sc_temp_rel_slope ~ sc_temp_sd_year
-  lGL ~ sc_temp_sd_year'
-
-model1.fit <- lavaan::sem(model1, data = bd4) 
-summary(model1.fit)
-
+car::vif(f2)
