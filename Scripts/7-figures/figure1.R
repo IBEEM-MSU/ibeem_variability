@@ -185,3 +185,54 @@ ggplot() +
                          zero_color = "#E8E8E8",
                          limits = c(0, py_q[20]),
                          limits_y = c(0, ps_q[20]))
+
+## Two species example ----
+
+### Select species ----
+
+# load bird data
+
+bird_data <- read_csv("~/Documents/Documents/ibeem/main-bird-data-birdtree2.csv") #needs update
+
+head(bird_data)
+summary(bird_data)
+
+# Gen length min = 1.42, max = 27.87, median = 3.041
+# Temp SD season min = 0.19, max = 18.91, median = 1.49
+# Temp SD year min = 0.124, max = 1.468, median = 0.391
+
+# High inter annual, low intra annual, long gen length
+bird_data %>%
+  select(Birdtree_name, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
+  arrange(-GenLength) %>%
+  #arrange(-Modeled_max_longevity) %>%
+  filter(temp_sd_year > 0.39) %>%
+  filter(temp_sd_season < 1.49) %>%
+  print(n= 30)
+
+# amazona ochrocephala GenLength = 16.5, temp_sd_season = 0.827, temp_sd_year = 0.403
+
+# High intra annual, low inter annual, short gen length
+
+bird_data %>%
+  select(Birdtree_name, Family, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
+  arrange(GenLength) %>%
+  #filter(Family == "Trochilidae") %>%
+  #arrange(-Modeled_max_longevity) %>%
+  #filter(temp_sd_year < 0.39) %>%
+  filter(temp_sd_season > 1.49) %>%
+  filter(Min.Latitude > 23) %>%
+  print(n= 30)
+
+#parus venustulus GenLength = 1.63, temp_sd_season = 8.38, temp_sd_year = 0.466
+#stellula calliope (hummingbird)   GenLength = 1.95, temp_sd_season = 8.99, temp_sd_year 0.702
+
+### Get silhouette 
+
+### Extract environmental data ----
+
+# average temp over range or extract centroid's temp?
+
+### Plot time series ----
+
+### Plot distribution range map ----
