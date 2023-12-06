@@ -1,5 +1,5 @@
 ####################
-# Fit Bayes model - ml ~ env + phylo + vint + oe
+# Fit Bayes model - ab ~ env + phylo + vint + oe
 ####################
 
 
@@ -88,8 +88,8 @@ pr_tree <- ape::drop.tip(bird.phylo, nm)
 
 #get idx
 j_idx <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
-                          data.frame(idx = 1:NROW(bird_df2), bird_df2), 
-                          by = 'species')
+                           data.frame(idx = 1:NROW(bird_df2), bird_df2), 
+                           by = 'species')
 
 #apply
 bird_df3 <- bird_df2[j_idx$idx,]
@@ -99,12 +99,12 @@ pr_tree2 <- ape::multi2di(pr_tree)
 
 #make response into matrix with species as rownames
 dd <- dplyr::select(bird_df3, 
-                    lMl) %>%
+                    lAb) %>%
   as.matrix()
 row.names(dd) <- bird_df3$species
 
 #get estimate of Pagel's kappa to scale phylogeny
-fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lMl'], model = "kappa")
+fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lAb'], model = "kappa")
 
 #rescale tree
 pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
@@ -126,14 +126,14 @@ niche_names <- levels(factor(bird_df3$Trophic_niche))
 # scale/predp data --------------------------------------------------------
 
 #observed and modeled values
-obs_idx <- which(!is.na(bird_df3$mlMl))
-mod_idx <- which(is.na(bird_df3$mlMl))
+obs_idx <- which(!is.na(bird_df3$mlAb))
+mod_idx <- which(is.na(bird_df3$mlAb))
 
-#Bird et al. r2 between modeled and observed for uncertainty = 0.765
+#Bird et al. r2 between modeled and observed for uncertainty = 0.922
 #r2 = 1 - (resid var / total var)
 #resid var / total var = 1 - r2
-#0.235 * total var = resid var
-sd_Y <- sqrt(0.235 * var(bird_df3$mlMl, na.rm = TRUE))
+#0.078 * total var = resid var
+sd_Y <- sqrt(0.078 * var(bird_df3$mlAb, na.rm = TRUE))
 
 #scalars for data - smaller number for larger param value (opposite for y)
 lMass_scalar <- 1
@@ -145,15 +145,15 @@ y_scalar <- 2
 
 #center predictors
 tt_obs <- data.frame(lMass = bird_df3$lMass[obs_idx] * 
-                       lMass_scalar,
-                     temp_sd_season = bird_df3$temp_sd_season[obs_idx] * 
-                       temp_sd_season_scalar,
-                     temp_sd_year = bird_df3$temp_sd_year[obs_idx] * 
-                       temp_sd_year_scalar,
-                     precip_cv_season = bird_df3$precip_cv_season[obs_idx] * 
-                       precip_cv_season_scalar,
-                     precip_cv_year = bird_df3$precip_cv_year[obs_idx] * 
-                       precip_cv_year_scalar)
+                   lMass_scalar,
+                 temp_sd_season = bird_df3$temp_sd_season[obs_idx] * 
+                   temp_sd_season_scalar,
+                 temp_sd_year = bird_df3$temp_sd_year[obs_idx] * 
+                   temp_sd_year_scalar,
+                 precip_cv_season = bird_df3$precip_cv_season[obs_idx] * 
+                   precip_cv_season_scalar,
+                 precip_cv_year = bird_df3$precip_cv_year[obs_idx] * 
+                   precip_cv_year_scalar)
 
 tt_mod <- data.frame(lMass = bird_df3$lMass[mod_idx] * 
                        lMass_scalar,
@@ -179,8 +179,8 @@ tt_mod2 <- sweep(tt_mod, 2, tt_mns)
 DATA <- list(N = NROW(bird_df3),
              No = length(obs_idx),
              Nm = length(mod_idx),
-             Y_obs = bird_df3$lMl[obs_idx] * y_scalar,
-             Y_mod = bird_df3$lMl[mod_idx] * y_scalar,
+             Y_obs = bird_df3$lAb[obs_idx] * y_scalar,
+             Y_mod = bird_df3$lAb[mod_idx] * y_scalar,
              sd_Y = sd_Y,
              K = NCOL(tt_obs2),
              J = length(unique(bird_df3$niche_idx)),
@@ -230,25 +230,25 @@ fit <- mod$sample(
 #save out summary, model fit, data
 MCMCvis::MCMCdiag(fit, 
                   round = 4,
-                  file_name = paste0('bird-ml-phylo-vint-oe-results-', run_date),
+                  file_name = paste0('bird-ab-phylo-vint-oe-results-', run_date),
                   dir = paste0(dir, 'Results'),
-                  # mkdir = paste0('bird-ml-phylo-vint-measured-', run_date),
-                  mkdir = paste0('bird-ml-phylo-vint-oe-', run_date),
+                  # mkdir = paste0('bird-ab-phylo-vint-measured-', run_date),
+                  mkdir = paste0('bird-ab-phylo-vint-oe-', run_date),
                   probs = c(0.055, 0.5, 0.945),
                   pg0 = TRUE,
                   save_obj = TRUE,
-                  obj_name = paste0('bird-ml-phylo-vint-oe-fit-', run_date),
+                  obj_name = paste0('bird-ab-phylo-vint-oe-fit-', run_date),
                   add_obj = list(DATA),
-                  add_obj_names = paste0('bird-ml-phylo-vint-oe-data-', run_date),
+                  add_obj_names = paste0('bird-ab-phylo-vint-oe-data-', run_date),
                   cp_file = c(paste0(sc_dir, 'Scripts/Model_files/5-phylo-vint-oe.stan'), 
-                              paste0(sc_dir, 'Scripts/5-model/5-ml-phylo-vint-oe.R')),
+                              paste0(sc_dir, 'Scripts/5-model/5-ab-phylo-vint-oe.R')),
                   cp_file_names = c(paste0('5-phylo-vint-oe-', run_date, '.stan'),
-                                    paste0('5-ml-phylo-vint-oe-', run_date, '.R')))
+                                    paste0('5-ab-phylo-vint-oe-', run_date, '.R')))
 
-fig_dir <- paste0(dir, 'Results/bird-ml-phylo-vint-oe-', run_date, '/')
+fig_dir <- paste0(dir, 'Results/bird-ab-phylo-vint-oe-', run_date, '/')
 
-# fit <- readRDS(paste0(dir, '/Results/bird-ml-phylo-vint-oe-', run_date,
-#                       '/bird-ml-phylo-vint-oe-fit-', run_date, '.rds'))
+# fit <- readRDS(paste0(dir, '/Results/bird-ab-phylo-vint-oe-', run_date,
+#                       '/bird-ab-phylo-vint-oe-fit-', run_date, '.rds'))
 # library(shinystan)
 # shinystan::launch_shinystan(fit)
 
@@ -298,19 +298,19 @@ MCMCvis::MCMCsummary(fit, round = 3,
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
                                 exact = TRUE, ISB = FALSE) * 
-  lMass_scalar * y_scalar
+  lMass_scalar / y_scalar
 beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_season_scalar * y_scalar
+  temp_sd_season_scalar / y_scalar
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_year_scalar * y_scalar
+  temp_sd_year_scalar / y_scalar
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_season_scalar * y_scalar
+  precip_cv_season_scalar / y_scalar
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_year_scalar * y_scalar
+  precip_cv_year_scalar / y_scalar
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -325,6 +325,11 @@ beta2_rs_ch <- (exp(beta2_ch * sd(X_comb[,2] / temp_sd_season_scalar)) - 1) * 10
 beta3_rs_ch <- (exp(beta3_ch * sd(X_comb[,3] / temp_sd_year_scalar)) - 1) * 100
 beta4_rs_ch <- (exp(beta4_ch * sd(X_comb[,4] / precip_cv_season_scalar)) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(X_comb[,5] / precip_cv_year_scalar)) - 1) * 100
+
+
+# multiplicative effect of niche ------------------------------------------
+
+gamma_rs_ch <- (exp(MCMCvis::MCMCchains(fit, params = 'gamma') / y_scalar) - 1) * 100
 
 
 # partial resid plots ------------------------------------------------
@@ -385,21 +390,19 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = '% change Ml for 1 sd change in cov',
+                  main = '% change Ab for 1 sd change in cov',
                   guide_lines = TRUE)
 dev.off()
 
-
-pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+pdf(paste0(fig_dir, 'gamma-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(fit, 
-                  params = 'gamma',
+MCMCvis::MCMCplot(gamma_rs_ch,
                   labels = niche_names,
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = 'Niche group intercept',
+                  main = '% change Ab by niche group',
                   guide_lines = TRUE)
 dev.off()
 
@@ -440,7 +443,7 @@ for (i in 1:length(sidx))
       (as.matrix(DATA$X_mod[j,]) %*% beta_ch[sidx[i],])[,1]
     
     y_mv <- rnorm(1, mu_rep[i, DATA$mod_idx[j]], 
-                  sigma_ch[sidx[i], 1])
+          sigma_ch[sidx[i], 1])
     
     y_rep[i, DATA$mod_idx[j]] <- rnorm(1, y_mv, DATA$sd_Y)
   }

@@ -58,12 +58,12 @@ bird_df2 <- dplyr::select(bird_df,
                           Order,
                           Family,
                           lGL,
-                          S = Modeled_survival,
-                          lAb,
-                          lMl,
-                          mS = Measured_survival,
-                          mlAb,
-                          mlMl,
+                          # S = Modeled_survival,
+                          # lAb,
+                          # lMl,
+                          # mS = Measured_survival,
+                          # mlAb,
+                          # mlMl,
                           Trophic_niche = Trophic.Niche,
                           lMass,
                           temp_sd_year,
@@ -151,6 +151,7 @@ plot(bird_df2$food_energy, resid)
 summary(lm(resid ~ bird_df2$food_energy))
 plot(bird_df2$food_h_level, resid)
 plot(bird_df2$fibres, resid)
+summary(lm(resid ~ bird_df2$fibres))
 plot(factor(bird_df2$foraging), resid)
 plot(factor(bird_df2$sedentariness), resid)
 plot(factor(bird_df2$insularity), resid)

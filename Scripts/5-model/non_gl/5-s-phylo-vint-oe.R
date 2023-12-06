@@ -295,19 +295,31 @@ MCMCvis::MCMCsummary(fit, round = 3,
 
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
                                 exact = TRUE, ISB = FALSE) * 
-  lMass_scalar * y_scalar
+  lMass_scalar / y_scalar
 beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_season_scalar * y_scalar
+  temp_sd_season_scalar / y_scalar
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_year_scalar * y_scalar
+  temp_sd_year_scalar / y_scalar
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_season_scalar * y_scalar
+  precip_cv_season_scalar / y_scalar
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_year_scalar * y_scalar
+  precip_cv_year_scalar / y_scalar
+
+#scale by sd
+beta1_rs_ch <- beta1_ch * sd(X_comb[,1] / lMass_scalar) / sd(Y_comb)
+beta2_rs_ch <- beta2_ch * sd(X_comb[,2] / temp_sd_season_scalar) / sd(Y_comb)
+beta3_rs_ch <- beta3_ch * sd(X_comb[,3] / temp_sd_year_scalar) / sd(Y_comb)
+beta4_rs_ch <- beta4_ch * sd(X_comb[,4] / precip_cv_season_scalar) / sd(Y_comb)
+beta5_rs_ch <- beta5_ch * sd(X_comb[,5] / precip_cv_year_scalar) / sd(Y_comb)
+
+
+# multiplicative effect of niche ------------------------------------------
+
+gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma') / y_scalar
 
 
 # partial resid plots ------------------------------------------------
@@ -354,16 +366,33 @@ MCMCvis::MCMCplot(fit,
                   guide_lines = TRUE)
 dev.off()
 
-pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(fit, 
-                  params = 'gamma',
+MCMCvis::MCMCplot(cbind(beta2_rs_ch,
+                        beta3_rs_ch,
+                        beta4_rs_ch,
+                        beta5_rs_ch),
+                  labels = c('T seasonality',
+                             'T interannual var',
+                             'P seasonality',
+                             'P interannual var'),
+                  sz_labels = 1.5,
+                  ci = c(89, 89),
+                  sz_thick = 3,
+                  sz_thin = 3,
+                  main = 'Change S (in sd) for 1 sd change in cov',
+                  guide_lines = TRUE)
+dev.off()
+
+pdf(paste0(fig_dir, 'gamma-cat-rs_', run_date, '.pdf'),
+    height = 5, width = 5)
+MCMCvis::MCMCplot(gamma_ch, 
                   labels = niche_names,
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = 'Niche group intercept',
+                  main = 'Change in S by niche group',
                   guide_lines = TRUE)
 dev.off()
 

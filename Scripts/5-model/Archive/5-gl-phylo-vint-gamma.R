@@ -224,13 +224,13 @@ fig_dir <- paste0(dir, 'Results/bird-gl-phylo-vint-gamma-', run_date, '/')
 
 # residuals ---------------------------------------------------------------
 
-# alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
-# kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
-# theta_mn <- MCMCvis::MCMCpstr(fit, params = 'theta')[[1]]
-# beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
-# 
-# mu_mn <- kappa_mn + theta_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1]
-# resid <- DATA$Y - mu_mn
+alpha_mn <- MCMCvis::MCMCpstr(fit, params = 'alpha')[[1]]
+kappa_mn <- MCMCvis::MCMCpstr(fit, params = 'kappa')[[1]]
+theta_mn <- MCMCvis::MCMCpstr(fit, params = 'theta')[[1]]
+beta_mn <- MCMCvis::MCMCpstr(fit, params = 'beta')[[1]]
+
+mu_mn <- exp(kappa_mn + theta_mn[DATA$niche_idx] + alpha_mn + (DATA$X %*% beta_mn)[,1])
+resid <- DATA$Y - mu_mn
 
 
 # Summary -----------------------------------------------------------------
@@ -243,24 +243,24 @@ MCMCvis::MCMCsummary(fit, round = 3,
 
 # covariate effect on LH trait -----------------------------------------------
 
-#INTERPRETATION
+#INTERPRETATION - same as logging response
 #((e^param) - 1) * 100 = percent change in trait for every one unit change in covariate
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
                                 exact = TRUE, ISB = FALSE) * 
-  lMass_scalar * y_scalar
+  lMass_scalar / y_scalar
 beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_season_scalar * y_scalar
+  temp_sd_season_scalar / y_scalar
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_year_scalar * y_scalar
+  temp_sd_year_scalar / y_scalar
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_season_scalar * y_scalar
+  precip_cv_season_scalar / y_scalar
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_year_scalar * y_scalar
+  precip_cv_year_scalar / y_scalar
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -277,7 +277,14 @@ beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4] / precip_cv_season_scalar)) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
 
 
-# added variable and partial resid plots ------------------------------------------------
+# effect of niche ---------------------------------------------------------
+
+#((e^(param)) - 1) * 100
+theta_ch <- MCMCvis::MCMCchains(fit, params = 'theta')
+theta_rs_ch <- (exp(theta_ch) - 1) * 100
+
+
+# partial resid plots ------------------------------------------------
 
 # https://www.wikiwand.com/en/Partial_residual_plot
 pr_fun <- function(num, nm)
@@ -286,7 +293,7 @@ pr_fun <- function(num, nm)
              'Precip seasonality', 'Precip interannual')
   
   #partial residuals
-  pr <- resid + (beta_mn[num] * DATA$X[,num])
+  pr <- resid + exp((beta_mn[num] * DATA$X[,num]))
   
   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
       height = 5, width = 5)
@@ -295,7 +302,7 @@ pr_fun <- function(num, nm)
        ylab = 'Partial residual',
        main = names[num])
   abline(h = 0, col = 'grey', lwd = 4, lty = 2)
-  abline(a = 0, b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
+  abline(a = exp(0), b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
   dev.off()
 }
 
@@ -342,56 +349,55 @@ dev.off()
 
 pdf(paste0(fig_dir, 'theta-cat-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(fit, 
-                  params = 'theta',
+MCMCvis::MCMCplot(theta_rs_ch, 
                   labels = niche_names,
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = 'Niche group intercept',
+                  main = '% change GL by niche group',
                   guide_lines = TRUE)
 dev.off()
 
 
 # PPC ---------------------------------------------------------------------
 
-# # PPC - normal model
-# sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
-# alpha_ch <- MCMCvis::MCMCchains(fit, params = 'alpha')
-# kappa_ch <- MCMCvis::MCMCchains(fit, params = 'kappa')
-# gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma')
-# beta_ch <- MCMCvis::MCMCchains(fit, params = 'beta')
-# 
-# #500 iterations
-# sidx <- sample(1:NROW(sigma_ch), size = 500)
-# mu_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
-# y_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
-# for (i in 1:length(sidx))
-# {
-#   #i <- 1
-#   print(paste0('iter: ', i, ' of ', length(sidx)))
-#   for (j in 1:length(DATA$Y))
-#   {
-#     #j <- 1
-#     #t-dis
-#     # eps <- rt(n = 1, df = nu_ch[sidx[i],1]) * sigma_ch[sidx[i],1]
-#     # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
-#     
-#     mu_rep[i, j] <- kappa_ch[sidx[i], 1] + gamma_ch[sidx[i], DATA$niche_idx[j]] + 
-#       alpha_ch[sidx[i], 1] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
-#     
-#     y_rep[i,j] <- rnorm(1, mu_rep[i, j], sigma_ch[sidx[i], 1])
-#   }
-# }
-# 
-# pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
-# plot(density(DATA$Y), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
-# for (i in 1:500)
-# {
-#   lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))
-# }
-# dev.off()
+# PPC - normal model
+sigma_ch <- MCMCvis::MCMCchains(fit, params = 'sigma')
+alpha_ch <- MCMCvis::MCMCchains(fit, params = 'alpha')
+kappa_ch <- MCMCvis::MCMCchains(fit, params = 'kappa')
+gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma')
+beta_ch <- MCMCvis::MCMCchains(fit, params = 'beta')
+
+#500 iterations
+sidx <- sample(1:NROW(sigma_ch), size = 500)
+mu_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
+y_rep <- matrix(NA, nrow = length(sidx), ncol = length(DATA$Y))
+for (i in 1:length(sidx))
+{
+  #i <- 1
+  print(paste0('iter: ', i, ' of ', length(sidx)))
+  for (j in 1:length(DATA$Y))
+  {
+    #j <- 1
+    #t-dis
+    # eps <- rt(n = 1, df = nu_ch[sidx[i],1]) * sigma_ch[sidx[i],1]
+    # y_rep[i,j] <- mu_ch[sidx[i],j] + eps
+
+    mu_rep[i, j] <- kappa_ch[sidx[i], 1] + gamma_ch[sidx[i], DATA$niche_idx[j]] +
+      alpha_ch[sidx[i], 1] + (DATA$X[j,] %*% beta_ch[sidx[i],])[,1]
+
+    y_rep[i,j] <- rnorm(1, mu_rep[i, j], sigma_ch[sidx[i], 1])
+  }
+}
+
+pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
+plot(density(DATA$Y), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
+for (i in 1:500)
+{
+  lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))
+}
+dev.off()
 
 
 # R^2 ---------------------------------------------------------------------

@@ -16,13 +16,13 @@ library(rnaturalearth)
 
 # Bird data
 
-#bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dh-nsp.tif'))
+bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-LH-nsp.tif'))
 bird_ras <- terra::rast("~/Documents/Documents/ibeem/raster-gl-dh-nsp.tif") #needs update!
 #bird_ras2 <- bird_ras[[c('median_gl', 'sd_gl', 
 #                         'median_dh', 'sd_dh')]]
 
 # Mask areas with fewer than 5 species
-msk <- ifel(bird_ras[['n_sp']] < 5, NA, 1)
+msk <- ifel(bird_ras[['n_sp']] < 10, NA, 1)
 bird_ras2 <- terra::mask(bird_ras, msk, 
                          inverse = FALSE)
 

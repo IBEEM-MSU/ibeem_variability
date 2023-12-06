@@ -77,36 +77,29 @@ bird_df2 <- dplyr::select(bird_df,
 #load consensus tree - bird.phylo
 load(paste0(dir, 'data/L3/bird-consensus-tree.rda'))
 
-#subset of imp
-# set.seed(1)
-# Nsel <- 1000
-# stidx <- sample(x = 1:NROW(bird_df2), size = Nsel)
-# bird_df3 <- bird_df2[stidx,]
-bird_df3 <- bird_df2
-
 #prune tree
 #species not found in both datasets (species to drop from tree)
-nm <- setdiff(bird.phylo$tip.label, bird_df3$species)
+nm <- setdiff(bird.phylo$tip.label, bird_df2$species)
 
 #prune specified tips from tree
 pr_tree <- ape::drop.tip(bird.phylo, nm)
 
 #get idx
 j_idx3 <- dplyr::left_join(data.frame(species = pr_tree$tip.label), 
-                           data.frame(idx = 1:NROW(bird_df3), bird_df3), 
+                           data.frame(idx = 1:NROW(bird_df2), bird_df2), 
                            by = 'species')
 
 #apply
-bird_df4 <- bird_df3[j_idx3$idx,]
+bird_df3 <- bird_df2[j_idx3$idx,]
 
 #make tree binary
 pr_tree2 <- ape::multi2di(pr_tree)
 
 #make response into matrix with species as rownames
-dd <- dplyr::select(bird_df4, 
+dd <- dplyr::select(bird_df3, 
                     lGL) %>%
   as.matrix()
-row.names(dd) <- bird_df4$species
+row.names(dd) <- bird_df3$species
 
 #get estimate of Pagel's kappa to scale phylogeny
 fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "kappa")
@@ -122,10 +115,10 @@ Rho <- ape::vcv.phylo(pr_tree_k, corr = TRUE)
 # niche levels ------------------------------------------------------------
 
 #assign missing species (owls) to Vertivore
-bird_df4$Trophic_niche[which(is.na(bird_df4$Trophic_niche))] <- "Vertivore"
+bird_df3$Trophic_niche[which(is.na(bird_df3$Trophic_niche))] <- "Vertivore"
 
-bird_df4$niche_idx <- as.numeric(factor(bird_df4$Trophic_niche))
-niche_names <- levels(factor(bird_df4$Trophic_niche))
+bird_df3$niche_idx <- as.numeric(factor(bird_df3$Trophic_niche))
+niche_names <- levels(factor(bird_df3$Trophic_niche))
 
 
 # scale/prep data ---------------------------------------------------------
@@ -139,27 +132,27 @@ precip_cv_year_scalar <- 0.5
 y_scalar <- 2
 
 #center predictors
-tt <- data.frame(lMass = bird_df4$lMass * 
+tt <- data.frame(lMass = bird_df3$lMass * 
                    lMass_scalar,
-                 temp_sd_season = bird_df4$temp_sd_season * 
+                 temp_sd_season = bird_df3$temp_sd_season * 
                    temp_sd_season_scalar,
-                 temp_sd_year = bird_df4$temp_sd_year * 
+                 temp_sd_year = bird_df3$temp_sd_year * 
                    temp_sd_year_scalar,
-                 precip_cv_season = bird_df4$precip_cv_season * 
+                 precip_cv_season = bird_df3$precip_cv_season * 
                    precip_cv_season_scalar,
-                 precip_cv_year = bird_df4$precip_cv_year * 
+                 precip_cv_year = bird_df3$precip_cv_year * 
                    precip_cv_year_scalar) %>%
   apply(2, function(x) scale(x, scale = FALSE)[,1])
 
 
 # fit model ---------------------------------------------------------------
 
-DATA <- list(N = NROW(bird_df4),
-             Y = bird_df4$lGL * y_scalar,
+DATA <- list(N = NROW(bird_df3),
+             Y = bird_df3$lGL * y_scalar,
              K = NCOL(tt),
-             J = length(unique(bird_df4$niche_idx)),
+             J = length(unique(bird_df3$niche_idx)),
              X = tt,
-             niche_idx = bird_df4$niche_idx,
+             niche_idx = bird_df3$niche_idx,
              mu_kappa = 2,
              sigma_kappa = 1,
              Rho = Rho) #corr matrix
@@ -248,19 +241,19 @@ MCMCvis::MCMCsummary(fit, round = 3,
 #((e^(param * L)) - 1) * 100 = percent change in trait for every L unit change in covariate
 beta1_ch <- MCMCvis::MCMCchains(fit, params = 'beta[1]', 
                                 exact = TRUE, ISB = FALSE) * 
-  lMass_scalar * y_scalar
+  lMass_scalar / y_scalar
 beta2_ch <- MCMCvis::MCMCchains(fit, params = 'beta[2]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_season_scalar * y_scalar
+  temp_sd_season_scalar / y_scalar
 beta3_ch <- MCMCvis::MCMCchains(fit, params = 'beta[3]', 
                                 exact = TRUE, ISB = FALSE) * 
-  temp_sd_year_scalar * y_scalar
+  temp_sd_year_scalar / y_scalar
 beta4_ch <- MCMCvis::MCMCchains(fit, params = 'beta[4]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_season_scalar * y_scalar
+  precip_cv_season_scalar / y_scalar
 beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]', 
                                 exact = TRUE, ISB = FALSE) * 
-  precip_cv_year_scalar * y_scalar
+  precip_cv_year_scalar / y_scalar
 
 # median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
 # median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
@@ -275,6 +268,11 @@ beta2_rs_ch <- (exp(beta2_ch * sd(tt[,2] / temp_sd_season_scalar)) - 1) * 100
 beta3_rs_ch <- (exp(beta3_ch * sd(tt[,3] / temp_sd_year_scalar)) - 1) * 100
 beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4] / precip_cv_season_scalar)) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
+
+
+# multiplicative effect of niche ------------------------------------------
+
+gamma_rs_ch <- (exp(MCMCvis::MCMCchains(fit, params = 'gamma') / y_scalar) - 1) * 100
 
 
 # partial resid plots ------------------------------------------------
@@ -305,6 +303,10 @@ pr_fun(num = 3, nm = 'temp-year') #temp year
 pr_fun(num = 4, nm = 'precip-season') #precip season
 pr_fun(num = 5, nm = 'precip-year') #precip year
 
+pr_data_2 <- data.frame(species = bird_df3$species, 
+                      var = DATA$X[,2], 
+                      pr = resid + (beta_mn[2] * DATA$X[,2]))
+str(pr_data_2)
 
 # cat plots ---------------------------------------------------------------
 
@@ -340,16 +342,15 @@ MCMCvis::MCMCplot(cbind(beta2_rs_ch,
 dev.off()
 
 
-pdf(paste0(fig_dir, 'gamma-cat-', run_date, '.pdf'),
+pdf(paste0(fig_dir, 'gamma-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(fit, 
-                  params = 'gamma',
+MCMCvis::MCMCplot(gamma_rs_ch,
                   labels = niche_names,
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
                   sz_thin = 3,
-                  main = 'Niche group intercept',
+                  main = '% change GL by niche group',
                   guide_lines = TRUE)
 dev.off()
 
@@ -412,27 +413,27 @@ dev.off()
 #covariates as a function of other covariates
 # tf1 <- lm(lMass ~ temp_sd_year + temp_sd_season +
 #             precip_cv_year + precip_cv_season, 
-#           data = bird_df4)
+#           data = bird_df3)
 # stf1 <- summary(tf1)
 # 
 # tf2 <- lm(temp_sd_year ~ lMass + temp_sd_season +
 #             precip_cv_year + precip_cv_season, data = 
-#             bird_df4)
+#             bird_df3)
 # stf2 <- summary(tf2)
 # 
 # tf3 <- lm(temp_sd_season ~ lMass + temp_sd_year +
 #             precip_cv_year + precip_cv_season, 
-#           data = bird_df4)
+#           data = bird_df3)
 # stf3 <- summary(tf3)
 # 
 # tf4 <- lm(precip_cv_year ~ lMass + temp_sd_year + temp_sd_season + 
 #             precip_cv_season, 
-#           data = bird_df4)
+#           data = bird_df3)
 # stf4 <- summary(tf4)
 # 
 # tf5 <- lm(precip_cv_season ~ lMass + temp_sd_year + temp_sd_season + 
 #             precip_cv_year, 
-#           data = bird_df4)
+#           data = bird_df3)
 # stf5 <- summary(tf5)
 # 
 # 
@@ -444,7 +445,7 @@ dev.off()
 # 1 / (1 - stf5$r.squared) #precip_cv_season
 # 
 # #correlation
-# cor(as.matrix(dplyr::select(bird_df4,
+# cor(as.matrix(dplyr::select(bird_df3,
 #                             lMass, temp_sd_year, temp_sd_season,
 #                             precip_cv_year, precip_cv_season)))
 
