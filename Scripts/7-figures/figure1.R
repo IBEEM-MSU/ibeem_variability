@@ -212,6 +212,11 @@ bird_data %>%
 
 # amazona ochrocephala GenLength = 16.5, temp_sd_season = 0.827, temp_sd_year = 0.403
 
+bird_data %>% 
+  dplyr::select(ID, Birdtree_name) %>%
+  dplyr::filter(Birdtree_name == "amazona ochrocephala")
+# ID 9030
+
 # High intra annual, low inter annual, short gen length
 
 bird_data %>%
@@ -224,15 +229,76 @@ bird_data %>%
   filter(Min.Latitude > 23) %>%
   print(n= 30)
 
-#parus venustulus GenLength = 1.63, temp_sd_season = 8.38, temp_sd_year = 0.466
-#stellula calliope (hummingbird)   GenLength = 1.95, temp_sd_season = 8.99, temp_sd_year 0.702
+# parus venustulus GenLength = 1.63, temp_sd_season = 8.38, temp_sd_year = 0.466
+# stellula calliope (hummingbird)   GenLength = 1.95, temp_sd_season = 8.99, temp_sd_year 0.702
 
-### Get silhouette 
+bird_data %>% 
+  dplyr::select(ID, Birdtree_name) %>%
+  dplyr::filter(Birdtree_name == "parus venustulus")
+# ID 2712
 
-### Extract environmental data ----
+bird_data %>% 
+  dplyr::select(ID, Birdtree_name) %>%
+  dplyr::filter(Birdtree_name == "stellula calliope")
+# ID 366
+
+### Extract species distribution ranges and environmental data ----
+
+# distribution ranges in 'L1/range/'
+# Read shapefiles
+
+dr_9030 <- sf::st_read("bird-breeding/birdtree-9030-breeding.shp")
+dr_2712 <- sf::st_read("bird-breeding/birdtree-2712-breeding.shp")
+dr_366 <- sf::st_read("bird-breeding/birdtree-366-breeding.shp")
+
+plot(dr_9030)
+
+# Read env data
+
+env_data <- read_csv("ERA5_1_2_3_4_5_6_7_8_9_10_11_12.csv")
+#env_data <- ERA5_1_2_3_4_5_6_7_8_9_10_11_12
+
+# Make loop to transform annual env data to raster
+
+env_data_years <- env_data %>%
+  group_by(year) %>%
+  summarize(years = unique(year)) %>%
+  select(years) %>%
+  as.list()
+
+years <- env_data_years[["years"]]
+env_data_raster <- NULL
+
+for (i in 1:length(years)) {
+  
+  current_year <- years[i]
+  print(paste0("Year ", i, " out of ", length(years)))
+}
+
+# Make raster per year
+  
+  env_data_raster <- env_data %>%
+    dplyr::select(lon, lat, year, mean_temp) %>%
+    dplyr::filter(year == current_year) %>%
+    terra::rast(crs = "epsg:4326")
+  
+  # Extract mean temp across dist range per year 
+  
+  
+#}
+
+# Transform env_data to raster
+
+env_data_raster <- env_data %>%
+  dplyr::select(lon, lat, year, mean_temp) %>%
+  dplyr::filter(year == 1979) %>%
+  terra::rast(crs = "epsg:4326")
+
 
 # average temp over range or extract centroid's temp?
 
 ### Plot time series ----
 
 ### Plot distribution range map ----
+
+### Get silhouette 
