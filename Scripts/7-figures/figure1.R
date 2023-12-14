@@ -16,7 +16,8 @@ library(ggplot2)
 library(rnaturalearth)
 # devtools::install_github("wmurphyrd/colorplaner")
 library(colorplaner)
-
+library(ncdf4)
+library(chron)
 
 ### Data ----
 
@@ -246,19 +247,86 @@ bird_data %>%
 
 # distribution ranges in 'L1/range/'
 # Read shapefiles
+# files are in "/Volumes/home-219/uscanga1/Documents" for now--needs update!
 
-dr_9030 <- sf::st_read("bird-breeding/birdtree-9030-breeding.shp")
-dr_2712 <- sf::st_read("bird-breeding/birdtree-2712-breeding.shp")
-dr_366 <- sf::st_read("bird-breeding/birdtree-366-breeding.shp")
+dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp")
+dr_2712 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-2712-breeding.shp")
+dr_366 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-366-breeding.shp")
 
 plot(dr_9030)
 
-# Read env data
+# Read temporal env data
 
-env_data <- read_csv("ERA5_1_2_3_4_5_6_7_8_9_10_11_12.csv")
-#env_data <- ERA5_1_2_3_4_5_6_7_8_9_10_11_12
+# open a netCDF file
+ncin <- nc_open("e5p.moda.an.sfc.128_167_2t.ll025sc.1950010100_1950120100.nc")
+#print(ncin)
 
-# Make loop to transform annual env data to raster
+# get longitude and latitude
+lon <- ncvar_get(ncin,"longitude")
+nlon <- dim(lon)
+# head(lon)
+# 
+lat <- ncvar_get(ncin,"latitude")
+nlat <- dim(lat)
+
+head(lat)
+tail(lat)
+
+head(lon)
+tail(lon)
+
+print(c(nlon,nlat))
+
+#convert lon to -180 to 180
+lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
+
+# # get time
+time <- ncvar_get(ncin,"time")
+# time
+tunits <- ncatt_get(ncin,"time","units")
+nt <- dim(time)
+# nt
+tunits
+#
+#covert dates to ymd
+ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
+lubridate::month(ymd_dates)
+
+# # get temperature
+dname <- "VAR_2T"
+tmp_array <- ncvar_get(ncin, dname)
+
+fillvalue_temp <- ncdf4::ncatt_get(ncin, "VAR_2T","_FillValue")
+tmp_array[tmp_array == fillvalue_temp$value] <- NA
+
+#convert from K to C
+head(tmp_array)
+tmp_array_c <- tmp_array - 273.15
+head(tmp_array_c)
+rm(tmp_array)
+# Close netcdf file
+ncdf4::nc_close(ncin)
+
+# get a single slice or layer (January)
+m <- 1
+tmp_slice <- tmp_array_c[,,m]
+
+head(tmp_slice)
+
+tmp_vec <- round(as.vector(tmp_array_c), 2)
+
+# create a dataframe
+llt <- expand.grid(lon, 
+                   lat, 
+                   lubridate::year(ymd_dates)[1], 
+                   lubridate::month(ymd_dates))
+tmp_df <- data.frame(llt, tmp_vec)
+
+colnames(tmp_df) <- c('lon', 'lat', 'year', 'month', 'temp')
+
+# ^Make loop to read in all files 
+# In loop, transform annual env data to raster
+# and extract info per spp
 
 env_data_years <- env_data %>%
   group_by(year) %>%
@@ -267,35 +335,60 @@ env_data_years <- env_data %>%
   as.list()
 
 years <- env_data_years[["years"]]
+
 env_data_raster <- NULL
+
+env_data_sp9030 <- data.frame(matrix(NA, nrow = length(years), ncol = 3))
+
+rn <- 1
 
 for (i in 1:length(years)) {
   
   current_year <- years[i]
   print(paste0("Year ", i, " out of ", length(years)))
-}
 
-# Make raster per year
+  # Make raster per year
   
   env_data_raster <- env_data %>%
     dplyr::select(lon, lat, year, mean_temp) %>%
     dplyr::filter(year == current_year) %>%
     terra::rast(crs = "epsg:4326")
   
-  # Extract mean temp across dist range per year 
+  # Extract mean temp and sd across dist range per year 
   
+  avg_temp <- terra::extract(env_data_raster,
+                             terra::vect(dr_9030),
+                             touches = TRUE,
+                             fun = function(x) median(x, na.rm = TRUE))
   
-#}
+  # sd_temp <- terra::extract(env_data_raster,
+  #                           terra::vect(dr_2712),
+  #                           touches = TRUE,
+  #                           fun = function(x) sd(x, na.rm = TRUE))
+  
+  env_data_sp9030[rn,] <- avg_temp
+  
+  rn <- rn + 1
+  
+}
 
 # Transform env_data to raster
 
-env_data_raster <- env_data %>%
+env_data_raster_y1 <- env_data %>%
   dplyr::select(lon, lat, year, mean_temp) %>%
   dplyr::filter(year == 1979) %>%
   terra::rast(crs = "epsg:4326")
 
+# average temp over range
 
-# average temp over range or extract centroid's temp?
+avg_temp <- terra::extract(env_data_raster_y1,
+                           terra::vect(dr_2712),
+                           touches = TRUE,
+                           fun = function(x) median(x, na.rm = TRUE))
+sd_temp <- terra::extract(env_data_raster_y1,
+                          terra::vect(dr_2712),
+                          touches = TRUE,
+                          fun = function(x) sd(x, na.rm = TRUE))
 
 ### Plot time series ----
 
