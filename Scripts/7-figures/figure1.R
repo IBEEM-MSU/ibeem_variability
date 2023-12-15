@@ -17,7 +17,6 @@ library(rnaturalearth)
 # devtools::install_github("wmurphyrd/colorplaner")
 library(colorplaner)
 library(ncdf4)
-library(chron)
 
 ### Data ----
 
@@ -257,8 +256,75 @@ plot(dr_9030)
 
 # Read temporal env data
 
+ncfiles <- list.files(path = "T2m", pattern = "moda", full.names = T)
+
+for (i in 1:length(ncfiles))
+{
+  
+  ncin <- ncfiles[i]
+  print(paste0("Processing ", i, " out of ", length(ncfiles)))
+  
+  # Open netCDF file
+  nc_temp <- nc_open(ncin)
+  
+  # get lon, lat, and time
+  lon <- ncvar_get(nc_temp,"longitude")
+  dlon <- dim(lon)
+  lat <- ncvar_get(nc_temp,"latitude")
+  dlat <- dim(lat)
+  time <- ncvar_get(nc_temp,"time")
+  
+  #convert lon to -180 to 180
+  lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
+  
+  #covert dates to ymd
+  ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
+  
+  # get temperature
+  dname <- "VAR_2T"
+  tmp_array <- ncvar_get(nc_temp, dname)
+  
+  # fill in NA values
+  fillvalue_temp <- ncdf4::ncatt_get(nc_temp, "VAR_2T","_FillValue")
+  tmp_array[tmp_array == fillvalue_temp$value] <- NA
+  
+  # convert from K to C
+  tmp_array_c <- tmp_array - 273.15
+  rm(tmp_array)
+  
+  # Close netcdf file
+  ncdf4::nc_close(nc_temp)
+  
+  # convert to 2d vector
+  tmp_vec <- round(as.vector(tmp_array_c), 2)
+  
+  # create a dataframe
+  llt <- expand.grid(lon, 
+                     lat, 
+                     lubridate::year(ymd_dates)[1], 
+                     lubridate::month(ymd_dates))
+  tmp_df <- data.frame(llt, tmp_vec)
+  
+  colnames(tmp_df) <- c('lon', 'lat', 'year', 'month', 'temp')
+  
+  months <- lubridate::month(ymd_dates)
+  months_ch <- as.character(months)
+  
+  # Make raster
+  
+  tmp_df_w <- tmp_df %>%
+    tidyr::pivot_wider(names_from = month,
+                       values_from = temp) %>%
+    select(-year)
+  
+  temp_rast <- terra::rast(tmp_df_w, crs = "EPSG:4326")
+}  
+  # Extract mean temp across range per month
+  
+  
+
 # open a netCDF file
-ncin <- nc_open("e5p.moda.an.sfc.128_167_2t.ll025sc.1950010100_1950120100.nc")
+ncin <- nc_open("T2m/e5p.moda.an.sfc.128_167_2t.ll025sc.1950010100_1950120100.nc")
 #print(ncin)
 
 # get longitude and latitude
