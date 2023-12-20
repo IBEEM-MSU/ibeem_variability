@@ -248,15 +248,50 @@ bird_data %>%
 # Read shapefiles
 # files are in "/Volumes/home-219/uscanga1/Documents" for now--needs update!
 
-dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp")
+dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp") # parrot
 dr_2712 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-2712-breeding.shp")
-dr_366 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-366-breeding.shp")
+dr_366 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-366-breeding.shp") # hummingbird
 
 plot(dr_9030)
+
+
+# Convert polygon to SpatVector
+
+dr_current_sp <- terra::vect(dr_9030)
 
 # Read temporal env data
 
 ncfiles <- list.files(path = "T2m", pattern = "moda", full.names = T)
+
+# Make empty file
+
+temp_mean_sd <- data.frame(matrix(NA, nrow = length(ncfiles), ncol = 25))
+colnames(temp_mean_sd) <- c("mean_temp_jan",
+                            "mean_temp_feb",
+                            "mean_temp_mar",
+                            "mean_temp_apr",
+                            "mean_temp_may",
+                            "mean_temp_jun",
+                            "mean_temp_jul",
+                            "mean_temp_ago",
+                            "mean_temp_sep",
+                            "mean_temp_oct",
+                            "mean_temp_nov",
+                            "mean_temp_dec",
+                            "sd_temp_jan",
+                            "sd_temp_feb",
+                            "sd_temp_mar",
+                            "sd_temp_apr",
+                            "sd_temp_may",
+                            "sd_temp_jun",
+                            "sd_temp_jul",
+                            "sd_temp_ago",
+                            "sd_temp_sep",
+                            "sd_temp_oct",
+                            "sd_temp_nov",
+                            "sd_temp_dec",
+                            "year")
+rn <- 1
 
 for (i in 1:length(ncfiles))
 {
@@ -309,6 +344,7 @@ for (i in 1:length(ncfiles))
   
   months <- lubridate::month(ymd_dates)
   months_ch <- as.character(months)
+  current_year <- tmp_df$year[1]
   
   # Make raster
   
@@ -318,9 +354,28 @@ for (i in 1:length(ncfiles))
     select(-year)
   
   temp_rast <- terra::rast(tmp_df_w, crs = "EPSG:4326")
-}  
-  # Extract mean temp across range per month
   
+  # Extract mean temp across range per month
+  mean_temp <- terra::extract(temp_rast,
+                             dr_current_sp,
+                             touches = TRUE,
+                             fun = mean,
+                             ID = F) 
+  
+  sd_temp <- terra::extract(temp_rast,
+                            dr_current_sp,
+                            touches = TRUE,
+                            fun = sd,
+                            ID = F) %>%
+    mutate(year = current_year)
+  
+  temp_mean_sd[rn,] <- c(mean_temp, sd_temp)
+  
+  rn <- rn + 1
+}  
+  
+
+
   
 
 # open a netCDF file
