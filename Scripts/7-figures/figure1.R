@@ -396,27 +396,150 @@ monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
                                          names_to = "month_temp",
                                          values_to = "temp") %>% 
   select(year, month_temp, temp) %>%
-  mutate(month = as.character(substr(month_temp, 11, 13)),
+  mutate(month = as.character(substr(month_temp, 11, 12)),
          year = as.character(year)) %>%
-  unite("date", c(year, month), sep = "-", remove = F) %>%
-  select(-month_temp)
-
-
+  unite("date_ym", c(year, month), sep = "-", remove = F) %>%
+  mutate(date = lubridate::ym(date_ym)) %>%
+  select(-month_temp, -date_ym) %>%
+  relocate(temp, .after = date)
 
 monthly_temp_sp9030_long_sd <- pivot_longer(monthly_temp_sp9030,
                                            cols = starts_with("sd"),
                                            names_to = "month_sd",
                                            values_to = "sd") %>% 
-  select(year, month_sd, sd) 
-
-
+  select(year, month_sd, sd) %>%
+  mutate(month = as.character(substr(month_sd, 9, 10)),
+         year = as.character(year)) %>%
+  unite("date_ym", c(year, month), sep = "-", remove = F) %>%
+  mutate(date = lubridate::ym(date_ym)) %>%
+  select(-month_sd, -date_ym) %>%
+  relocate(sd, .after = date)
 
 monthly_temp_sp9030_long <- monthly_temp_sp9030_long_t %>%
-  left_join(monthly_temp_sp9030_long_sd, by = c("year", "month"))
+  left_join(monthly_temp_sp9030_long_sd, by = c("year", "month", "date"))
 
-ggplot(monthly_temp_sp9030_long) +
-  geom_point(aes(x= ))
+rm(monthly_temp_sp9030_long_sd, monthly_temp_sp9030_long_t)
+
+#pivot longer
+monthly_temp_sp366_long_t <- pivot_longer(monthly_temp_sp366,
+                                           cols = starts_with("mean"),
+                                           names_to = "month_temp",
+                                           values_to = "temp") %>% 
+  select(year, month_temp, temp) %>%
+  mutate(month = as.character(substr(month_temp, 11, 12)),
+         year = as.character(year)) %>%
+  unite("date_ym", c(year, month), sep = "-", remove = F) %>%
+  mutate(date = lubridate::ym(date_ym)) %>%
+  select(-month_temp, -date_ym) %>%
+  relocate(temp, .after = date)
+
+monthly_temp_sp366_long_sd <- pivot_longer(monthly_temp_sp366,
+                                            cols = starts_with("sd"),
+                                            names_to = "month_sd",
+                                            values_to = "sd") %>% 
+  select(year, month_sd, sd) %>%
+  mutate(month = as.character(substr(month_sd, 9, 10)),
+         year = as.character(year)) %>%
+  unite("date_ym", c(year, month), sep = "-", remove = F) %>%
+  mutate(date = lubridate::ym(date_ym)) %>%
+  select(-month_sd, -date_ym) %>%
+  relocate(sd, .after = date)
+
+monthly_temp_sp366_long <- monthly_temp_sp366_long_t %>%
+  left_join(monthly_temp_sp366_long_sd, by = c("year", "month", "date"))
+
+rm(monthly_temp_sp366_long_sd, monthly_temp_sp366_long_t)
+
+# plots
+
+monthly_temp_sp9030_long %>%
+  ggplot(aes(x = date, y = temp)) +
+  #geom_point() +
+  geom_line() +
+  geom_ribbon(aes(x = date,
+                  ymin = temp - sd,
+                  ymax = temp + sd),
+              alpha = 0.2) +
+  theme_classic() +
+  scale_x_date(date_breaks = "5 years",
+               date_labels = "%Y") +
+  scale_y_continuous(limits = c(-30, 30))
+
+monthly_temp_sp366_long %>%
+  ggplot(aes(x = date, y = temp)) +
+  #geom_point() +
+  geom_line() +
+  geom_ribbon(aes(x = date,
+                  ymin = temp - sd,
+                  ymax = temp + sd),
+              alpha = 0.2) +
+  theme_classic() +
+  scale_x_date(date_breaks = "5 years",
+               date_labels = "%Y") +
+  scale_y_continuous(limits = c(-30, 30))
+
+ggplot() +
+  geom_line(aes(x = monthly_temp_sp366_long$date,
+                y = monthly_temp_sp366_long$temp),
+            color = "magenta4") +
+  geom_ribbon(aes(x = monthly_temp_sp366_long$date,
+                  ymin = monthly_temp_sp366_long$temp - monthly_temp_sp366_long$sd,
+                  ymax = monthly_temp_sp366_long$temp + monthly_temp_sp366_long$sd),
+              alpha = 0.2,
+              fill = "magenta4") +
+  geom_line(aes(x = monthly_temp_sp9030_long$date,
+                y = monthly_temp_sp9030_long$temp),
+            color = "green4") +
+  geom_ribbon(aes(x = monthly_temp_sp9030_long$date,
+                  ymin = monthly_temp_sp9030_long$temp - monthly_temp_sp9030_long$sd,
+                  ymax = monthly_temp_sp9030_long$temp + monthly_temp_sp9030_long$sd),
+              alpha = 0.2,
+              fill = "green4") +
+  theme_classic() +
+  scale_x_date(date_breaks = "5 years",
+               date_labels = "%Y") +
+  scale_y_continuous(limits = c(-20, 30)) +
+  labs(y = "Temperature (°C)",
+       x = NULL)
 
 ### Plot distribution range map ----
 
-### Get silhouette 
+ggplot() +
+  geom_polygon(data = map_data("world"),
+               aes(x = long, y = lat, group = group),
+               fill = "grey95",
+               color = "gray40",
+               size = 0.1) +
+  geom_sf(data = dr_9030,
+          color = "green4",
+          fill = "green4",
+          linetype = "solid",
+          alpha = 0.8) +
+  coord_sf(crs = 4326,
+           xlim = c(-90,-30),
+           ylim = c(-20,20)) +
+  theme_bw() +
+  labs(y = NULL,
+       x = NULL)
+
+ggplot() +
+  geom_polygon(data = map_data("world"),
+               aes(x = long, y = lat, group = group),
+               fill = "grey95",
+               color = "gray40",
+               size = 0.1) +
+  geom_sf(data = dr_366,
+          color = "magenta4",
+          fill = "magenta4",
+          linetype = "solid",
+          alpha = 0.8) +
+  coord_sf(crs = 4326,
+           xlim = c(-130,-90),
+           ylim = c(30,55)) +
+  theme_bw() +
+  labs(y = NULL,
+       x = NULL)
+
+### Get silhouette ----
+
+# I downloaded silhouettes from phylopic
