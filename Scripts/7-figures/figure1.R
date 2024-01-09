@@ -257,39 +257,39 @@ plot(dr_9030)
 
 # Convert polygon to SpatVector
 
-dr_current_sp <- terra::vect(dr_9030)
+dr_current_sp <- terra::vect(dr_9030) 
 
 # Read temporal env data
 
-ncfiles <- list.files(path = "T2m", pattern = "moda", full.names = T)
+ncfiles <- list.files(path = "/Volumes/home-219/uscanga1/Documents/T2m", pattern = "moda", full.names = T)
 
 # Make empty file
 
 temp_mean_sd <- data.frame(matrix(NA, nrow = length(ncfiles), ncol = 25))
-colnames(temp_mean_sd) <- c("mean_temp_jan",
-                            "mean_temp_feb",
-                            "mean_temp_mar",
-                            "mean_temp_apr",
-                            "mean_temp_may",
-                            "mean_temp_jun",
-                            "mean_temp_jul",
-                            "mean_temp_ago",
-                            "mean_temp_sep",
-                            "mean_temp_oct",
-                            "mean_temp_nov",
-                            "mean_temp_dec",
-                            "sd_temp_jan",
-                            "sd_temp_feb",
-                            "sd_temp_mar",
-                            "sd_temp_apr",
-                            "sd_temp_may",
-                            "sd_temp_jun",
-                            "sd_temp_jul",
-                            "sd_temp_ago",
-                            "sd_temp_sep",
-                            "sd_temp_oct",
-                            "sd_temp_nov",
-                            "sd_temp_dec",
+colnames(temp_mean_sd) <- c("mean_temp_01",
+                            "mean_temp_02",
+                            "mean_temp_03",
+                            "mean_temp_04",
+                            "mean_temp_05",
+                            "mean_temp_06",
+                            "mean_temp_07",
+                            "mean_temp_08",
+                            "mean_temp_09",
+                            "mean_temp_10",
+                            "mean_temp_11",
+                            "mean_temp_12",
+                            "sd_temp_01",
+                            "sd_temp_02",
+                            "sd_temp_03",
+                            "sd_temp_04",
+                            "sd_temp_05",
+                            "sd_temp_06",
+                            "sd_temp_07",
+                            "sd_temp_08",
+                            "sd_temp_09",
+                            "sd_temp_10",
+                            "sd_temp_11",
+                            "sd_temp_12",
                             "year")
 rn <- 1
 
@@ -373,145 +373,49 @@ for (i in 1:length(ncfiles))
   
   rn <- rn + 1
 }  
-  
 
+# Save files:
 
-  
+temp_mean_sd_sp9030 <- temp_mean_sd
+write_csv(temp_mean_sd_sp9030, "temp_mean_sd_sp9030.csv")  
 
-# open a netCDF file
-ncin <- nc_open("T2m/e5p.moda.an.sfc.128_167_2t.ll025sc.1950010100_1950120100.nc")
-#print(ncin)
-
-# get longitude and latitude
-lon <- ncvar_get(ncin,"longitude")
-nlon <- dim(lon)
-# head(lon)
-# 
-lat <- ncvar_get(ncin,"latitude")
-nlat <- dim(lat)
-
-head(lat)
-tail(lat)
-
-head(lon)
-tail(lon)
-
-print(c(nlon,nlat))
-
-#convert lon to -180 to 180
-lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
-
-# # get time
-time <- ncvar_get(ncin,"time")
-# time
-tunits <- ncatt_get(ncin,"time","units")
-nt <- dim(time)
-# nt
-tunits
-#
-#covert dates to ymd
-ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
-lubridate::month(ymd_dates)
-
-# # get temperature
-dname <- "VAR_2T"
-tmp_array <- ncvar_get(ncin, dname)
-
-fillvalue_temp <- ncdf4::ncatt_get(ncin, "VAR_2T","_FillValue")
-tmp_array[tmp_array == fillvalue_temp$value] <- NA
-
-#convert from K to C
-head(tmp_array)
-tmp_array_c <- tmp_array - 273.15
-head(tmp_array_c)
-rm(tmp_array)
-# Close netcdf file
-ncdf4::nc_close(ncin)
-
-# get a single slice or layer (January)
-m <- 1
-tmp_slice <- tmp_array_c[,,m]
-
-head(tmp_slice)
-
-tmp_vec <- round(as.vector(tmp_array_c), 2)
-
-# create a dataframe
-llt <- expand.grid(lon, 
-                   lat, 
-                   lubridate::year(ymd_dates)[1], 
-                   lubridate::month(ymd_dates))
-tmp_df <- data.frame(llt, tmp_vec)
-
-colnames(tmp_df) <- c('lon', 'lat', 'year', 'month', 'temp')
-
-# ^Make loop to read in all files 
-# In loop, transform annual env data to raster
-# and extract info per spp
-
-env_data_years <- env_data %>%
-  group_by(year) %>%
-  summarize(years = unique(year)) %>%
-  select(years) %>%
-  as.list()
-
-years <- env_data_years[["years"]]
-
-env_data_raster <- NULL
-
-env_data_sp9030 <- data.frame(matrix(NA, nrow = length(years), ncol = 3))
-
-rn <- 1
-
-for (i in 1:length(years)) {
-  
-  current_year <- years[i]
-  print(paste0("Year ", i, " out of ", length(years)))
-
-  # Make raster per year
-  
-  env_data_raster <- env_data %>%
-    dplyr::select(lon, lat, year, mean_temp) %>%
-    dplyr::filter(year == current_year) %>%
-    terra::rast(crs = "epsg:4326")
-  
-  # Extract mean temp and sd across dist range per year 
-  
-  avg_temp <- terra::extract(env_data_raster,
-                             terra::vect(dr_9030),
-                             touches = TRUE,
-                             fun = function(x) median(x, na.rm = TRUE))
-  
-  # sd_temp <- terra::extract(env_data_raster,
-  #                           terra::vect(dr_2712),
-  #                           touches = TRUE,
-  #                           fun = function(x) sd(x, na.rm = TRUE))
-  
-  env_data_sp9030[rn,] <- avg_temp
-  
-  rn <- rn + 1
-  
-}
-
-# Transform env_data to raster
-
-env_data_raster_y1 <- env_data %>%
-  dplyr::select(lon, lat, year, mean_temp) %>%
-  dplyr::filter(year == 1979) %>%
-  terra::rast(crs = "epsg:4326")
-
-# average temp over range
-
-avg_temp <- terra::extract(env_data_raster_y1,
-                           terra::vect(dr_2712),
-                           touches = TRUE,
-                           fun = function(x) median(x, na.rm = TRUE))
-sd_temp <- terra::extract(env_data_raster_y1,
-                          terra::vect(dr_2712),
-                          touches = TRUE,
-                          fun = function(x) sd(x, na.rm = TRUE))
+#temp_mean_sd_sp366 <- temp_mean_sd
+#write_csv(temp_mean_sd_sp366, "temp_mean_sd_sp366.csv")  
 
 ### Plot time series ----
+
+#Read in temp_mean_sd files for both spp
+#parrot
+monthly_temp_sp9030<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9030.csv")
+#hummingbird
+monthly_temp_sp366<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp366.csv")
+
+#pivot longer
+monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
+                                         cols = starts_with("mean"),
+                                         names_to = "month_temp",
+                                         values_to = "temp") %>% 
+  select(year, month_temp, temp) %>%
+  mutate(month = as.character(substr(month_temp, 11, 13)),
+         year = as.character(year)) %>%
+  unite("date", c(year, month), sep = "-", remove = F) %>%
+  select(-month_temp)
+
+
+
+monthly_temp_sp9030_long_sd <- pivot_longer(monthly_temp_sp9030,
+                                           cols = starts_with("sd"),
+                                           names_to = "month_sd",
+                                           values_to = "sd") %>% 
+  select(year, month_sd, sd) 
+
+
+
+monthly_temp_sp9030_long <- monthly_temp_sp9030_long_t %>%
+  left_join(monthly_temp_sp9030_long_sd, by = c("year", "month"))
+
+ggplot(monthly_temp_sp9030_long) +
+  geom_point(aes(x= ))
 
 ### Plot distribution range map ----
 
