@@ -398,6 +398,7 @@ monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
   select(year, month_temp, temp) %>%
   mutate(month = as.character(substr(month_temp, 11, 12)),
          year = as.character(year)) %>%
+  arrange(year, month) %>%
   unite("date_ym", c(year, month), sep = "-", remove = F) %>%
   mutate(date = lubridate::ym(date_ym)) %>%
   select(-month_temp, -date_ym) %>%
@@ -410,6 +411,7 @@ monthly_temp_sp9030_long_sd <- pivot_longer(monthly_temp_sp9030,
   select(year, month_sd, sd) %>%
   mutate(month = as.character(substr(month_sd, 9, 10)),
          year = as.character(year)) %>%
+  arrange(year, month) %>%
   unite("date_ym", c(year, month), sep = "-", remove = F) %>%
   mutate(date = lubridate::ym(date_ym)) %>%
   select(-month_sd, -date_ym) %>%
@@ -428,6 +430,7 @@ monthly_temp_sp366_long_t <- pivot_longer(monthly_temp_sp366,
   select(year, month_temp, temp) %>%
   mutate(month = as.character(substr(month_temp, 11, 12)),
          year = as.character(year)) %>%
+  arrange(year, month) %>%
   unite("date_ym", c(year, month), sep = "-", remove = F) %>%
   mutate(date = lubridate::ym(date_ym)) %>%
   select(-month_temp, -date_ym) %>%
@@ -440,6 +443,7 @@ monthly_temp_sp366_long_sd <- pivot_longer(monthly_temp_sp366,
   select(year, month_sd, sd) %>%
   mutate(month = as.character(substr(month_sd, 9, 10)),
          year = as.character(year)) %>%
+  arrange(year, month) %>%
   unite("date_ym", c(year, month), sep = "-", remove = F) %>%
   mutate(date = lubridate::ym(date_ym)) %>%
   select(-month_sd, -date_ym) %>%
@@ -495,12 +499,25 @@ ggplot() +
                   ymax = monthly_temp_sp9030_long$temp + monthly_temp_sp9030_long$sd),
               alpha = 0.2,
               fill = "green4") +
+  geom_segment(aes(x = as_date(-7490),
+                   xend = as_date(-6760),
+                   y = -20,
+                   yend = -20),
+               color = "magenta4",
+               #fill = "black",
+               linewidth = 1.5) +
+  geom_segment(aes(x = as_date(-7490),
+                   xend = as_date(-1468),
+                   y = -18,
+                   yend = -18),
+               color = "green4",
+               linewidth = 1.5) +
   theme_classic() +
   scale_x_date(date_breaks = "5 years",
                date_labels = "%Y") +
   scale_y_continuous(limits = c(-20, 30)) +
   labs(y = "Temperature (°C)",
-       x = NULL)
+       x = NULL) 
 
 ### Plot distribution range map ----
 
