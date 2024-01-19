@@ -255,12 +255,6 @@ beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]',
                                 exact = TRUE, ISB = FALSE) * 
   precip_cv_year_scalar / y_scalar
 
-# median((exp(beta_ch * diff(range(DATA$lMass))) - 1) * 100)
-# median((exp(gamma1_ch * diff(range(DATA$temp_sd_season))) - 1) * 100)
-# median((exp(gamma2_ch * diff(range(DATA$temp_sd_year))) - 1) * 100)
-# median((exp(theta1_ch * diff(range(DATA$precip_cv_season))) - 1) * 100)
-# median((exp(theta2_ch * diff(range(DATA$precip_cv_year))) - 1) * 100)
-
 #scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
 beta1_rs_ch <- (exp(beta1_ch * sd(tt[,1] / lMass_scalar)) - 1) * 100
@@ -269,10 +263,110 @@ beta3_rs_ch <- (exp(beta3_ch * sd(tt[,3] / temp_sd_year_scalar)) - 1) * 100
 beta4_rs_ch <- (exp(beta4_ch * sd(tt[,4] / precip_cv_season_scalar)) - 1) * 100
 beta5_rs_ch <- (exp(beta5_ch * sd(tt[,5] / precip_cv_year_scalar)) - 1) * 100
 
+mean(beta1_rs_ch)
+quantile(beta1_rs_ch, probs = c(0.055, 0.5, 0.945))
+sum(beta1_rs_ch < 0) / NROW(beta1_rs_ch)
+
+mean(beta2_rs_ch)
+quantile(beta2_rs_ch, probs = c(0.055, 0.5, 0.945))
+sum(beta2_rs_ch < 0) / NROW(beta2_rs_ch)
+
+mean(beta3_rs_ch)
+quantile(beta3_rs_ch, probs = c(0.055, 0.5, 0.945))
+sum(beta3_rs_ch > 0) / NROW(beta3_rs_ch)
+
+mean(beta4_rs_ch)
+quantile(beta4_rs_ch, probs = c(0.055, 0.5, 0.945))
+sum(beta4_rs_ch < 0) / NROW(beta4_rs_ch)
+
+mean(beta5_rs_ch)
+quantile(beta5_rs_ch, probs = c(0.055, 0.5, 0.945))
+sum(beta5_rs_ch < 0) / NROW(beta5_rs_ch)
+
+median((exp(beta1_ch * diff(range(tt[,1] / lMass_scalar))) - 1) * 100)
+median((exp(beta2_ch * diff(range(tt[,2] / temp_sd_season_scalar))) - 1) * 100)
+median((exp(beta3_ch * diff(range(tt[,3] / temp_sd_year_scalar))) - 1) * 100)
+median((exp(beta4_ch * diff(range(tt[,4] / precip_cv_season_scalar))) - 1) * 100)
+median((exp(beta5_ch * diff(range(tt[,5] / precip_cv_year_scalar))) - 1) * 100)
+
+
 
 # multiplicative effect of niche ------------------------------------------
 
-gamma_rs_ch <- (exp(MCMCvis::MCMCchains(fit, params = 'gamma') / y_scalar) - 1) * 100
+gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma')
+gamma_rs_ch <- (exp(gamma_ch / y_scalar) - 1) * 100
+apply(gamma_rs_ch, 2, mean)
+apply(gamma_rs_ch, 2, function(x) quantile(x, probs = c(0.055, 0.5, 0.945)))
+apply(gamma_rs_ch, 2, function(x) sum(x > 0) / NROW(gamma_rs_ch))
+
+#pairwise differences niche categories
+#k(k-1)/2
+k <- (NCOL(gamma_ch)*(NCOL(gamma_ch) -1)) / 2
+pw_df <- data.frame(nc1 = rep(NA, k),
+           nc2 = NA,
+           mean = NA,
+           LCI = NA,
+           UCI = NA,
+           Pg0 = NA)
+mn_mat <- matrix(NA, nrow = NCOL(gamma_ch), ncol = NCOL(gamma_ch))
+Pg0_mat <- matrix(NA, nrow = NCOL(gamma_ch), ncol = NCOL(gamma_ch))
+counter <- 1
+for (i in 1:(NCOL(gamma_ch) - 1))
+{
+  #i <- 1
+  for (j in (i+1):NCOL(gamma_ch))
+  {
+    #j <- 2
+    d_t <- gamma_ch[,i] - gamma_ch[,j]
+    d_rs <- (exp(d_t / y_scalar) - 1) * 100
+    
+    pw_df$nc1[counter] <- i
+    pw_df$nc2[counter] <- j
+    pw_df$mean[counter] <- mean(d_rs)
+    pw_df$LCI[counter] <- quantile(d_rs, probs = 0.055)
+    pw_df$UCI[counter] <- quantile(d_rs, probs = 0.945)
+    pw_df$Pg0[counter] <- sum(d_rs > 0) / NROW(d_rs)
+    
+    #stack into upper triangular mat
+    mn_mat[i, j] <- mean(d_rs)
+    Pg0_mat[i, j] <- sum(d_rs > 0) / NROW(d_rs)
+    counter <- counter + 1
+  }
+}
+
+#join with niche category names
+ref_df <- data.frame(num = 1:NCOL(gamma_ch),
+           niche_names)
+
+pw_df2 <- dplyr::left_join(pw_df, ref_df, by = c('nc1' = 'num')) %>%
+  dplyr::left_join(ref_df, by = c('nc2' = 'num'))
+
+#plot of mean percent difference
+ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = abs(mean))) +
+  geom_tile(color = 'black', linewidth = 0.8) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
+                                   size = 12, hjust = 1)) +
+  theme(axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.border = element_blank())
+
+#plot of prob greater than 0 for estimate
+ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = Pg0)) +
+  geom_tile(color = 'black', linewidth = 0.8) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
+                                   size = 12, hjust = 1)) +
+  theme(axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  theme(panel.background = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.border = element_blank())
+
+#largest pairwise difference between categories
+pw_df2[which.max(abs(pw_df2$mean)),]
 
 
 # partial resid plots ------------------------------------------------
@@ -303,10 +397,14 @@ pr_fun(num = 3, nm = 'temp-year') #temp year
 pr_fun(num = 4, nm = 'precip-season') #precip season
 pr_fun(num = 5, nm = 'precip-year') #precip year
 
+#to get specific species for plot examples
 pr_data_2 <- data.frame(species = bird_df3$species, 
                       var = DATA$X[,2], 
                       pr = resid + (beta_mn[2] * DATA$X[,2]))
-str(pr_data_2)
+dplyr::filter(pr_data_2, 
+              var > 2.5,
+              pr < 0.25)
+
 
 # cat plots ---------------------------------------------------------------
 
