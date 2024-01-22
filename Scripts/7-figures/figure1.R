@@ -496,51 +496,52 @@ monthly_temp_sp366_long %>%
 ggplot() +
   geom_line(aes(x = monthly_temp_sp366_long$date,
                 y = monthly_temp_sp366_long$temp),
-            color = "magenta4") +
+            color = "#bf1da1") +
   geom_ribbon(aes(x = monthly_temp_sp366_long$date,
                   ymin = monthly_temp_sp366_long$temp - monthly_temp_sp366_long$sd,
                   ymax = monthly_temp_sp366_long$temp + monthly_temp_sp366_long$sd),
               alpha = 0.2,
-              fill = "magenta4") +
+              fill = "#bf1da1") +
   geom_line(aes(x = monthly_temp_sp9030_long$date,
                 y = monthly_temp_sp9030_long$temp),
-            color = "green4") +
+            color = "#1dbf76") +
   geom_ribbon(aes(x = monthly_temp_sp9030_long$date,
                   ymin = monthly_temp_sp9030_long$temp - monthly_temp_sp9030_long$sd,
                   ymax = monthly_temp_sp9030_long$temp + monthly_temp_sp9030_long$sd),
               alpha = 0.2,
-              fill = "green4") +
+              fill = "#1dbf76") +
   geom_segment(aes(x = as_date(-7490),
                    xend = as_date(-6760),
-                   y = -20,
-                   yend = -20),
-               color = "magenta4",
+                   y = -14,
+                   yend = -14),
+               color = "#bf1da1",
                #fill = "black",
                linewidth = 1.5) +
   geom_segment(aes(x = as_date(-7490),
                    xend = as_date(-1468),
-                   y = -18,
-                   yend = -18),
-               color = "green4",
+                   y = 30,
+                   yend = 30),
+               color = "#1dbf76",
                linewidth = 1.5) +
   theme_classic() +
   scale_x_date(date_breaks = "5 years",
                date_labels = "%Y") +
-  scale_y_continuous(limits = c(-20, 30)) +
+  scale_y_continuous(limits = c(-15, 30)) +
   labs(y = "Temperature (°C)",
-       x = NULL) 
+       x = NULL) +
+  theme(legend.text = element_text(size = 16))
 
 ### Plot distribution range map ----
 
 ggplot() +
   geom_polygon(data = map_data("world"),
                aes(x = long, y = lat, group = group),
-               fill = "grey95",
-               color = "gray40",
+               fill = "grey75",
+               color = "gray10",
                size = 0.1) +
   geom_sf(data = dr_9030,
-          color = "green4",
-          fill = "green4",
+          color = "#1dbf76",
+          fill = "#1dbf76",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
@@ -553,17 +554,17 @@ ggplot() +
 ggplot() +
   geom_polygon(data = map_data("world"),
                aes(x = long, y = lat, group = group),
-               fill = "grey95",
-               color = "gray40",
+               fill = "grey75",
+               color = "gray10",
                size = 0.1) +
   geom_sf(data = dr_366,
-          color = "magenta4",
-          fill = "magenta4",
+          color = "#bf1da1",
+          fill = "#bf1da1",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
-           xlim = c(-130,-100),
-           ylim = c(30,55)) +
+           xlim = c(-140,-80),
+           ylim = c(30,60)) +
   theme_bw() +
   labs(y = NULL,
        x = NULL)
