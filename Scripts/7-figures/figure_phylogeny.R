@@ -24,25 +24,47 @@ bird_data %>%
   select(ID, Birdtree_name, Avonet_name, Family, GenLength, Modeled_max_longevity) 
 
 # Extract the tree tip labels (in order), use to reorder dataframe
-spp<-bird.phylo$tip.label
+spp <- bird.phylo$tip.label
 
-# Make spp data frame
+# Change to lower case and remove underscore so that names match "Birdtree_name" in bird dataset
 spp <- sub("_", " ", spp)
+spp <- tolower(spp)
 
+# Make spp data frame with spp names and ordered ID
 spp_df <- as.data.frame(spp) %>%
   mutate(ID_spp = seq(1:9993)) %>%
-  mutate(spp_match = tolower(spp)) %>%
+  mutate(spp_match = spp) %>%
   select(-spp)
+
+# Remove spp that are not in bird dataset from tree
+bird_data <- bird_data %>%
+  mutate(spp_match = as.character(Birdtree_name))
+
+spp_rm <- spp_df %>%
+  anti_join(bird_data, by = "spp_match")
+
+spp_rm_list <- spp_rm %>%
+  select(spp_match) %>%
+  as.list()
+spp_rm_list <- spp_rm_list[["spp_match"]]
+
+bird_tree$tip.label <- as.character(spp)
+
+bird_tree <- ape::drop.tip(bird_tree, spp_rm_list)
+
+spp_tree <- bird_tree$tip.label
+
+spp_tree_df <- as.data.frame(spp_tree) %>%
+  mutate(ID_spp = seq(1:9648)) %>%
+  mutate(spp_match = spp_tree) %>%
+  select(-spp_tree)
 
 # Join to bird_data
 
-bird_data_short <- bird_data %>%
-  select(ID, Birdtree_name, Avonet_name, Family, GenLength, Modeled_max_longevity) %>%
-  mutate(spp_match = as.character(Birdtree_name)) %>%
-  left_join(spp_df, by = "spp_match") %>%
-  arrange(ID_spp)
-
+bird_data_short <- inner_join(spp_tree_df, bird_data, by = "spp_match")
 head(bird_data_short)
+
+  
 
 # Replace tip labels with family names
 bird.phylo$tip.label<-as.character(bird_data_short$Family) 
