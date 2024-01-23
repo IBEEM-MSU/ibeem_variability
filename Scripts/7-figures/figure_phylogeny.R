@@ -9,6 +9,8 @@
 library(ape)
 library(phytools)
 library(tidyverse)
+library(viridis)
+library(plotfunctions)
 
 ### Data ----
 
@@ -66,47 +68,87 @@ bird_data_short <- bird_data %>%
   select(ID, spp_match, Family, GenLength) %>%
   inner_join(spp_match_df)
 
+# Remove duplicates
 bird_data_short <- bird_data_short %>%
   filter(!duplicated(ID_spp))
 
-# Remove spp that are not in bird dataset from tree
-bird_data <- bird_data %>%
-  mutate(spp_match = as.character(Birdtree_name))
-
-spp_rm <- spp_df %>%
-  anti_join(bird_data, by = "spp_match")
-
-spp_rm_list <- spp_rm %>%
-  select(spp_match) %>%
-  as.list()
-spp_rm_list <- spp_rm_list[["spp_match"]]
-
-bird_tree$tip.label <- as.character(spp)
-
-bird_tree <- ape::drop.tip(bird_tree, spp_rm_list)
-
-spp_tree <- bird_tree$tip.label
-
-spp_tree_df <- as.data.frame(spp_tree) %>%
-  mutate(ID_spp = seq(1:9648)) %>%
-  mutate(spp_match = spp_tree) %>%
-  select(-spp_tree)
-
-# Join to bird_data
-
-bird_data_short <- inner_join(spp_tree_df, bird_data, by = "spp_match")
-head(bird_data_short)
-
-  
-
-# Replace tip labels with family names
-bird.phylo$tip.label<-as.character(bird_data_short$Family) 
-
-# Summarize data by family
-
-bird_data_short %>%
+# Summarize info by family
+bird_data_family <- bird_data_short %>%
   group_by(Family) %>%
   summarize(gen_length = mean(GenLength),
             spp_no = n())
 
+# Change tree tip labels with family names and leave only one tip per family
+family_labels <- bird_data_short %>%
+  arrange(ID_spp) %>%
+  select(Family) %>%
+  group_by(Family) %>%
+  mutate(fam_no = seq(1:n())) %>%
+  mutate(fam_no = as.character(fam_no),
+         Family = as.character(Family),
+         family_id = paste0(Family, "_", fam_no, "."))
 
+fam_labels_ls <- family_labels %>%
+  ungroup() %>%
+  select(family_id) %>%
+  as.list()
+
+fam_labels_ls <- fam_labels_ls[["family_id"]]
+
+bird_tree$tip.label <- fam_labels_ls
+
+# make list of tips to drop
+
+fam_tips_tokeep <- grep("_1.", fam_labels_ls, fixed = T, value = T)
+
+fam_tips_todrop <- setdiff(fam_labels_ls, fam_tips_tokeep)
+
+# drop tips
+tree <- drop.tip(bird_tree, fam_tips_todrop)
+
+# remove id from label
+fam_tips <- str_sub(fam_tips_tokeep, 1, -4)
+
+tree$tip.label <- fam_tips
+tree
+
+# Extract gen length and species #
+
+bird_data_fam_df <- as.data.frame(fam_tips) %>%
+  mutate(Family = as.character(fam_tips)) %>%
+  left_join(bird_data_family)
+
+gen_length <- bird_data_fam_df$gen_length
+names(gen_length)<-tree$tip.label
+
+spp_no <- bird_data_fam_df$spp_no
+names(spp_no)<-tree$tip.label
+
+# Define color ramp with # spp
+
+barcols <- round(log1p(bird_data_fam_df$spp_no)*10)
+names(barcols) <- tree$tip.label
+ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w species richness
+
+# Plot tree with bars
+
+plotTree.wBars(tree,
+               x= gen_length,
+               type= 'fan',
+               tip.labels = T, fsize = .4,
+               col = ramp[barcols],
+               border = F,
+               width = 5,
+               scale = 4)
+
+gradientLegend(1:416,
+               color = ramp,
+               pos = c(-300,130,-280,180),
+               side = 2, 
+               coords = T,
+               # length = 0.15, 
+               # depth = 0.025, 
+               n.seg = c(100, 200, 300), 
+               inside = T,
+               cex = .5)
+text(-280,180,'# Species',adj=0.5,pos=3,offset=.5,cex=.8)
