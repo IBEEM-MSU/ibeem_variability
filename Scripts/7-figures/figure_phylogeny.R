@@ -9,6 +9,8 @@
 library(ape)
 library(phytools)
 library(tidyverse)
+library(viridis)
+library(plotfunctions)
 
 ### Data ----
 
@@ -23,35 +25,130 @@ head(bird_data)
 bird_data %>%
   select(ID, Birdtree_name, Avonet_name, Family, GenLength, Modeled_max_longevity) 
 
-# Extract the tree tip labels (in order), use to reorder dataframe
-spp<-bird.phylo$tip.label
+# Extract spp list from tree and from bird_data
+spp_tree <- bird.phylo$tip.label
+spp_data <- bird_data$Birdtree_name
 
-# Make spp data frame
-spp <- sub("_", " ", spp)
+# Change to lower case and remove underscore so that names match "Birdtree_name" in bird dataset
+spp_tree <- sub("_", " ", spp_tree)
+spp_tree <- tolower(spp_tree)
 
-spp_df <- as.data.frame(spp) %>%
+# Make spp data frames with spp names and ordered ID
+spp_tree_df <- as.data.frame(spp_tree) %>%
   mutate(ID_spp = seq(1:9993)) %>%
-  mutate(spp_match = tolower(spp)) %>%
-  select(-spp)
+  mutate(spp_match = spp_tree) %>%
+  select(-spp_tree)
 
-# Join to bird_data
+spp_data_df <- as.data.frame(spp_data) %>%
+  mutate(spp_match = spp_data) %>%
+  select(-spp_data)
 
+# Inner join
+spp_list <- inner_join(spp_tree_df, spp_data_df)
+
+# Anti join to get a list of spp that need to be removed from tree
+spp_rm <- anti_join(spp_tree_df, spp_list)
+spp_rm_list <- as.list(spp_rm)
+spp_rm_list <- spp_rm_list[["spp_match"]]
+
+# Remove spp with missing info from both tree and bird_data
+
+bird.phylo$tip.label <- as.character(spp_tree)
+bird_tree <- ape::drop.tip(bird.phylo, spp_rm_list)
+
+# Extract tip labels from tree (in order)
+spp_match <- bird_tree$tip.label
+
+spp_match_df <- as.data.frame(spp_match) %>%
+  mutate(ID_spp = seq(1:9648))
+
+# Add bird data to spp list
 bird_data_short <- bird_data %>%
-  select(ID, Birdtree_name, Avonet_name, Family, GenLength, Modeled_max_longevity) %>%
   mutate(spp_match = as.character(Birdtree_name)) %>%
-  left_join(spp_df, by = "spp_match") %>%
-  arrange(ID_spp)
+  select(ID, spp_match, Family, GenLength) %>%
+  inner_join(spp_match_df)
 
-head(bird_data_short)
+# Remove duplicates
+bird_data_short <- bird_data_short %>%
+  filter(!duplicated(ID_spp))
 
-# Replace tip labels with family names
-bird.phylo$tip.label<-as.character(bird_data_short$Family) 
-
-# Summarize data by family
-
-bird_data_short %>%
+# Summarize info by family
+bird_data_family <- bird_data_short %>%
   group_by(Family) %>%
   summarize(gen_length = mean(GenLength),
             spp_no = n())
 
+# Change tree tip labels with family names and leave only one tip per family
+family_labels <- bird_data_short %>%
+  arrange(ID_spp) %>%
+  select(Family) %>%
+  group_by(Family) %>%
+  mutate(fam_no = seq(1:n())) %>%
+  mutate(fam_no = as.character(fam_no),
+         Family = as.character(Family),
+         family_id = paste0(Family, "_", fam_no, "."))
 
+fam_labels_ls <- family_labels %>%
+  ungroup() %>%
+  select(family_id) %>%
+  as.list()
+
+fam_labels_ls <- fam_labels_ls[["family_id"]]
+
+bird_tree$tip.label <- fam_labels_ls
+
+# make list of tips to drop
+
+fam_tips_tokeep <- grep("_1.", fam_labels_ls, fixed = T, value = T)
+
+fam_tips_todrop <- setdiff(fam_labels_ls, fam_tips_tokeep)
+
+# drop tips
+tree <- drop.tip(bird_tree, fam_tips_todrop)
+
+# remove id from label
+fam_tips <- str_sub(fam_tips_tokeep, 1, -4)
+
+tree$tip.label <- fam_tips
+tree
+
+# Extract gen length and species #
+
+bird_data_fam_df <- as.data.frame(fam_tips) %>%
+  mutate(Family = as.character(fam_tips)) %>%
+  left_join(bird_data_family)
+
+gen_length <- bird_data_fam_df$gen_length
+names(gen_length)<-tree$tip.label
+
+spp_no <- bird_data_fam_df$spp_no
+names(spp_no)<-tree$tip.label
+
+# Define color ramp with # spp
+
+barcols <- round(log1p(bird_data_fam_df$spp_no)*10)
+names(barcols) <- tree$tip.label
+ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w species richness
+
+# Plot tree with bars
+
+plotTree.wBars(tree,
+               x= gen_length,
+               type= 'fan',
+               tip.labels = T, fsize = .6,
+               col = ramp[barcols],
+               border = F,
+               width = 5,
+               scale = 3)
+
+gradientLegend(1:416,
+               color = ramp,
+               pos = c(-300,130,-280,180),
+               side = 2, 
+               coords = T,
+               # length = 0.15, 
+               # depth = 0.025, 
+               n.seg = c(100, 200, 300), 
+               inside = T,
+               cex = 1)
+text(-280,190,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)

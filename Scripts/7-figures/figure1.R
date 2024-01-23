@@ -91,6 +91,13 @@ head(temp_df)
 ty_q <- quantile(temp_df$temp_sd_year, seq(0, 1, by = 0.05))
 ts_q <- quantile(temp_df$temp_sd_season, seq(0, 1, by = 0.05))
 
+temp_df_map <- temp_df %>%
+  select(x, y, temp_sd_season, temp_sd_year) %>%
+  mutate(temp_s = ifelse(temp_sd_season > ts_q[20], 16.7, temp_sd_season),
+         temp_y = ifelse(temp_sd_year > ty_q[20], 1.26, temp_sd_year))
+head(temp_df_map)
+
+
 # Map with ggplot 
 ggplot() +
   # Map background
@@ -106,11 +113,11 @@ ggplot() +
   theme_minimal() +
   # Temp variation
   # geom_tile will through warning for fill2--it's ok, ignore.
-  geom_tile(data = temp_df, 
+  geom_tile(data = temp_df_map, 
             aes(x = x,
                 y = y, 
-                fill = temp_sd_year,
-                fill2 = temp_sd_season)) +
+                fill = temp_y,
+                fill2 = temp_s)) +
   # remove X and Y labels from map (it also removes legend labels :S )  
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
@@ -118,40 +125,44 @@ ggplot() +
   scale_fill_colourplane(name = "", 
                          na.color = "#FAFAFA",
                          color_projection = "interpolate", 
-                         # vertical_color = "#FFAA00",
-                         # horizontal_color = "#5555FF",
                          # zero_color = "#E8E8E8",
                          # vertical_color = "#FAE30C",
-                         # horizontal_color = "#0E91BE",
-                         # zero_color = "#E8E8E8",
-                         # vertical_color = "#FF0000",
-                         # horizontal_color = "#0000FF",
-                         # zero_color = "#E8E8E8",
-                         vertical_color = "#0071AA",
-                         horizontal_color = "#00AA00",
+                         # horizontal_color = "#0E91BE", 
                          zero_color = "#E8E8E8",
+                         vertical_color = "#fff700",
+                         horizontal_color = "#ff002f",
                          # use temp quantiles to define limits and breaks
-                         limits = c(0, 2),
-                         limits_y = c(0, 20),
-                         breaks = c(0,0.5,1.0,1.5,2),
-                         breaks_y = c(5,10,15,20)) 
+                         limits = c(0, max(temp_df_map$temp_y)),
+                         limits_y = c(0, max(temp_df_map$temp_s)))
+
+                         # breaks = c(0,0.5,1.0,1.5,2),
+                         # breaks_y = c(5,10,15,20)) 
 
 ### Precip variability map ----
 
 # Make data frame with projected env data 
 precip_df <- terra::as.data.frame(precip_rast_proj, xy = T, cells = F, na.rm = T)
 head(precip_df)
+summary(precip_df)
 
 precip_df %>%
   filter(precip_cv_season == Inf)
 # 5613 Inf values
 
 precip_df <- precip_df %>%
-  mutate(precip_cv_season = ifelse(precip_cv_season == Inf, NA, precip_cv_season)) 
+  mutate(precip_cv_season = ifelse(precip_cv_season == Inf, 999, precip_cv_season)) 
+
+summary(precip_data)
 
 # Get precip quantiles to set vertical and horizontal color scales
 py_q <- quantile(precip_df$precip_cv_year, seq(0, 1, by = 0.05))
 ps_q <- quantile(precip_df$precip_cv_season, seq(0, 1, by = 0.05), na.rm = T)
+
+precip_df_map <- precip_df %>%
+  select(x, y, precip_cv_year, precip_cv_season) %>%
+  mutate(precip_s = ifelse(precip_cv_season > ps_q[20], 1.7, precip_cv_season),
+         precip_y = ifelse(precip_cv_year > py_q[20], 0.59, precip_cv_year))
+head(precip_df_map)
 
 # Map with ggplot 
 ggplot() +
@@ -168,23 +179,23 @@ ggplot() +
   theme_minimal() +
   # Temp variation
   # geom_tile will through warning for fill2--it's ok, ignore.
-  geom_tile(data = precip_df, 
+  geom_tile(data = precip_df_map, 
             aes(x = x,
                 y = y, 
-                fill = precip_cv_year,
-                fill2 = precip_cv_season)) +
+                fill = precip_y,
+                fill2 = precip_s)) +
   # remove X and Y labels from map (it also removes legend labels :S )  
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   # bivariate color scale 
   scale_fill_colourplane(name = "", 
-                         na.color = "#FAFAFA",
+                         na.color = "gray95",
                          color_projection = "interpolate",
-                         vertical_color = "#FF0000",
-                         horizontal_color = "#0000FF",
+                         vertical_color = "#0000FF",
+                         horizontal_color = "#FF0000",
                          zero_color = "#E8E8E8",
-                         limits = c(0, py_q[20]),
-                         limits_y = c(0, ps_q[20]))
+                         limits = c(0, max(precip_df_map$precip_y)),
+                         limits_y = c(0, max(precip_df_map$precip_s)))
 
 ## Two species example ----
 
@@ -249,7 +260,7 @@ bird_data %>%
 # files are in "/Volumes/home-219/uscanga1/Documents" for now--needs update!
 
 dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp") # parrot
-dr_2712 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-2712-breeding.shp")
+#dr_2712 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-2712-breeding.shp")
 dr_366 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-366-breeding.shp") # hummingbird
 
 plot(dr_9030)
@@ -485,51 +496,52 @@ monthly_temp_sp366_long %>%
 ggplot() +
   geom_line(aes(x = monthly_temp_sp366_long$date,
                 y = monthly_temp_sp366_long$temp),
-            color = "magenta4") +
+            color = "#bf1da1") +
   geom_ribbon(aes(x = monthly_temp_sp366_long$date,
                   ymin = monthly_temp_sp366_long$temp - monthly_temp_sp366_long$sd,
                   ymax = monthly_temp_sp366_long$temp + monthly_temp_sp366_long$sd),
               alpha = 0.2,
-              fill = "magenta4") +
+              fill = "#bf1da1") +
   geom_line(aes(x = monthly_temp_sp9030_long$date,
                 y = monthly_temp_sp9030_long$temp),
-            color = "green4") +
+            color = "#1dbf76") +
   geom_ribbon(aes(x = monthly_temp_sp9030_long$date,
                   ymin = monthly_temp_sp9030_long$temp - monthly_temp_sp9030_long$sd,
                   ymax = monthly_temp_sp9030_long$temp + monthly_temp_sp9030_long$sd),
               alpha = 0.2,
-              fill = "green4") +
+              fill = "#1dbf76") +
   geom_segment(aes(x = as_date(-7490),
                    xend = as_date(-6760),
-                   y = -20,
-                   yend = -20),
-               color = "magenta4",
+                   y = -14,
+                   yend = -14),
+               color = "#bf1da1",
                #fill = "black",
                linewidth = 1.5) +
   geom_segment(aes(x = as_date(-7490),
                    xend = as_date(-1468),
-                   y = -18,
-                   yend = -18),
-               color = "green4",
+                   y = 30,
+                   yend = 30),
+               color = "#1dbf76",
                linewidth = 1.5) +
   theme_classic() +
   scale_x_date(date_breaks = "5 years",
                date_labels = "%Y") +
-  scale_y_continuous(limits = c(-20, 30)) +
+  scale_y_continuous(limits = c(-15, 30)) +
   labs(y = "Temperature (°C)",
-       x = NULL) 
+       x = NULL) +
+  theme(legend.text = element_text(size = 16))
 
 ### Plot distribution range map ----
 
 ggplot() +
   geom_polygon(data = map_data("world"),
                aes(x = long, y = lat, group = group),
-               fill = "grey95",
-               color = "gray40",
+               fill = "grey75",
+               color = "gray10",
                size = 0.1) +
   geom_sf(data = dr_9030,
-          color = "green4",
-          fill = "green4",
+          color = "#1dbf76",
+          fill = "#1dbf76",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
@@ -542,17 +554,17 @@ ggplot() +
 ggplot() +
   geom_polygon(data = map_data("world"),
                aes(x = long, y = lat, group = group),
-               fill = "grey95",
-               color = "gray40",
+               fill = "grey75",
+               color = "gray10",
                size = 0.1) +
   geom_sf(data = dr_366,
-          color = "magenta4",
-          fill = "magenta4",
+          color = "#bf1da1",
+          fill = "#bf1da1",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
-           xlim = c(-130,-90),
-           ylim = c(30,55)) +
+           xlim = c(-140,-80),
+           ylim = c(30,60)) +
   theme_bw() +
   labs(y = NULL,
        x = NULL)
