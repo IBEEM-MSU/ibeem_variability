@@ -135,11 +135,11 @@ ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w spe
 plotTree.wBars(tree,
                x= gen_length,
                type= 'fan',
-               tip.labels = T, fsize = .4,
+               tip.labels = T, fsize = .6,
                col = ramp[barcols],
                border = F,
                width = 5,
-               scale = 4)
+               scale = 3)
 
 gradientLegend(1:416,
                color = ramp,
@@ -150,5 +150,5 @@ gradientLegend(1:416,
                # depth = 0.025, 
                n.seg = c(100, 200, 300), 
                inside = T,
-               cex = .5)
-text(-280,180,'# Species',adj=0.5,pos=3,offset=.5,cex=.8)
+               cex = 1)
+text(-280,190,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
