@@ -1,6 +1,15 @@
 # Variability_life_history
 
-## Project Links:
+Code for Youngflesh et al. *In prep*
+
+This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species.
+
+**Associated publications:**
+
+TBD
+
+
+**Project Links:**
 
 [Project Google Drive](https://drive.google.com/drive/u/1/folders/1hnJP1CRZQSph2M2cIhCEwvujxFOhfM0k)
 
@@ -11,15 +20,6 @@
 [Proposal](https://drive.google.com/file/d/1K0jelDSM3ZlyHDlNI3SRYAbzlrS0hpiU/view?usp=share_link)
 
 [Annotated Bib](https://docs.google.com/document/d/1fn3lzU2IUtvY7Go_O7An_6JLgPk7Zc-OKLlNQYgOq48/edit)
-
-
-Code for Youngflesh et al. *In prep*
-
-This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species.
-
-**Associated publications:**
-
-TBD
 
 
 **Repository structure:**
