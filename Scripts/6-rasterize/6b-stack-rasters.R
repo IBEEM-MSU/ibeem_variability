@@ -15,6 +15,7 @@ library(terra)
 
 dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+gl_run_date <- '2023-10-17'
 
 
 # read in env data --------------------------------------------------------
@@ -33,56 +34,9 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 
 # read in bird data -------------------------------------------------------
 
-# #read in life history and other traits
-# #use to filter species of interest (only resident, terrestrial birds)
-'%ni%' <- Negate('%in%')
-
-or_excl <- c('Sphenisciformes', #penguins 
-             'Procellariiformes', #tubenoses
-             'Pelecaniformes', #pelicans
-             'Suliformes', #gannets/boobies
-             'Phaethontiformes', #tropicbirds
-             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
-#'Anseriformes', #waterfowl
-#'Ciconiiformes', #storks
-#'Gaviiformes', #aquatic birds (loons and divers)
-#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-#'Phoenicopteriformes', #flamingos and relatives
-#'Podicipediformes') #grebes
-
-'%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
-  dplyr::arrange(Birdtree_name) %>%
-  dplyr::filter(Order %ni% or_excl,
-                Migration == 1) %>%
-  #filter out precip outlier
-  dplyr::filter(precip_cv_season < 2.5) %>%
-  dplyr::mutate(lMass = log(Mass),
-                lGL = log(GenLength),
-                lAb = log(Modeled_age_first_breeding),
-                # lAb = log(Measured_age_first_breeding),
-                lMl = log(Modeled_max_longevity),
-                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  #drop duplicated species (for now)
-  dplyr::group_by(Birdtree_name) %>%
-  dplyr::slice_head() %>%
-  dplyr::ungroup() %>%
-  #ex = number of years before temp exceeds 2 sd
-  #AND
-  #delta_t = how much temp will change in 1 generation (in sds)
-  #AND
-  #delta_haldane = how much change (in sd) per generation
-  #AND
-  #n_gen = how many gens before temp will exceed 2 sd
-  dplyr::mutate(ex = 2 * temp_sd_year / temp_slope,
-                ex_season = 2 * temp_sd_season / temp_slope,
-                delta_t = temp_slope / temp_sd_year * GenLength,
-                delta_t_season = temp_slope / temp_sd_year * GenLength,
-                #(degrees / year) * (sd / degrees) * (year / gen) = sd / gen
-                delta_haldane = (temp_slope / temp_sd_year) * GenLength,
-                delta_haldane_season = (temp_slope / temp_sd_season) * GenLength,
-                n_gen = ex / GenLength)
-
+#from results
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+                          '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
 ids <- bird_df$ID
 
 #copy rasters to local

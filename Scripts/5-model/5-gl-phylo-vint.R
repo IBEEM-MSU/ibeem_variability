@@ -318,7 +318,6 @@ median((exp(beta4_ch * diff(range(tt[,4] / precip_cv_season_scalar))) - 1) * 100
 median((exp(beta5_ch * diff(range(tt[,5] / precip_cv_year_scalar))) - 1) * 100)
 
 
-
 # multiplicative effect of niche ------------------------------------------
 
 gamma_ch <- MCMCvis::MCMCchains(fit, params = 'gamma')
@@ -369,29 +368,8 @@ ref_df <- data.frame(num = 1:NCOL(gamma_ch),
 pw_df2 <- dplyr::left_join(pw_df, ref_df, by = c('nc1' = 'num')) %>%
   dplyr::left_join(ref_df, by = c('nc2' = 'num'))
 
-#plot of mean percent difference
-ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = abs(mean))) +
-  geom_tile(color = 'black', linewidth = 0.8) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
-                                   size = 12, hjust = 1)) +
-  theme(axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  theme(panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.border = element_blank())
-
-#plot of prob greater than 0 for estimate
-ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = Pg0)) +
-  geom_tile(color = 'black', linewidth = 0.8) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 1, 
-                                   size = 12, hjust = 1)) +
-  theme(axis.text.y = element_text(vjust = 1, size = 12, hjust = 1)) +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  theme(panel.background = element_blank(), 
-        panel.grid.major = element_blank(),
-        panel.border = element_blank())
+saveRDS(pw_df2, paste0(fig_dir, '/pairwise_gamma.rds'))
+pd_df2 <- readRDS(paste0(fig_dir, '/pairwise_gamma.rds'))
 
 #largest pairwise difference between categories
 pw_df2[which.max(abs(pw_df2$mean)),]
@@ -521,29 +499,6 @@ for (i in 1:500)
 dev.off()
 
 
-# var change metrics ------------------------------------------------------
-
-hist(bird_df2$temp_delta, breaks = 50, main = 'delta_T')
-abline(v = 0.1, lty = 2, lwd = 2, col = 'red')
-abline(v = 0.3, lty = 2, lwd = 2, col = 'red')
-hist(bird_df2$precip_delta, breaks = 50, main = 'delta_P')
-abline(v = 0.1, lty = 2, lwd = 2, col = 'red')
-abline(v = 0.3, lty = 2, lwd = 2, col = 'red')
-
-
-# R^2 ---------------------------------------------------------------------
-
-#Gelman et al. 2019 - American Statistician
-#var predicted / (var predicted + var residuals)
-#in other words:
-#explained var / (explained var + resid var)
-
-# var_pred <- apply(mu_rep, 1, var)
-# var_resid <- apply(sweep(mu_rep, 2, DATA$Y), 1, var)
-# r2_ch <- var_pred / (var_pred + var_resid)
-# hist(r2_ch)
-
-
 # VIF ---------------------------------------------------------------------
 
 #covariates as a function of other covariates
@@ -579,10 +534,3 @@ abline(v = 0.3, lty = 2, lwd = 2, col = 'red')
 # 1 / (1 - stf3$r.squared) #temp_sd_season
 # 1 / (1 - stf4$r.squared) #precip_cv_year
 # 1 / (1 - stf5$r.squared) #precip_cv_season
-# 
-# #correlation
-# cor(as.matrix(dplyr::select(bird_df3,
-#                             lMass, temp_sd_year, temp_sd_season,
-#                             precip_cv_year, precip_cv_season)))
-
-
