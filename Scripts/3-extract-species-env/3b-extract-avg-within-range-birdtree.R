@@ -29,7 +29,7 @@ if(length(file.name) == 0) base::stop('Need to give the file name to process')
 load(paste0(dir, 'data/L1/range/bird-breeding/', file.name))
 
 # Climate data (takes a couple of minutes to load)
-# only valid cells (land and N of -60S lat)
+# only valid cells (land and N of 60S lat)
 env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
   #only 'valid' cells (those over land and > -60S lat)
   dplyr::filter(valid == TRUE) %>%

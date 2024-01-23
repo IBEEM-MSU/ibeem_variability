@@ -1,13 +1,9 @@
 ################
-# Resolve differences in species names and combine bird/mammal datasets:
+# Resolve differences in species names and combine bird dataset:
 # - range maps
 # - generation time
 # - other traits
 # - phylogeny
-# 
-# NOTES:
-# - should decide on taxonomic source to match to (itis? col?)
-# - for species that don't have db match but common among data sources, just merge?
 ################
 
 

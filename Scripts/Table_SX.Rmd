@@ -1,0 +1,26 @@
+---
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Table for species with LH characters
+
+```{r}
+#set dirs
+# dir <- '/mnt/research/ibeem/variability/'
+dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+
+gl_run_date <- '2023-10-17'
+```
+
+```{r}
+#read in data
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+               '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+
+str(bird_df)
+```
+

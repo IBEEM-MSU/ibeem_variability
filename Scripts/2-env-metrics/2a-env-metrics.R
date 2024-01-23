@@ -20,7 +20,6 @@ args <- commandArgs(trailingOnly = TRUE)
 library(tidyverse)
 library(data.table)
 library(moments)
-library(lomb)
 
 
 # read in data -------------------------------------------------
@@ -61,16 +60,7 @@ env_df <- data.frame(cell_id = rep(uci, each = 2),
                      sd_year = NA, #sd of residuals for linear model
                      cv_year = NA,
                      sd_season = NA, #mean yearly sd across months
-                     cv_season = NA,
-                     rng_season = NA,
-                     kurt = NA, #kurtosis
-                     skew = NA, #skewness
-                     sp_color_year = NA, #spectral exponent
-                     rho_l1 = NA, #temporal autocorrelation lag 1
-                     rho_l2 = NA, #lag 2
-                     rho_l3 = NA,
-                     rho_l4 = NA,
-                     rho_l5 = NA)
+                     cv_season = NA)
 
 #loop through each cell to calc metrics
 time <- proc.time()
@@ -90,37 +80,6 @@ for (i in 1:length(uci))
   temp_resid <- residuals(fit_temp)
   precip_resid <- residuals(fit_precip)
   
-  #spectral analysis using Lomb-Scargle Periodogram
-  #between freq 2/(n*dt) and 1/(2*dt), where dt = 1 and n = 72; 0.0278 to 0.5
-  #following Marshall and Burgess 2015 Eco Letters
-  #see also Vasseur and Yodzis 2004 Ecology
-  #period = 1/freq; ~2 - 36 years
-  ll_freq <- 0.0278
-  ul_freq <- 0.5
-  temp_spec <- lomb::lsp(temp_resid, 
-                         from = ll_freq, to = ul_freq, 
-                         type = 'frequency',
-                         normalize =  'standard', 
-                         plot = FALSE)
-  #spectral exponent (1/f^beta)
-  temp_spec_fit <- summary(lm(log10(temp_spec$power) ~ log10(temp_spec$scanned)))$coefficients[,1]
-  #precip - only run if residuals exist (i.e., all precip values were not 0)
-  if (sd(precip_resid) > 0)
-  {
-    precip_spec <- lomb::lsp(precip_resid, 
-                             from = ll_freq, to = ul_freq, 
-                             type = 'frequency', 
-                             normalize = 'standard', 
-                             plot = FALSE)
-    precip_spec_fit <- summary(lm(log10(precip_spec$power) ~ log10(precip_spec$scanned)))$coefficients[,1]
-  } else {
-    precip_spec_fit <- rep(NA, 2)
-  }
-  
-  #temporal autocorrelation
-  temp_acf <- acf(temp_resid, lag.max = 5, plot = FALSE)
-  precip_acf <- acf(precip_resid, lag.max = 5, plot = FALSE)
-  
   #fill df
   env_df$lon[counter:(counter + 1)] <- rep(te$lon[1], 2)
   env_df$lat[counter:(counter + 1)] <- rep(te$lat[1], 2)
@@ -138,17 +97,6 @@ for (i in 1:length(uci))
                                                mean(te$season_precip) / mean(te$mean_precip))
   env_df$rng_season[counter:(counter + 1)] <- c(mean(te$rng_season_temp), 
                                                      mean(te$rng_season_precip))
-  env_df$kurt[counter:(counter + 1)] <- c(moments::kurtosis(temp_resid), 
-                                          moments::kurtosis(precip_resid))
-  env_df$skew[counter:(counter + 1)] <- c(moments::skewness(temp_resid), 
-                                          moments::skewness(precip_resid))
-  env_df$sp_color_year[counter:(counter + 1)] <- c(temp_spec_fit[2] * -1, 
-                                                   precip_spec_fit[2] * -1)
-  env_df$rho_l1[counter:(counter + 1)] <- c(temp_acf$acf[2], precip_acf$acf[2])
-  env_df$rho_l2[counter:(counter + 1)] <- c(temp_acf$acf[3], precip_acf$acf[3])
-  env_df$rho_l3[counter:(counter + 1)] <- c(temp_acf$acf[4], precip_acf$acf[4])
-  env_df$rho_l4[counter:(counter + 1)] <- c(temp_acf$acf[5], precip_acf$acf[5])
-  env_df$rho_l5[counter:(counter + 1)] <- c(temp_acf$acf[6], precip_acf$acf[6])
   
   counter <- counter + 2
 }

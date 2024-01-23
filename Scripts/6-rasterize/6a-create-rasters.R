@@ -3,14 +3,8 @@
 #
 # Rasters for: 
 # - Gl (gen length)
-# - delta haldane
-# - Ab (age first breeding)
-# - Cs (clutch size)
-# - Ml (maximum longevity)
-# - S (survival)
-# - LH PC1
-# - LH PC2
-# - LH PC3
+# - delta T
+# - delta P
 #############################
 
 
@@ -25,6 +19,8 @@ library(terra)
 
 dir <- '/mnt/research/ibeem/variability/'
 # dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+
+gl_run_date <- '2023-10-17'
 
 
 # Get the current file to process -----------------------------------------
@@ -52,91 +48,9 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
   terra::rast(crs = "epsg:4326")
 
 #read in life history and other traits
-
-or_excl <- c('Sphenisciformes', #penguins 
-             'Procellariiformes', #tubenoses
-             'Pelecaniformes', #pelicans
-             'Suliformes', #gannets/boobies
-             'Phaethontiformes', #tropicbirds
-             'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
-#'Anseriformes', #waterfowl
-#'Ciconiiformes', #storks
-#'Gaviiformes', #aquatic birds (loons and divers)
-#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-#'Phoenicopteriformes', #flamingos and relatives
-#'Podicipediformes') #grebes
-
-'%ni%' <- Negate('%in%')
-bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtreeX.csv')) %>%
-  dplyr::arrange(Birdtree_name) %>%
-  dplyr::filter(Order %ni% or_excl,
-                Migration == 1) %>%
-  #filter out precip outlier
-  dplyr::filter(precip_cv_season < 2.5) %>%
-  dplyr::mutate(lMass = log(Mass),
-                lGL = log(GenLength),
-                lAb = log(Modeled_age_first_breeding),
-                # lAb = log(Measured_age_first_breeding),
-                lMl = log(Modeled_max_longevity),
-                S = Modeled_survival,
-                species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  #drop duplicated species (for now)
-  dplyr::group_by(Birdtree_name) %>%
-  dplyr::slice_head() %>%
-  dplyr::ungroup() %>%
-  #ex = number of years before temp exceeds 2 sd
-  #AND
-  #delta_t = how much temp will change in 1 generation (in sds)
-  #AND
-  #delta_haldane = how much change (in sd) per generation
-  #AND
-  #n_gen = how many gens before temp will exceed 2 sd
-  dplyr::mutate(ex = 2 * temp_sd_year / temp_slope,
-                ex_season = 2 * temp_sd_season / temp_slope,
-                delta_t = temp_slope / temp_sd_year * GenLength,
-                delta_t_season = temp_slope / temp_sd_year * GenLength,
-                #(degrees / year) * (sd / degrees) * (year / gen) = sd / gen
-                delta_haldane = (temp_slope / temp_sd_year) * GenLength,
-                delta_haldane_season = (temp_slope / temp_sd_season) * GenLength,
-                n_gen = ex / GenLength)
-
-
-# PCA ---------------------------------------------------------------------
-
-tt_pca <- dplyr::select(bird_df, 
-                        lAb, lMl, S) %>%
-  prcomp(center = TRUE, scale. = TRUE)
-# factoextra::fviz_pca_var(tt_pca,
-#                          axes = c(1,2),
-#                          #geom = 'arrow',
-#                          col.var = "contrib", # Color by contributions to the PC
-#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-#                          #repel = FALSE,
-#                          title = 'PCA')
-# factoextra::fviz_pca_var(tt_pca,
-#                          axes = c(2,3),
-#                          #geom = 'arrow',
-#                          col.var = "contrib", # Color by contributions to the PC
-#                          gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-#                          #repel = FALSE,
-#                          title = 'PCA')
-# 
-# factoextra::fviz_pca_biplot(tt_pca,
-#                             axes = c(1,2), 
-#                             label = "var",
-#                             habillage = bird_df$Order)
-
-# + PC 1 = long lives, high surv, late age first breeding
-# + PC 2 = long lives, low surv, 0 age first breeding
-# + PC 3 = short lives, low surv, late age first breeding
-
-bird_df$LH_PC1 <- tt_pca$x[,1]
-bird_df$LH_PC2 <- tt_pca$x[,2]
-bird_df$LH_PC3 <- tt_pca$x[,3]
-
-# ggplot(bird_df, aes(S, lMl, col = Order)) +
-#   geom_point(alpha = 0.8) +
-#   theme_bw()
+#from results
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+               '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
 
 
 # loop through ranges -----------------------------------------------------
@@ -196,25 +110,14 @@ for (i in 1:length(ids))
                                         touches = TRUE)
     #two layers
     curr.range.rast2 <- c(curr.range.rast, curr.range.rast,
-                          curr.range.rast, curr.range.rast,
-                          curr.range.rast, curr.range.rast,
-                          curr.range.rast, curr.range.rast,
                           curr.range.rast)
     
     #change layer names
-    names(curr.range.rast2) <- c('GenLength', 'delta_haldane',
-                                 'Ab', 'Ml', 'Cs', 'S',
-                                 'LH_PC1', 'LH_PC2', 'LH_PC3')
+    names(curr.range.rast2) <- c('GenLength', 'delta_T', 'delta_P')
     
-    curr.range.rast2[['GenLength']][curr.range.rast2['GenLength'] == 1] <-  tdf$GenLength
-    curr.range.rast2[['delta_haldane']][curr.range.rast2['delta_haldane'] == 1] <- tdf$delta_haldane
-    curr.range.rast2[['Ab']][curr.range.rast2['Ab'] == 1] <- tdf$Modeled_age_first_breeding
-    curr.range.rast2[['Ml']][curr.range.rast2['Ml'] == 1] <- tdf$Modeled_max_longevity
-    curr.range.rast2[['Cs']][curr.range.rast2['Cs'] == 1] <- tdf$Measured_clutch_size
-    curr.range.rast2[['S']][curr.range.rast2['S'] == 1] <- tdf$Modeled_survival
-    curr.range.rast2[['LH_PC1']][curr.range.rast2['LH_PC1'] == 1] <- tdf$LH_PC1
-    curr.range.rast2[['LH_PC2']][curr.range.rast2['LH_PC2'] == 1] <- tdf$LH_PC2
-    curr.range.rast2[['LH_PC3']][curr.range.rast2['LH_PC3'] == 1] <- tdf$LH_PC3
+    curr.range.rast2[['GenLength']][curr.range.rast2['GenLength'] == 1] <- exp(tdf$lGL)
+    curr.range.rast2[['delta_T']][curr.range.rast2['delta_T'] == 1] <- tdf$temp_delta
+    curr.range.rast2[['delta_P']][curr.range.rast2['delta_P'] == 1] <- tdf$precip_delta
     
     # save out as single-species tifs (one per metric)
     terra::writeRaster(curr.range.rast2[['GenLength']], 
@@ -223,52 +126,16 @@ for (i in 1:length(ids))
                                          '-breeding-GenLength.tif'),
                        overwrite = TRUE)
     
-    terra::writeRaster(curr.range.rast2[['delta_haldane']],
+    terra::writeRaster(curr.range.rast2[['delta_T']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.sp),
-                                       '-breeding-delta_haldane.tif'),
+                                       '-breeding-delta_T.tif'),
                        overwrite = TRUE)
     
-    terra::writeRaster(curr.range.rast2[['Ab']],
+    terra::writeRaster(curr.range.rast2[['delta_P']],
                        filename = paste0(dir, 'data/L2/range-raster/', 
                                          gsub(' ', '_', curr.sp),
-                                         '-breeding-Ab.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['Ml']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-Ml.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['Cs']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-Cs.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['S']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-S.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['LH_PC1']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-LH_PC1.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['LH_PC2']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-LH_PC2.tif'),
-                       overwrite = TRUE)
-    
-    terra::writeRaster(curr.range.rast2[['LH_PC3']],
-                       filename = paste0(dir, 'data/L2/range-raster/', 
-                                         gsub(' ', '_', curr.sp),
-                                         '-breeding-LH_PC3.tif'),
+                                         '-breeding-delta_P.tif'),
                        overwrite = TRUE)
   }
 }

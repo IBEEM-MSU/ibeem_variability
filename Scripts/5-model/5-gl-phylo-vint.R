@@ -5,10 +5,10 @@
 
 # specify dir -------------------------------------------------------------
 
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-# sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-dir <- '/mnt/research/ibeem/variability/'
-sc_dir <- '/mnt/home/ccy/variability/'
+dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# dir <- '/mnt/research/ibeem/variability/'
+# sc_dir <- '/mnt/home/ccy/variability/'
 run_date <- '2023-10-17'
 
 
@@ -37,39 +37,56 @@ or_excl <- c('Sphenisciformes', #penguins
 #'Phoenicopteriformes', #flamingos and relatives
 #'Podicipediformes') #grebes
 
+# #exclude Sicalis auriventris - outlier precip_cv_season
+# s_auriventris <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
+#   dplyr::filter(Migration == 1, precip_cv_season > 2.5) %>%
+#   dplyr::select(precip_cv_season)
+# 
+# all_precip_cv_season <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
+#   dplyr::filter(Order %ni% or_excl,
+#                 Migration == 1) %>%
+#   dplyr::select(precip_cv_season) %>%
+#   as.vector()
+# 
+# #11.6 MAD
+# (s_auriventris$precip_cv_season - median(all_precip_cv_season$precip_cv_season)) / mad(all_precip_cv_season$precip_cv_season)
+
+
 '%ni%' <- Negate('%in%')
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
-                Migration == 1) %>%
-  #filter out precip outlier
-  dplyr::filter(precip_cv_season < 2.5) %>%
+                Migration == 1,
+                #filter out precip outlier
+                precip_cv_season < 2.5) %>% 
   dplyr::mutate(lMass = log(Mass),
                 lGL = log(GenLength),
-                # lGL = GenLength,
-                # lGL = 1/GenLength,
-                lAb = log(Modeled_age_first_breeding),
-                lMl = log(Modeled_max_longevity),
                 species = stringr::str_to_title(gsub(' ', '_', Birdtree_name))) %>%
-  #drop duplicated species (for now)
+  dplyr::rename(Trophic_niche = Trophic.Niche) %>%
+  #drop duplicated species
   dplyr::group_by(species) %>%
   dplyr::slice_head() %>%
-  dplyr::ungroup()
+  dplyr::ungroup() %>%
+  #how much var will change in 1 generation (in sds)
+  #((degrees / year) * (year / generation) * (1 / degrees) = degrees (sd) / generation
+  dplyr::mutate(temp_delta = (temp_slope * GenLength) / temp_sd_year, 
+                precip_delta = (precip_slope * GenLength) / precip_sd_year)
 
 #subset out just traits of interest
 bird_df2 <- dplyr::select(bird_df, 
+                          ID,
                           species,
-                          lMass,
+                          Order,
+                          Family,
                           lGL,
-                          Modeled_survival,
-                          lAb,
-                          lMl,
-                          Trophic_niche = Trophic.Niche,
-                          temp_mean,
+                          Trophic_niche,
+                          lMass,
                           temp_sd_year,
                           temp_sd_season,
                           precip_cv_year,
-                          precip_cv_season)
+                          precip_cv_season,
+                          temp_delta,
+                          precip_delta)
 
 
 # phylo -------------------------------------------------------------------
@@ -121,6 +138,16 @@ bird_df3$niche_idx <- as.numeric(factor(bird_df3$Trophic_niche))
 niche_names <- levels(factor(bird_df3$Trophic_niche))
 
 
+# summary metrics ---------------------------------------------------------
+
+#7476 species
+NROW(bird_df3)
+#29 orders
+length(unique(bird_df3$Order))
+#198 families
+length(unique(bird_df3$Family))
+
+
 # scale/prep data ---------------------------------------------------------
 
 #scalars for data - smaller number for larger param value (opposite for y)
@@ -155,7 +182,8 @@ DATA <- list(N = NROW(bird_df3),
              niche_idx = bird_df3$niche_idx,
              mu_kappa = 2,
              sigma_kappa = 1,
-             Rho = Rho) #corr matrix
+             Rho = Rho, #corr matrix
+             pro_data = bird_df3) 
 
 # summary(lm(DATA$Y ~ DATA$X[,1] +
 #              DATA$X[,2] +
@@ -491,6 +519,16 @@ for (i in 1:500)
   lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))
 }
 dev.off()
+
+
+# var change metrics ------------------------------------------------------
+
+hist(bird_df2$temp_delta, breaks = 50, main = 'delta_T')
+abline(v = 0.1, lty = 2, lwd = 2, col = 'red')
+abline(v = 0.3, lty = 2, lwd = 2, col = 'red')
+hist(bird_df2$precip_delta, breaks = 50, main = 'delta_P')
+abline(v = 0.1, lty = 2, lwd = 2, col = 'red')
+abline(v = 0.3, lty = 2, lwd = 2, col = 'red')
 
 
 # R^2 ---------------------------------------------------------------------

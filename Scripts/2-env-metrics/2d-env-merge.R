@@ -65,7 +65,6 @@ t_vals <- data.frame(terra::values(frast)) %>%
 t_cval <- cbind(t_crds, t_vals) %>%
   dplyr::rename(lat = y, lon = x) %>%
   dplyr::filter(lat > -60) %>%
-  #dplyr::filter(lat > -66.5, lat < 66.5) %>%
   dplyr::mutate(valid = TRUE)
 
 
