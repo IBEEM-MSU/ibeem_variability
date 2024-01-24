@@ -1,8 +1,6 @@
 #----------------------------#
-# Figure 2. Pace of life ----
+# Pace of life map
 #----------------------------#
-
-## Pace of life maps ----
 
 ### Load packages ----
 
@@ -18,6 +16,7 @@ library(rnaturalearth)
 
 bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-LH-nsp.tif'))
 bird_ras <- terra::rast("~/Documents/Documents/ibeem/raster-gl-dh-nsp.tif") #needs update!
+bird_ras <- tt
 #bird_ras2 <- bird_ras[[c('median_gl', 'sd_gl', 
 #                         'median_dh', 'sd_dh')]]
 

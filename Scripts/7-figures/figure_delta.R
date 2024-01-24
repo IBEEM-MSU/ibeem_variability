@@ -1,5 +1,5 @@
 ####################
-# Figure 5 - delta metrics
+# delta metrics (histograms and maps)
 ####################
 
 

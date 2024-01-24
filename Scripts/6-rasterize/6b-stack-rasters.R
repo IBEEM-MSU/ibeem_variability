@@ -105,6 +105,15 @@ names(sd_gl) <- 'sd_gl'
 names(sd_dT) <- 'sd_dT'
 names(sd_dP) <- 'sd_dP'
 
+#calculate mean
+mn_gl <- terra::app(gl_stack, fun = function(x) mean(x, na.rm = TRUE))
+mn_dT <- terra::app(dT_stack, fun = function(x) mean(x, na.rm = TRUE))
+mn_dP <- terra::app(dP_stack, fun = function(x) mean(x, na.rm = TRUE))
+
+names(mn_gl) <- 'mean_gl'
+names(mn_dT) <- 'mean_dT'
+names(mn_dP) <- 'mean_dP'
+
 #calculate number of species in each grid cell
 n_sp <- terra::app(gl_stack, fun = function(x) sum(!is.na(x)))
 names(n_sp) <- 'n_sp'
@@ -114,11 +123,18 @@ names(n_sp) <- 'n_sp'
 # plot(n_sp)
 
 #combine into one raster
-mrg_ras <- c(med_gl, sd_gl, med_dT, sd_dT, med_dP, sd_dP, n_sp)
+mrg_ras <- c(med_gl, sd_gl, med_dT, sd_dT, med_dP, sd_dP, mn_gl, mn_dT, mn_dP, n_sp)
 
 #mask out non-land
 mrg_ras2 <- terra::mask(mrg_ras, env.dat.rast, 
                   inverse = FALSE)
+
+
+# terra::writeRaster(med_gl,
+#                    filename = paste0(dir, 'data/L3/med-test.tif'),
+#                    overwrite = TRUE)
+# tt <- terra::rast('~/Downloads/med-test.tif')
+# plot(tt)
 
 
 # save out tifs -----------------------------------------------------------
