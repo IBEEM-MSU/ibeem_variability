@@ -35,11 +35,16 @@ bird_data <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date,
 head(bird_data)
 
 bird_data %>%
-  select(ID, Birdtree_name, Avonet_name, Family, GenLength, Modeled_max_longevity) 
+  dplyr::mutate(GenLength = exp(lGL)) %>%
+  select(ID, species, Order, Family, GenLength) 
 
 # Extract spp list from tree and from bird_data
 spp_tree <- bird.phylo$tip.label
-spp_data <- bird_data$Birdtree_name
+spp_data <- bird_data$species
+
+
+
+#CY: did not change here down
 
 # Change to lower case and remove underscore so that names match "Birdtree_name" in bird dataset
 spp_tree <- sub("_", " ", spp_tree)
