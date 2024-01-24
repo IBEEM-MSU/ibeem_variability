@@ -12,13 +12,25 @@ library(tidyverse)
 library(viridis)
 library(plotfunctions)
 
+# Specify top-level directory -------------------------------------------------------
+
+dir <- '/mnt/research/ibeem/variability/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+gl_run_date <- '2023-10-17'
+
+
 ### Data ----
 
 # Load consensus tree: '/mnt/research/ibeem/variability/data/L3/bird-consensus-tree.rda'
 load("~/bird-consensus-tree.rda")
 
 # Load bird data
-bird_data <- read_csv("~/Documents/Documents/ibeem/main-bird-data-birdtree2.csv") #needs update
+# bird_data <- read_csv("~/Documents/Documents/ibeem/main-bird-data-birdtree2.csv") #needs update
+
+#FILTERED BIRD DATA
+bird_data <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+                          '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+
 
 head(bird_data)
 

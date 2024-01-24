@@ -368,8 +368,8 @@ ref_df <- data.frame(num = 1:NCOL(gamma_ch),
 pw_df2 <- dplyr::left_join(pw_df, ref_df, by = c('nc1' = 'num')) %>%
   dplyr::left_join(ref_df, by = c('nc2' = 'num'))
 
-saveRDS(pw_df2, paste0(fig_dir, '/pairwise_gamma.rds'))
-pd_df2 <- readRDS(paste0(fig_dir, '/pairwise_gamma.rds'))
+# saveRDS(pw_df2, paste0(fig_dir, '/pairwise_gamma.rds'))
+# pw_df2 <- readRDS(paste0(fig_dir, '/pairwise_gamma.rds'))
 
 #largest pairwise difference between categories
 pw_df2[which.max(abs(pw_df2$mean)),]
