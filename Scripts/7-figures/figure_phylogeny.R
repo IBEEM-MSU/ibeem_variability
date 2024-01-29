@@ -25,30 +25,19 @@ gl_run_date <- '2023-10-17'
 load("~/bird-consensus-tree.rda")
 
 # Load bird data
-# bird_data <- read_csv("~/Documents/Documents/ibeem/main-bird-data-birdtree2.csv") #needs update
 
-#FILTERED BIRD DATA
 bird_data <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
                           '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
 
-
 head(bird_data)
 
-bird_data %>%
+bird_data <- bird_data %>%
   dplyr::mutate(GenLength = exp(lGL)) %>%
   select(ID, species, Order, Family, GenLength) 
 
 # Extract spp list from tree and from bird_data
 spp_tree <- bird.phylo$tip.label
 spp_data <- bird_data$species
-
-
-
-#CY: did not change here down
-
-# Change to lower case and remove underscore so that names match "Birdtree_name" in bird dataset
-spp_tree <- sub("_", " ", spp_tree)
-spp_tree <- tolower(spp_tree)
 
 # Make spp data frames with spp names and ordered ID
 spp_tree_df <- as.data.frame(spp_tree) %>%
@@ -68,26 +57,22 @@ spp_rm <- anti_join(spp_tree_df, spp_list)
 spp_rm_list <- as.list(spp_rm)
 spp_rm_list <- spp_rm_list[["spp_match"]]
 
-# Remove spp with missing info from both tree and bird_data
+# Remove extra spp from tree
 
-bird.phylo$tip.label <- as.character(spp_tree)
+#bird.phylo$tip.label <- as.character(spp_tree)
 bird_tree <- ape::drop.tip(bird.phylo, spp_rm_list)
 
 # Extract tip labels from tree (in order)
 spp_match <- bird_tree$tip.label
 
 spp_match_df <- as.data.frame(spp_match) %>%
-  mutate(ID_spp = seq(1:9648))
+  mutate(ID_spp = seq(1:7476))
 
 # Add bird data to spp list
 bird_data_short <- bird_data %>%
-  mutate(spp_match = as.character(Birdtree_name)) %>%
+  mutate(spp_match = as.character(species)) %>%
   select(ID, spp_match, Family, GenLength) %>%
   inner_join(spp_match_df)
-
-# Remove duplicates
-bird_data_short <- bird_data_short %>%
-  filter(!duplicated(ID_spp))
 
 # Summarize info by family
 bird_data_family <- bird_data_short %>%
@@ -129,7 +114,7 @@ fam_tips <- str_sub(fam_tips_tokeep, 1, -4)
 tree$tip.label <- fam_tips
 tree
 
-# Extract gen length and species #
+# Extract gen length and species 
 
 bird_data_fam_df <- as.data.frame(fam_tips) %>%
   mutate(Family = as.character(fam_tips)) %>%
@@ -142,10 +127,15 @@ spp_no <- bird_data_fam_df$spp_no
 names(spp_no)<-tree$tip.label
 
 # Define color ramp with # spp
+bird_data_fam_df <- bird_data_fam_df %>%
+  mutate(logsp = log1p(spp_no))
+logsp <- bird_data_fam_df$logsp
+names(logsp) <- tree$tip.label
+barcols <- round(logsp*100)-68
 
-barcols <- round(log1p(bird_data_fam_df$spp_no)*10)
-names(barcols) <- tree$tip.label
-ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w species richness
+#barcols <- round(log1p(bird_data_fam_df$spp_no)*10)-6
+# names(barcols) <- tree$tip.label
+# ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w species richness
 
 # Plot tree with bars
 
@@ -153,19 +143,21 @@ plotTree.wBars(tree,
                x= gen_length,
                type= 'fan',
                tip.labels = T, fsize = .6,
-               col = ramp[barcols],
+               #col = ramp[barcols],
+               col = viridis(max(barcols), option = "A")[barcols],
                border = F,
                width = 5,
-               scale = 3)
+               scale = 4)
 
-gradientLegend(1:416,
+ramp<-viridis(max(barcols), option = "A")[round(log1p(1:315)*100)-68] # Define palette w species richness
+gradientLegend(1:315,
                color = ramp,
                pos = c(-300,130,-280,180),
                side = 2, 
                coords = T,
-               # length = 0.15, 
-               # depth = 0.025, 
-               n.seg = c(100, 200, 300), 
+               length = 0.15,
+               depth = 0.025,
+               n.seg = c(100, 200),
                inside = T,
                cex = 1)
 text(-280,190,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
