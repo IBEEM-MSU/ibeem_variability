@@ -33,7 +33,7 @@ head(bird_data)
 
 bird_data <- bird_data %>%
   dplyr::mutate(GenLength = exp(lGL)) %>%
-  select(ID, species, Order, Family, GenLength) 
+  select(ID, species, Order, Family, GenLength, Trophic_niche) 
 
 # Extract spp list from tree and from bird_data
 spp_tree <- bird.phylo$tip.label
@@ -71,7 +71,7 @@ spp_match_df <- as.data.frame(spp_match) %>%
 # Add bird data to spp list
 bird_data_short <- bird_data %>%
   mutate(spp_match = as.character(species)) %>%
-  select(ID, spp_match, Family, GenLength) %>%
+  #select(ID, spp_match, Family, GenLength) %>%
   inner_join(spp_match_df)
 
 # Summarize info by family
@@ -161,3 +161,99 @@ gradientLegend(1:315,
                inside = T,
                cex = 1)
 text(-280,190,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
+
+###################
+# Tree by order
+
+# Summarize info by order
+bird_data_order <- bird_data_short %>%
+  group_by(Order) %>%
+  summarize(gen_length = mean(GenLength),
+            spp_no = n())
+
+# with trophic niche
+bird_data_short %>%
+  group_by(Order, Trophic_niche) %>%
+  summarize(gen_length = mean(GenLength),
+            spp_no = n())
+
+# Change tree tip labels with order names and leave only one tip per order
+order_labels <- bird_data_short %>%
+  arrange(ID_spp) %>%
+  select(Order) %>%
+  group_by(Order) %>%
+  mutate(order_no = seq(1:n())) %>%
+  mutate(order_no = as.character(order_no),
+         Order = as.character(Order),
+         order_id = paste0(Order, "_", order_no, "."))
+
+order_labels_ls <- order_labels %>%
+  ungroup() %>%
+  select(order_id) %>%
+  as.list()
+
+order_labels_ls <- order_labels_ls[["order_id"]]
+
+bird_tree$tip.label <- order_labels_ls
+
+# make list of tips to drop
+
+order_tips_tokeep <- grep("_1.", order_labels_ls, fixed = T, value = T)
+
+order_tips_todrop <- setdiff(order_labels_ls, order_tips_tokeep)
+
+# drop tips
+tree <- drop.tip(bird_tree, order_tips_todrop)
+
+# remove id from label
+order_tips <- str_sub(order_tips_tokeep, 1, -4)
+
+tree$tip.label <- order_tips
+tree
+
+# Extract gen length and species 
+
+bird_data_order_df <- as.data.frame(order_tips) %>%
+  mutate(Order = as.character(order_tips)) %>%
+  left_join(bird_data_order)
+
+gen_length <- bird_data_order_df$gen_length
+names(gen_length)<-tree$tip.label
+
+spp_no <- bird_data_order_df$spp_no
+names(spp_no)<-tree$tip.label
+
+# Define color ramp with # spp
+bird_data_order_df <- bird_data_order_df %>%
+  mutate(logsp = log1p(spp_no))
+logsp <- bird_data_order_df$logsp
+names(logsp) <- tree$tip.label
+barcols <- round(logsp*100)-68
+
+#barcols <- round(log1p(bird_data_fam_df$spp_no)*10)-6
+# names(barcols) <- tree$tip.label
+# ramp<-viridis(max(barcols), option = "A", direction = -1) # Define palette w species richness
+
+# Plot tree with bars
+
+plotTree.wBars(tree,
+               x= gen_length,
+               #type= 'fan',
+               tip.labels = T, fsize = .6,
+               #col = ramp[barcols],
+               col = viridis(max(barcols), option = "A")[barcols],
+               border = F,
+               width = 1)
+
+ramp<-viridis(max(barcols), option = "A")[round(log1p(1:4780)*100)-68] # Define palette w species richness
+gradientLegend(1:4780,
+               color = ramp,
+               pos = c(0,2,5,7),
+               side = 2, 
+               coords = T,
+               length = 0.15,
+               depth = 0.025,
+               n.seg = c(1000, 2000),
+               inside = T,
+               cex = 1)
+text(5,8,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
