@@ -14,14 +14,13 @@ library(rnaturalearth)
 
 # Bird data
 
-bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-LH-nsp.tif'))
-bird_ras <- terra::rast("~/Documents/Documents/ibeem/raster-gl-dh-nsp.tif") #needs update!
-bird_ras <- tt
-#bird_ras2 <- bird_ras[[c('median_gl', 'sd_gl', 
-#                         'median_dh', 'sd_dh')]]
+# bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-LH-nsp.tif'))
+# bird_ras <- terra::rast("~/Documents/Documents/ibeem/raster-gl-dh-nsp.tif") #needs update!
+bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif')) 
 
-# Mask areas with fewer than 5 species
-msk <- ifel(bird_ras[['n_sp']] < 10, NA, 1)
+# Mask areas with fewer than NSP species
+NSP <- 10
+msk <- ifel(bird_ras[['n_sp']] < NSP, NA, 1)
 bird_ras2 <- terra::mask(bird_ras, msk, 
                          inverse = FALSE)
 
@@ -85,7 +84,8 @@ ggplot() +
   scale_fill_gradient(low = "#fef0d9",
                       high = "#b30000",
                       na.value = "#FAFAFA",
-                      limits = c(0,5)) +
+                      #limits = c(0,5)) +
+                      limits = range(medgl_q)) +
   # remove X and Y labels from map   
 theme(axis.title.x = element_blank(),
       axis.title.y = element_blank())

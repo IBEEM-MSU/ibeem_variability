@@ -119,7 +119,18 @@ dd <- dplyr::select(bird_df3,
 row.names(dd) <- bird_df3$species
 
 #get estimate of Pagel's kappa to scale phylogeny
+#https://lukejharmon.github.io/pcm/chapter6_beyondbm/
 fit_ka <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "kappa")
+
+#other transformations - lambda, delta, OU, Brownian motion
+fit_la <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "lambda")
+fit_de <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "delta")
+fit_ou <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "OU")
+fit_bm <- geiger::fitContinuous(pr_tree2, dd[,'lGL'], model = "BM")
+
+aic_df <- data.frame(method = c('kappa', 'lambda', 'delta', 'ou', 'bm'),
+                     AIC = c(fit_ka$opt$aic, fit_la$opt$aic, fit_de$opt$aic, 
+                             fit_ou$opt$aic, fit_bm$opt$aic))
 
 #rescale tree
 pr_tree_k <- phytools::rescale(pr_tree, 'kappa', 
@@ -147,6 +158,13 @@ length(unique(bird_df3$Order))
 #198 families
 length(unique(bird_df3$Family))
 
+#min and max gen lengths
+min_idx <- which.min(bird_df3$lGL)
+max_idx <- which.max(bird_df3$lGL)
+bird_df3[c(min_idx, max_idx),] %>%
+  dplyr::mutate(GL = exp(lGL)) %>%
+  dplyr::select(species, GL)
+
 
 # scale/prep data ---------------------------------------------------------
 
@@ -170,6 +188,20 @@ tt <- data.frame(lMass = bird_df3$lMass *
                  precip_cv_year = bird_df3$precip_cv_year * 
                    precip_cv_year_scalar) %>%
   apply(2, function(x) scale(x, scale = FALSE)[,1])
+
+
+
+# delta -------------------------------------------------------------------
+
+median(bird_df3$temp_delta)
+sd(bird_df3$temp_delta)
+sum(abs(bird_df3$temp_delta) > 0.1) / NROW(bird_df3)
+sum(abs(bird_df3$temp_delta) > 0.3) / NROW(bird_df3)
+
+median(bird_df3$precip_delta)
+sd(bird_df3$precip_delta)
+sum(abs(bird_df3$precip_delta) > 0.1) / NROW(bird_df3)
+sum(abs(bird_df3$precip_delta) > 0.3) / NROW(bird_df3)
 
 
 # fit model ---------------------------------------------------------------
