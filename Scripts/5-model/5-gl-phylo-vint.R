@@ -410,7 +410,7 @@ pw_df2[which.max(abs(pw_df2$mean)),]
 # partial resid plots ------------------------------------------------
 
 # https://www.wikiwand.com/en/Partial_residual_plot
-pr_fun <- function(num, nm)
+pr_fun <- function(num, nm, YL = NULL)
 {
   names <- c('Mass', 'Temp seasonality', 'Temp interannual',
              'Precip seasonality', 'Precip interannual')
@@ -418,22 +418,30 @@ pr_fun <- function(num, nm)
   #partial residuals
   pr <- resid + (beta_mn[num] * DATA$X[,num])
   
+  #range(pr) #mass: -1.396803  3.419791
+  #range(pr) #temp season: -0.8076210  0.7560785
+  #range(pr) #temp year: -0.8226651  0.7304605
+  #range(pr) #precip season: -0.8224905  0.7416623
+  #range(pr) #precip year: -0.8340021  0.7514176
+  #range(c(pr2, pr5)): -0.8340021  0.7560785
+  
   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
       height = 5, width = 5)
   plot(DATA$X[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
        xlab = 'Predictor',
        ylab = 'Partial residual',
-       main = names[num])
+       main = names[num],
+       ylim = YL)
   abline(h = 0, col = 'grey', lwd = 4, lty = 2)
   abline(a = 0, b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
   dev.off()
 }
 
 pr_fun(num = 1, nm = 'mass') #Mass
-pr_fun(num = 2, nm = 'temp-season') #temp season
+pr_fun(num = 2, nm = 'temp-season', YL = c(-0.8340021, 0.7560785)) #temp season
 pr_fun(num = 3, nm = 'temp-year') #temp year
 pr_fun(num = 4, nm = 'precip-season') #precip season
-pr_fun(num = 5, nm = 'precip-year') #precip year
+pr_fun(num = 5, nm = 'precip-year', YL = c(-0.8340021, 0.7560785)) #precip year
 
 #to get specific species for plot examples
 pr_data_2 <- data.frame(species = bird_df3$species, 
