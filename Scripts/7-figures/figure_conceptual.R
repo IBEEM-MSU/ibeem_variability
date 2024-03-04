@@ -203,17 +203,12 @@ ggplot() +
 
 # load bird data
 
-bird_data <- read_csv("~/Documents/Documents/ibeem/main-bird-data-birdtree2.csv") #needs update
+dir <- '/mnt/research/ibeem/variability/'
+# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+gl_run_date <- '2023-10-17'
 
-head(bird_data)
-summary(bird_data)
-
-# Gen length min = 1.42, max = 27.87, median = 3.041
-# Temp SD season min = 0.19, max = 18.91, median = 1.49
-# Temp SD year min = 0.124, max = 1.468, median = 0.391
-
-bird <- readRDS("~/Documents/Documents/ibeem/bird-gl-phylo-vint-data-2023-10-17.rds")
-bird <- bird$pro_data
+bird <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+                            '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
 
 head(bird)
 summary(bird)
@@ -223,14 +218,6 @@ summary(bird)
 # temp_sd_season min= 0.191, max= 17.455, mean= 1.971
 
 # High inter annual, low intra annual, long gen length
-bird_data %>%
-  select(Birdtree_name, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
-  arrange(-GenLength) %>%
-  #arrange(-Modeled_max_longevity) %>%
-  filter(temp_sd_year > 0.39) %>%
-  filter(temp_sd_season < 1.49) %>%
-  print(n= 30)
-
 bird %>%
   select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
   arrange(-lGL) %>%
@@ -280,25 +267,6 @@ bird %>%
   print(n= 50)
 
 # Selasphorus platycercus (ID 9708), GenLength = 2.593, temp_sd_season = 8.40, temp_sd_year = 0.639
-# Spelaeornis formosus, GenLength = 1.82, temp_sd_season = 4.39, temp_sd_year = 0.384
-# parus venustulus GenLength = 1.63, temp_sd_season = 8.38, temp_sd_year = 0.466
-# stellula calliope (hummingbird)   GenLength = 1.95, temp_sd_season = 8.99, temp_sd_year 0.702
-
-bird_data %>% 
-  dplyr::select(ID, Birdtree_name) %>%
-  dplyr::filter(Birdtree_name == "parus venustulus")
-# ID 2712
-
-bird_data %>% 
-  dplyr::select(ID, Birdtree_name) %>%
-  dplyr::filter(Birdtree_name == "stellula calliope")
-# ID 366
-
-# Cacatua galerita GenLength = 27.2, temp_sd_season = 3.69, temp_sd_year = 0.478
-# ID 9049
-
-# Taeniopygia bichenovii GenLength = 1.42, temp_sd_season = 4.47, temp_sd_year = 0.617
-# ID 6773
 
 ### Extract species distribution ranges and environmental data ----
 
@@ -307,13 +275,6 @@ bird_data %>%
 # files are in "/Volumes/home-219/uscanga1/Documents" for now--needs update!
 
 dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp") # parrot
-#dr_2712 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-2712-breeding.shp")
-dr_366 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-366-breeding.shp") # hummingbird
-
-dr_9049 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9049-breeding.shp")
-plot(dr_9049)
-
-dr_6773 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-6773-breeding.shp")
 
 dr_9708 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9708-breeding.shp")
 
@@ -441,18 +402,6 @@ for (i in 1:length(ncfiles))
 temp_mean_sd_sp9030 <- temp_mean_sd
 write_csv(temp_mean_sd_sp9030, "temp_mean_sd_sp9030.csv")  
 
-#temp_mean_sd_sp366 <- temp_mean_sd
-#write_csv(temp_mean_sd_sp366, "temp_mean_sd_sp366.csv")  
-
-temp_mean_sd_sp9049 <- temp_mean_sd
-write_csv(temp_mean_sd_sp9049, "temp_mean_sd_sp9049.csv")  
-
-temp_mean_sd_sp9049 <- temp_mean_sd
-write_csv(temp_mean_sd_sp9049, "temp_mean_sd_sp9049.csv")
-
-temp_mean_sd_sp6773 <- temp_mean_sd
-write_csv(temp_mean_sd_sp6773, "temp_mean_sd_sp6773.csv")
-
 temp_mean_sd_sp9708 <- temp_mean_sd
 write_csv(temp_mean_sd_sp9708, "temp_mean_sd_sp9708.csv")
 
@@ -460,15 +409,10 @@ write_csv(temp_mean_sd_sp9708, "temp_mean_sd_sp9708.csv")
 
 #Read in temp_mean_sd files for both spp
 #parrot
-monthly_temp_sp9030<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9030.csv")
-#hummingbird
-monthly_temp_sp366<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp366.csv")
-# cacatua
-monthly_temp_sp9049<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9049.csv")
-# double-barred finch (Taeniopygia bichenovii)
-monthly_temp_sp6773<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp6773.csv")
+monthly_temp_sp9030<- read_csv("~/temp_mean_sd_sp9030.csv")
+
 # Broad-tailed hummingbird
-monthly_temp_sp9708<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9708.csv")
+monthly_temp_sp9708<- read_csv("~/temp_mean_sd_sp9708.csv")
 
 #pivot longer
 monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
@@ -632,8 +576,8 @@ ggplot() +
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
-           xlim = c(-130,-80),
-           ylim = c(15,45)) +
+           xlim = c(-120,-80),
+           ylim = c(15,43)) +
   theme_bw() +
   labs(y = NULL,
        x = NULL)
