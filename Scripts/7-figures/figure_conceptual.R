@@ -212,6 +212,16 @@ summary(bird_data)
 # Temp SD season min = 0.19, max = 18.91, median = 1.49
 # Temp SD year min = 0.124, max = 1.468, median = 0.391
 
+bird <- readRDS("~/Documents/Documents/ibeem/bird-gl-phylo-vint-data-2023-10-17.rds")
+bird <- bird$pro_data
+
+head(bird)
+summary(bird)
+
+# lGl min= 0.3534, max = 3.3035, mean = 1.1671
+# temp_sd_year min= 0.1247, max= 1.0807, mean= 0.3816
+# temp_sd_season min= 0.191, max= 17.455, mean= 1.971
+
 # High inter annual, low intra annual, long gen length
 bird_data %>%
   select(Birdtree_name, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
@@ -221,20 +231,18 @@ bird_data %>%
   filter(temp_sd_season < 1.49) %>%
   print(n= 30)
 
-head(bird)
 bird %>%
   select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
   arrange(-lGL) %>%
-  #arrange(-Modeled_max_longevity) %>%
   filter(temp_sd_year > 0.39) %>%
-  filter(temp_sd_season < 1.49) %>%
-  print(n= 30)
+  filter(temp_sd_season < 1.9) %>%
+  print(n = 30)
 
 # amazona ochrocephala GenLength = 16.5, temp_sd_season = 0.827, temp_sd_year = 0.403
 
-bird_data %>% 
-  dplyr::select(ID, Birdtree_name) %>%
-  dplyr::filter(Birdtree_name == "amazona ochrocephala")
+bird %>% 
+  dplyr::select(ID, species) %>%
+  dplyr::filter(species == "Amazona_ochrocephala")
 # ID 9030
 
 # High intra annual, low inter annual, short gen length
@@ -252,13 +260,27 @@ bird_data %>%
 bird %>%
   select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
   arrange(lGL) %>%
-  #arrange(-Modeled_max_longevity) %>%
+  arrange(-temp_sd_season) %>%
+  filter(lGL < 0.4) %>%
+  #filter(temp_sd_year < 0.39) %>%
+  #filter(temp_sd_season > 1.49) %>%
+  #filter(temp_sd_season > 7) %>%
+  #filter(temp_sd_year < 0.39) %>%
+  #filter(Family == "Elachuridae") %>%
+  print(n= 50)
+
+bird %>%
+  select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
+  arrange(lGL) %>%
   #filter(temp_sd_season > 1.49) %>%
   filter(temp_sd_season > 4) %>%
-  filter(temp_sd_year < 0.39) %>%
-  filter(Family == "Elachuridae") %>%
-  print(n= 30)
+  #filter(temp_sd_year < 0.39) %>%
+  #filter(Family == "Elachuridae") %>%
+  filter(Family == "Trochilidae") %>%
+  print(n= 50)
 
+# Selasphorus platycercus (ID 9708), GenLength = 2.593, temp_sd_season = 8.40, temp_sd_year = 0.639
+# Spelaeornis formosus, GenLength = 1.82, temp_sd_season = 4.39, temp_sd_year = 0.384
 # parus venustulus GenLength = 1.63, temp_sd_season = 8.38, temp_sd_year = 0.466
 # stellula calliope (hummingbird)   GenLength = 1.95, temp_sd_season = 8.99, temp_sd_year 0.702
 
@@ -293,9 +315,11 @@ plot(dr_9049)
 
 dr_6773 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-6773-breeding.shp")
 
+dr_9708 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9708-breeding.shp")
+
 # Convert polygon to SpatVector
 
-dr_current_sp <- terra::vect(dr_6773) 
+dr_current_sp <- terra::vect(dr_9708) 
 
 # Read temporal env data
 
@@ -429,6 +453,9 @@ write_csv(temp_mean_sd_sp9049, "temp_mean_sd_sp9049.csv")
 temp_mean_sd_sp6773 <- temp_mean_sd
 write_csv(temp_mean_sd_sp6773, "temp_mean_sd_sp6773.csv")
 
+temp_mean_sd_sp9708 <- temp_mean_sd
+write_csv(temp_mean_sd_sp9708, "temp_mean_sd_sp9708.csv")
+
 ### Plot time series ----
 
 #Read in temp_mean_sd files for both spp
@@ -440,9 +467,11 @@ monthly_temp_sp366<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp366.cs
 monthly_temp_sp9049<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9049.csv")
 # double-barred finch (Taeniopygia bichenovii)
 monthly_temp_sp6773<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp6773.csv")
+# Broad-tailed hummingbird
+monthly_temp_sp9708<- read_csv("~/Documents/Documents/ibeem/temp_mean_sd_sp9708.csv")
 
 #pivot longer
-monthly_temp_sp9049_long_t <- pivot_longer(monthly_temp_sp9049,
+monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
                                          cols = starts_with("mean"),
                                          names_to = "month_temp",
                                          values_to = "temp") %>% 
@@ -455,7 +484,7 @@ monthly_temp_sp9049_long_t <- pivot_longer(monthly_temp_sp9049,
   select(-month_temp, -date_ym) %>%
   relocate(temp, .after = date)
 
-monthly_temp_sp9049_long_sd <- pivot_longer(monthly_temp_sp9049,
+monthly_temp_sp9030_long_sd <- pivot_longer(monthly_temp_sp9030,
                                            cols = starts_with("sd"),
                                            names_to = "month_sd",
                                            values_to = "sd") %>% 
@@ -468,13 +497,13 @@ monthly_temp_sp9049_long_sd <- pivot_longer(monthly_temp_sp9049,
   select(-month_sd, -date_ym) %>%
   relocate(sd, .after = date)
 
-monthly_temp_sp9049_long <- monthly_temp_sp9049_long_t %>%
-  left_join(monthly_temp_sp9049_long_sd, by = c("year", "month", "date"))
+monthly_temp_sp9030_long <- monthly_temp_sp9030_long_t %>%
+  left_join(monthly_temp_sp9030_long_sd, by = c("year", "month", "date"))
 
-rm(monthly_temp_sp9049_long_sd, monthly_temp_sp9049_long_t)
+rm(monthly_temp_sp9030_long_sd, monthly_temp_sp9030_long_t)
 
 #pivot longer
-monthly_temp_sp6773_long_t <- pivot_longer(monthly_temp_sp6773,
+monthly_temp_sp9708_long_t <- pivot_longer(monthly_temp_sp9708,
                                            cols = starts_with("mean"),
                                            names_to = "month_temp",
                                            values_to = "temp") %>% 
@@ -487,7 +516,7 @@ monthly_temp_sp6773_long_t <- pivot_longer(monthly_temp_sp6773,
   select(-month_temp, -date_ym) %>%
   relocate(temp, .after = date)
 
-monthly_temp_sp6773_long_sd <- pivot_longer(monthly_temp_sp6773,
+monthly_temp_sp9708_long_sd <- pivot_longer(monthly_temp_sp9708,
                                             cols = starts_with("sd"),
                                             names_to = "month_sd",
                                             values_to = "sd") %>% 
@@ -500,14 +529,14 @@ monthly_temp_sp6773_long_sd <- pivot_longer(monthly_temp_sp6773,
   select(-month_sd, -date_ym) %>%
   relocate(sd, .after = date)
 
-monthly_temp_sp6773_long <- monthly_temp_sp6773_long_t %>%
-  left_join(monthly_temp_sp6773_long_sd, by = c("year", "month", "date"))
+monthly_temp_sp9708_long <- monthly_temp_sp9708_long_t %>%
+  left_join(monthly_temp_sp9708_long_sd, by = c("year", "month", "date"))
 
-rm(monthly_temp_sp6773_long_sd, monthly_temp_sp6773_long_t)
+rm(monthly_temp_sp9708_long_sd, monthly_temp_sp9708_long_t)
 
 # plots
 
-monthly_temp_sp9049_long %>%
+monthly_temp_sp9030_long %>%
   ggplot(aes(x = date, y = temp)) +
   #geom_point() +
   geom_line() +
@@ -520,7 +549,7 @@ monthly_temp_sp9049_long %>%
                date_labels = "%Y") +
   scale_y_continuous(limits = c(-30, 30))
 
-monthly_temp_sp6773_long %>%
+monthly_temp_sp9708_long %>%
   ggplot(aes(x = date, y = temp)) +
   #geom_point() +
   geom_line() +
@@ -534,26 +563,26 @@ monthly_temp_sp6773_long %>%
   scale_y_continuous(limits = c(-30, 30))
 
 ggplot() +
-  geom_line(aes(x = monthly_temp_sp6773_long$date,
-                y = monthly_temp_sp6773_long$temp),
+  geom_line(aes(x = monthly_temp_sp9708_long$date,
+                y = monthly_temp_sp9708_long$temp),
             color = "#bf1da1") +
-  geom_ribbon(aes(x = monthly_temp_sp6773_long$date,
-                  ymin = monthly_temp_sp6773_long$temp - monthly_temp_sp6773_long$sd,
-                  ymax = monthly_temp_sp6773_long$temp + monthly_temp_sp6773_long$sd),
+  geom_ribbon(aes(x = monthly_temp_sp9708_long$date,
+                  ymin = monthly_temp_sp9708_long$temp - monthly_temp_sp9708_long$sd,
+                  ymax = monthly_temp_sp9708_long$temp + monthly_temp_sp9708_long$sd),
               alpha = 0.2,
               fill = "#bf1da1") +
-  geom_line(aes(x = monthly_temp_sp9049_long$date,
-                y = monthly_temp_sp9049_long$temp),
+  geom_line(aes(x = monthly_temp_sp9030_long$date,
+                y = monthly_temp_sp9030_long$temp),
             color = "#1dbf76") +
-  geom_ribbon(aes(x = monthly_temp_sp9049_long$date,
-                  ymin = monthly_temp_sp9049_long$temp - monthly_temp_sp9049_long$sd,
-                  ymax = monthly_temp_sp9049_long$temp + monthly_temp_sp9049_long$sd),
+  geom_ribbon(aes(x = monthly_temp_sp9030_long$date,
+                  ymin = monthly_temp_sp9030_long$temp - monthly_temp_sp9030_long$sd,
+                  ymax = monthly_temp_sp9030_long$temp + monthly_temp_sp9030_long$sd),
               alpha = 0.2,
               fill = "#1dbf76") +
   geom_segment(aes(x = as_date(-7490),
-                   xend = as_date(-6760),
-                   y = -14,
-                   yend = -14),
+                   xend = as_date(-6541),
+                   y = -11,
+                   yend = -11),
                color = "#bf1da1",
                #fill = "black",
                linewidth = 1.5) +
@@ -566,7 +595,7 @@ ggplot() +
   theme_classic() +
   scale_x_date(date_breaks = "5 years",
                date_labels = "%Y") +
-  scale_y_continuous(limits = c(-15, 30)) +
+  scale_y_continuous(limits = c(-12, 30)) +
   labs(y = "Temperature (°C)",
        x = NULL) +
   theme(legend.text = element_text(size = 16))
@@ -597,14 +626,14 @@ ggplot() +
                fill = "grey75",
                color = "gray10",
                size = 0.1) +
-  geom_sf(data = dr_366,
+  geom_sf(data = dr_9708,
           color = "#bf1da1",
           fill = "#bf1da1",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
-           xlim = c(-140,-80),
-           ylim = c(30,60)) +
+           xlim = c(-130,-80),
+           ylim = c(15,45)) +
   theme_bw() +
   labs(y = NULL,
        x = NULL)
