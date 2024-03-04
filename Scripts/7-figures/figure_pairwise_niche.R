@@ -20,7 +20,7 @@ pw_df2 <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date,
 
 
 #plot of mean percent difference
-ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = abs(mean))) +
+p1 <- ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = abs(mean))) +
   geom_tile(color = 'black', linewidth = 0.8) +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, 
                                    size = 12, hjust = 1)) +
@@ -31,8 +31,10 @@ ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = abs(mean))) +
         panel.grid.major = element_blank(),
         panel.border = element_blank())
 
+ggsave(p1, filename = '~/Desktop/niche_gen_length.pdf')
+
 #plot of prob greater than 0 for estimate - SHOULD BE DIVERGING COLOR SCALE
-ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = Pg0)) +
+p2 <- ggplot(pw_df2, aes(niche_names.x, niche_names.y, fill = Pg0)) +
   geom_tile(color = 'black', linewidth = 0.8) +
   theme(axis.text.x = element_text(angle = 90, vjust = 1, 
                                    size = 12, hjust = 1)) +

@@ -20,16 +20,16 @@ parameters {
   real<lower=0> sigma_gamma; // mean gammas
   real<lower=0> sigma;  // process error
   real<lower=0> sigma_phylo;  // phylo sd
-  vector[N] theta;  // unscaled phylo intecepts
-  // vector[N] z;  // standardized group-level effects
+  // vector[N] theta;  // unscaled phylo intecepts
+  vector[N] z;  // standardized group-level effects
 }
 transformed parameters {
   vector[N] alpha;  // phylo intercepts (per species)
   // implies alpha ~ MVN(0, Rho) * sigma_phylo^2
-  // alpha = (sigma_phylo^2 * (LRho * z));
+  alpha = (sigma_phylo^2 * (LRho * z));
   
   // scale phylo intercepts
-  alpha = theta * sigma_phylo;
+  // alpha = theta * sigma_phylo;
 }
 model {
   // priors
@@ -38,12 +38,12 @@ model {
   sigma ~ std_normal();
   sigma_phylo ~ std_normal();
   sigma_gamma ~ std_normal();
-  // z ~ std_normal();
+  z ~ std_normal();
   
   // niche intercepts
   gamma ~ normal(0, sigma_gamma);
   // phylo intercepts (unscaled)
-  theta ~ multi_normal_cholesky(rep_vector(0, N), LRho);
+  // theta ~ multi_normal_cholesky(rep_vector(0, N), LRho);
   
   // optimized call for glm
   Y ~ normal_id_glm(X, kappa + gamma[niche_idx] + alpha, beta, sigma);
