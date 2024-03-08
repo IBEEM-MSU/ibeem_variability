@@ -142,17 +142,17 @@ barcols <- round(logsp*100)-68
 plotTree.wBars(tree,
                x= gen_length,
                type= 'fan',
-               tip.labels = F, #fsize = .4,
+               tip.labels = F, fsize = .4,
                #col = ramp[barcols],
                col = viridis(max(barcols), option = "A")[barcols],
                border = F,
                width = 3,
-               scale = 5)
+               scale = 3)
 
 ramp<-viridis(max(barcols), option = "A")[round(log1p(1:315)*100)-68] # Define palette w species richness
 gradientLegend(1:315,
                color = ramp,
-               pos = c(-200,90,-180,140),
+               pos = c(-210,70,-190,120),
                side = 2, 
                coords = T,
                length = 0.15,
@@ -160,7 +160,7 @@ gradientLegend(1:315,
                n.seg = c(100, 200),
                inside = T,
                cex = 1)
-text(-190,150,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
+text(-200,130,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
 
 ###################
 # Tree by order
@@ -238,7 +238,7 @@ barcols <- round(logsp*100)-68
 
 plotTree.wBars(tree,
                x= gen_length,
-               #type= 'fan',
+               type= 'fan',
                tip.labels = T, fsize = .6,
                #col = ramp[barcols],
                col = viridis(max(barcols), option = "A")[barcols],
@@ -257,3 +257,6 @@ gradientLegend(1:4780,
                inside = T,
                cex = 1)
 text(5,8,'# Species',adj=0.5,pos=3,offset=.5,cex=1.5)
+
+
+
