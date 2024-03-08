@@ -8,7 +8,6 @@ rm(list = ls())
 # load packages ------------------------------------------------------------
 
 library(tidyverse)
-library(rredlist)
 
 
 # Specify directories -----------------------------------------------------
@@ -62,25 +61,8 @@ avonet.dat1 <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
 avonet.dat2 <- dplyr::group_by(avonet.dat1, ID) %>%
   # Get means of continuous variables and the unique categorical variable for those
   # BirdTree species that are split into multiple BirdLife species.
-  dplyr::summarize(Beak.Length_Culmen = mean(Beak.Length_Culmen),
-		   Beak.Length_Nares = mean(Beak.Length_Nares),
-		   Beak.Width = mean(Beak.Width),
-		   Beak.Depth = mean(Beak.Depth),
-		   Tarsus.Length = mean(Tarsus.Length),
-		   Wing.Length = mean(Wing.Length),
-		   Kipps.Distance = mean(Kipps.Distance),
-		   Secondary1 = mean(Secondary1),
-		   Hand.Wing.Index = mean(Hand.Wing.Index),
-		   Tail.Length = mean(Tail.Length),
-		   Mass = mean(Mass),
-		   Habitat = unique(Habitat),
-		   Habitat.Density = unique(Habitat.Density),
-		   Migration = unique(Migration),
-		   Trophic.Level = unique(Trophic.Level),
-		   Trophic.Niche = unique(Trophic.Niche),
-		   Primary.Lifestyle = unique(Primary.Lifestyle),
-		   Min.Latitude = min(Min.Latitude),
-		   Max.Latitude = max(Max.Latitude)) %>%
+  dplyr::summarize(Migration = unique(Migration),
+		   Trophic.Niche = unique(Trophic.Niche)) %>%
   dplyr::ungroup() %>%
   #first Family/Order of each ID group (should be the same across all sp ID)
   dplyr::left_join(dplyr::select(avonet.dat1, ID, Avonet_name, Birdtree_name,
@@ -94,34 +76,11 @@ avonet.dat2 <- dplyr::group_by(avonet.dat1, ID) %>%
 gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv')) %>%
   dplyr::filter(!is.na(birdtreeID)) %>%
   dplyr::select(birdtreeID, 
-                GenLength,
-                Measured_clutch_size,
-                Measured_survival,
-                Measured_age_first_breeding,
-                Measured_max_longevity,
-                Modeled_survival,
-                Modeled_age_first_breeding,
-                Modeled_max_longevity) %>%
-  #correct for incorrect scaling in data
-  dplyr::mutate(Measured_survival = Measured_survival * 0.01) %>%
+                GenLength) %>%
   dplyr::rename(ID = birdtreeID) %>%
   #average genlength across dups
   dplyr::group_by(ID) %>%
-  dplyr::summarize(GenLength = mean(GenLength),
-                   Measured_clutch_size = mean(Measured_clutch_size, 
-                                            na.rm = TRUE),
-                   Measured_survival = mean(Measured_survival, 
-                                            na.rm = TRUE),
-                   Measured_age_first_breeding = mean(Measured_age_first_breeding, 
-                                                      na.rm = TRUE),
-                   Measured_max_longevity = mean(Measured_max_longevity, 
-                                                 na.rm = TRUE),
-                   Modeled_survival = mean(Modeled_survival, 
-                                           na.rm = TRUE),
-                   Modeled_age_first_breeding = mean(Modeled_age_first_breeding, 
-                                                     na.rm = TRUE),
-                   Modeled_max_longevity = mean(Modeled_max_longevity, 
-                                                na.rm = TRUE)) %>%
+  dplyr::summarize(GenLength = mean(GenLength)) %>%
   dplyr::ungroup()
 
 
@@ -147,21 +106,6 @@ main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
 #   dplyr::select(Accepted_name, ID, 
 #                 GenLength, temp_mean, Migration)
 
-
-# Get IUCN status ---------------------------------------------------------
-# Note this takes a while (6h), since IUCN requires a 2 second delay between 
-# calls when using the same API key, so can't really do any parallelization...
-main.dat$iucn <- NA
-for (i in 1:nrow(main.dat)) {
-  print(paste0("Currently on row ", i, " out of ", nrow(main.dat)))
-  try({
-    tmp <- rredlist::rl_search(main.dat$Avonet_name[i],
-                               key = IUCN_api_key)
-    main.dat$iucn[i] <- tmp$result$category
-  })
-  # Need two second delay to avoid getting API key shut down
-  Sys.sleep(2)	
-}
 
 # write to file
 write.csv(main.dat, file = paste0(dir, 'data/L3/main-bird-data-birdtree2.csv'),

@@ -30,16 +30,10 @@ or_excl <- c('Sphenisciformes', #penguins
              'Suliformes', #gannets/boobies
              'Phaethontiformes', #tropicbirds
              'Charadriiformes')#, #skuas, gulls, terns, skimmers, auks
-#'Anseriformes', #waterfowl
-#'Ciconiiformes', #storks
-#'Gaviiformes', #aquatic birds (loons and divers)
-#'Gruiformes', #cranes, rails - Family Psophiidae are not waterbirds, but there are few members (~6 species)
-#'Phoenicopteriformes', #flamingos and relatives
-#'Podicipediformes') #grebes
 
 # #exclude Sicalis auriventris - outlier precip_cv_season
 # s_auriventris <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
-#   dplyr::filter(Migration == 1, precip_cv_season > 2.5) %>%
+#   dplyr::filter(Migration == 1, precip_cv_season >= 2.5) %>%
 #   dplyr::select(precip_cv_season)
 # 
 # all_precip_cv_season <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
@@ -165,6 +159,10 @@ bird_df3[c(min_idx, max_idx),] %>%
   dplyr::mutate(GL = exp(lGL)) %>%
   dplyr::select(species, GL)
 
+#IQR
+qs <- quantile(exp(bird_df3$lGL), probs = c(0.25, 0.5, 0.75))
+iqr <- qs[3] - qs[1]
+
 
 # scale/prep data ---------------------------------------------------------
 
@@ -194,12 +192,14 @@ tt <- data.frame(lMass = bird_df3$lMass *
 # delta -------------------------------------------------------------------
 
 median(bird_df3$temp_delta)
-sd(bird_df3$temp_delta)
+t_delta_qs <- quantile(bird_df3$temp_delta, probs = c(0.25, 0.5, 0.75))
+t_delta_iqr <- t_delta_qs[3] - t_delta_qs[1]
 sum(abs(bird_df3$temp_delta) > 0.1) / NROW(bird_df3)
 sum(abs(bird_df3$temp_delta) > 0.3) / NROW(bird_df3)
 
 median(bird_df3$precip_delta)
-sd(bird_df3$precip_delta)
+p_delta_qs <- quantile(bird_df3$precip_delta, probs = c(0.25, 0.5, 0.75))
+p_delta_iqr <- p_delta_qs[3] - p_delta_qs[1]
 sum(abs(bird_df3$precip_delta) > 0.1) / NROW(bird_df3)
 sum(abs(bird_df3$precip_delta) > 0.3) / NROW(bird_df3)
 
@@ -315,6 +315,16 @@ beta5_ch <- MCMCvis::MCMCchains(fit, params = 'beta[5]',
                                 exact = TRUE, ISB = FALSE) * 
   precip_cv_year_scalar / y_scalar
 
+beta_mn_sc <- apply(cbind(beta1_ch, beta2_ch, beta3_ch, beta4_ch, beta5_ch), 2, mean)
+DATA_X_sc <- DATA$X
+DATA_X_sc[,] <- NA
+DATA_X_sc[,1] <- DATA$X[,1] / lMass_scalar
+DATA_X_sc[,2] <- DATA$X[,2] / temp_sd_season_scalar
+DATA_X_sc[,3] <- DATA$X[,3] / temp_sd_year_scalar
+DATA_X_sc[,4] <- DATA$X[,4] / precip_cv_season_scalar
+DATA_X_sc[,5] <- DATA$X[,5] / precip_cv_year_scalar
+
+
 #scaling cov to measured scale bc transformed param est
 #% change in LH trait for 1 sd change in covariate
 beta1_rs_ch <- (exp(beta1_ch * sd(tt[,1] / lMass_scalar)) - 1) * 100
@@ -416,40 +426,32 @@ pr_fun <- function(num, nm, YL = NULL)
              'Precip seasonality', 'Precip interannual')
   
   #partial residuals
-  pr <- resid + (beta_mn[num] * DATA$X[,num])
+  pr <- (resid / y_scalar) + (beta_mn_sc[num] * DATA_X_sc[,num])
   
-  #range(pr) #mass: -1.396803  3.419791
-  #range(pr) #temp season: -0.8076210  0.7560785
-  #range(pr) #temp year: -0.8226651  0.7304605
-  #range(pr) #precip season: -0.8224905  0.7416623
-  #range(pr) #precip year: -0.8340021  0.7514176
-  #range(c(pr2, pr5)): -0.8340021  0.7560785
+  #range(pr) #mass: -0.698  1.710
+  #range(pr) #temp season: -0.0438  0.3780
+  #range(pr) #temp year: -0.4113  0.3652
+  #range(pr) #precip season: -0.4112  0.3708
+  #range(pr) #precip year: -0.4170  0.3757
+  #range(c(pr2, pr5)): -0.4170  0.3780
   
   pdf(paste0(fig_dir, nm, '-pr-', run_date, '.pdf'),
       height = 5, width = 5)
-  plot(DATA$X[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
+  plot(DATA_X_sc[,num], pr, col = rgb(0,0,0,0.2), pch = 19,
        xlab = 'Predictor',
        ylab = 'Partial residual',
        main = names[num],
        ylim = YL)
   abline(h = 0, col = 'grey', lwd = 4, lty = 2)
-  abline(a = 0, b = beta_mn[num], col = rgb(1,0,0,0.5), lwd = 4)
+  abline(a = 0, b = beta_mn_sc[num], col = rgb(1,0,0,0.5), lwd = 4)
   dev.off()
 }
 
 pr_fun(num = 1, nm = 'mass') #Mass
-pr_fun(num = 2, nm = 'temp-season', YL = c(-0.8340021, 0.7560785)) #temp season
+pr_fun(num = 2, nm = 'temp-season', YL = c(-0.4170, 0.3780)) #temp season
 pr_fun(num = 3, nm = 'temp-year') #temp year
 pr_fun(num = 4, nm = 'precip-season') #precip season
-pr_fun(num = 5, nm = 'precip-year', YL = c(-0.8340021, 0.7560785)) #precip year
-
-#to get specific species for plot examples
-pr_data_2 <- data.frame(species = bird_df3$species, 
-                      var = DATA$X[,2], 
-                      pr = resid + (beta_mn[2] * DATA$X[,2]))
-dplyr::filter(pr_data_2, 
-              var > 2.5,
-              pr < 0.25)
+pr_fun(num = 5, nm = 'precip-year', YL = c(-0.4170, 0.3780)) #precip year
 
 
 # cat plots ---------------------------------------------------------------
@@ -469,14 +471,14 @@ dev.off()
 
 pdf(paste0(fig_dir, 'param-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
-MCMCvis::MCMCplot(cbind(beta2_rs_ch,
-                        beta3_rs_ch,
-                        beta4_rs_ch,
-                        beta5_rs_ch),
-                  labels = c('T seasonality',
-                             'T interannual var',
-                             'P seasonality',
-                             'P interannual var'),
+MCMCvis::MCMCplot(cbind(beta3_rs_ch,
+                        beta2_rs_ch,
+                        beta5_rs_ch,
+                        beta4_rs_ch),
+                  labels = c('T interannual var',
+                             'T seasonality',
+                             'P interannual var',
+                             'P seasonality'),
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
@@ -490,6 +492,7 @@ pdf(paste0(fig_dir, 'gamma-cat-rs-', run_date, '.pdf'),
     height = 5, width = 5)
 MCMCvis::MCMCplot(gamma_rs_ch,
                   labels = niche_names,
+                  rank = TRUE,
                   sz_labels = 1.5,
                   ci = c(89, 89),
                   sz_thick = 3,
@@ -531,10 +534,10 @@ for (i in 1:length(sidx))
 }
 
 pdf(paste0(fig_dir, 'PPC-', run_date, '.pdf'), height = 5, width = 5)
-plot(density(DATA$Y), col = 'black', lwd = 3, ylim = c(0, 1))#, xlim = c(0, 3.5))
+plot(density(DATA$Y / y_scalar), col = 'black', lwd = 3, ylim = c(0, 1.5))#, xlim = c(0, 3.5))
 for (i in 1:500)
 {
-  lines(density(y_rep[i,]), col = rgb(1,0,0,0.05))
+  lines(density(y_rep[i,] / y_scalar), col = rgb(1,0,0,0.05))
 }
 dev.off()
 
