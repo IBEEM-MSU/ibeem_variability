@@ -33,10 +33,6 @@ env_out <- read.csv(args[1])
 #-mean
 #-slope over time (and se)
 #-variance (or sd) of residuals (i.e., variability of detrended time series)
-#-kurtosis (i.e., heavy-tailed ness - or model time series using t-distribution and estimate degrees of freedom parameter)
-#-skew (i.e., skew of residuals)
-#-spectral exponent ('color' of noise)
-#-temporal autocorrelation (of residuals - see Leung et al. 2020 Eco Letters for use of this metric for 'predictability')
 
 #add unique cell id
 #convert to data table (much faster)
@@ -95,8 +91,6 @@ for (i in 1:length(uci))
                                                mean(te$season_precip))
   env_df$cv_season[counter:(counter + 1)] <- c(mean(te$season_temp) / mean(te$mean_temp), 
                                                mean(te$season_precip) / mean(te$mean_precip))
-  env_df$rng_season[counter:(counter + 1)] <- c(mean(te$rng_season_temp), 
-                                                     mean(te$rng_season_precip))
   
   counter <- counter + 2
 }

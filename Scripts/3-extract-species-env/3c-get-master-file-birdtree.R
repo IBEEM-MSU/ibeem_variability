@@ -91,20 +91,10 @@ main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
                              by = 'ID') %>%
   dplyr::full_join(climate.df, by = 'ID') %>%
   # add CV for precip and dhi over species range (spatial CV)
-  dplyr::mutate(precip_cv_space = precip_sd_space / precip_mean,
-                dhi_cum_cv_space = dhi_cum_sd_space / dhi_cum_mean) %>%
+  dplyr::mutate(precip_cv_space = precip_sd_space / precip_mean) %>%
   # must have at least mean temp, gen length, and Migration
   dplyr::filter(!is.na(temp_mean), !is.na(GenLength), !is.na(Migration)) %>%
-  dplyr::relocate(precip_cv_space, .after = precip_sd_space) %>%
-  dplyr::relocate(dhi_cum_cv_space, .after = dhi_cum_sd_space) #%>%
-  # dplyr::filter(!is.na(range_size_km2))
-
-
-# dplyr::filter(main.dat, is.na(GenLength) | 
-#                 is.na(temp_mean) | 
-#                 is.na(Migration)) %>%
-#   dplyr::select(Accepted_name, ID, 
-#                 GenLength, temp_mean, Migration)
+  dplyr::relocate(precip_cv_space, .after = precip_sd_space)
 
 
 # write to file

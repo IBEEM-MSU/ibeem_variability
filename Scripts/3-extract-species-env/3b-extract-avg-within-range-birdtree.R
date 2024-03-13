@@ -38,20 +38,19 @@ env.dat <- read.csv(paste0(dir, 'data/L2/climate/era5/Env-main.csv')) %>%
 #rasterize env data for extraction (so ensure that ranges that don't intersect cell centers are captured)
 env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
-                               grep('precip', colnames(env.dat), value = TRUE),
-                              grep('dhi', colnames(env.dat), value = TRUE)) %>%
+                               grep('precip', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
 
-#just mean temp precip, and cum DHI for each cell
-tpd.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean', 'dhi_cum_mean')]]
+#just mean temp, precip for each cell
+tpd.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
 
 
 # Loop through all the species in the current file ------------------------
 
 # Make data frame to hold everything
 cn <- c('ID', names(env.dat.rast), 
-        'temp_rng_space', 'precip_rng_space', 'dhi_cum_rng_space',
-        'temp_sd_space', 'precip_sd_space', 'dhi_cum_sd_space',
+        'temp_rng_space', 'precip_rng_space',
+        'temp_sd_space', 'precip_sd_space',
         'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
