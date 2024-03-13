@@ -3,8 +3,10 @@
 .RData
 .Ruserdata
 *.proj
-data/
-Results/
+data
+Results
 XX*
-Resources/
+Resources
 *.pdf
+Scripts/X-explore
+*Archive
