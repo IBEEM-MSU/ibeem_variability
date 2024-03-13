@@ -79,13 +79,3 @@ TBD
     * `raster-gl-dT-dP-nsp.tif` - raster of median and sd of gen length and delta haldane (relative temp change), as well as number of species in each cell (5 layers)
     * `bird-phylo-cor-matrix.rda` - bird phylogenetic correlation matrix
     * `bird-consensus-tree.rda` - bird consensus tree
-
-
-## Data sources:
-* [ERA5 reanalysis data (temp and precipitation)](https://rda.ucar.edu/datasets/ds633.1/)
-* [Bird Life International range maps](http://datazone.birdlife.org/species/requestdis)
-* [IUCN mammal range amps](https://www.iucnredlist.org/resources/spatial-data-download)
-* [Bird et al. 2020 *Conservation Biology* bird generation time](https://conbio.onlinelibrary.wiley.com/doi/10.1111/cobi.13486)
-* [Elton Traits (Wilman et al. 2014) for birds and mammals](https://esajournals.onlinelibrary.wiley.com/doi/10.1890/13-1917.1)
-* [AVONET (Tobias et al. 2022) for birds](https://onlinelibrary.wiley.com/doi/full/10.1111/ele.13898)
-* [Cooney et al. 2020 for birds](https://www.nature.com/articles/s41467-020-16257-x)
