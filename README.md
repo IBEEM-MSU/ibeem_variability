@@ -34,8 +34,7 @@ TBD
     * `1d-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
-    * `2c-DHI.R` - process DHI data
-    * `2d-env-merge.R` - merge env metrics
+    * `2b-env-merge.R` - merge env metrics
   * `3-extract-species-env/` - extract env var data from species range
     * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
@@ -54,12 +53,7 @@ TBD
     * `6a-raster.sbatch` - bash script to load one piece of data and run `6a-create-rasters.R` on HPCC
     * `6b-stack-rasters.R` - script to stack rasters and produce main .tif
   * `7-figures` - figures
-  * `X-explore/`
-    * `X-explore-bird.R` - exploratory analyses birds
-    * `X-explore-mammal.R` - exploratory analyses mammals
-    * `X-explore-env-var.R` - explore environmental variability
   * `Model_files` - Stan model files
-* `Archive/` - unused scripts  
 * `Data/` (ignored)
   * `L0/` - raw data
     * `DHI/` - Dynamic Habitat Index data
