@@ -13,13 +13,13 @@
 # range_map_data_dir <- '~/Downloads/BOTW_2022_2/'
 # life_history_dir <- '~/Downloads/'
 # paths on HPCC
-range_map_data_dir <- '/mnt/research/ibeem/variability/data/L0/ranges/'
-life_history_dir <- '/mnt/research/ibeem/variability/data/L0/trait/'
-avonet_dir <- '/mnt/research/ibeem/variability/data/L0/trait/'
+range_map_data_dir <- paste0(dir, 'data/L0/ranges/')
+life_history_dir <- paste0(dir, 'data/L0/trait/')
+avonet_dir <- paste0(dir, 'data/L0/trait/')
 
 #directory to save out intermediate file
 # out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
-out_dir <- '/mnt/research/ibeem/variability/data/L1/'
+out_dir <- paste0(dir, 'data/L1/')
 
 
 # load packages -----------------------------------------------------------

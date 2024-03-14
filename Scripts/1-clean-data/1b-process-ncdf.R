@@ -6,8 +6,6 @@
 # DATE:             May 2023 
 # OVERVIEW:         Convert netcdf ERA data into df, yearly averages for specified months, and sd across specified months (seasonality)
 
-
-
 ################
 # args:
 # - in dir
