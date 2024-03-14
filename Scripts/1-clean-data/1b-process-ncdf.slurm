@@ -5,7 +5,7 @@
 #SBATCH -c 4 #cpus
 #SBATCH --time=3:59:00
 #SBATCH --mail-type=FAIL,END
-#SBATCH --mail-user=ccy@msu.edu
+#SBATCH --mail-user=kapsarke@msu.edu
 #SBATCH --mem=400G #memory requested
 #SBATCH --constraint=amd22
 #SBATCH --output=%x-%j.SLURMout
@@ -18,7 +18,4 @@ module load GCC/8.3.0
 module load OpenMPI/3.1.4
 module load R/4.1.0
 
-#manually specify R lib
-export R_LIBS=/mnt/home/ccy/R/x86_64-pc-linux-gnu-library/4.1
-
-Rscript /mnt/home/ccy/variability/Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12
+Rscript ./Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12
