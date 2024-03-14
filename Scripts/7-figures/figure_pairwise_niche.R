@@ -1,7 +1,10 @@
-####################
-# Figure SX - pairwise niche figs
-####################
-
+# TITLE:            Figure S2: Pairwise niche figure   
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:        
+# DATA OUTPUT:      
+# DATE:             January 2024 
+# OVERVIEW:         
 
 # specify dir -------------------------------------------------------------
 

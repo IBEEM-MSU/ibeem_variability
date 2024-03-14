@@ -1,7 +1,10 @@
-# 3c-get-master-file-birdtree.R: script to generate a single master file where each 
-#                                row is a species and the columns contain the traits, 
-#                                and climate variables. This file generates the 
-#                                file using the birdtree taxonomy. 
+# TITLE:            Generate master data file 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Combine environmental 
+# DATA OUTPUT:      Master bird ID list (rda), species-climate data from 3b, trait data (Bird et al. and AVONET) from 1d
+# DATE:             September 2023 
+# OVERVIEW:         Script to generate a single master file where each row is a species and the columns contain the traits, and climate variables. This file generates the file using the birdtree taxonomy
 
 rm(list = ls())
 

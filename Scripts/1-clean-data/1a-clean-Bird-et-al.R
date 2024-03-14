@@ -1,7 +1,10 @@
-################
-# Combine/clean bird gen time from Bird et al. 2020 Conservation Biology
-#
-################
+# TITLE:            Clean Bird et al. data 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Excel tables with bird gen time from Bird et al. 2020 Conservation Biology
+# DATA OUTPUT:      Clean csv with bird generation length data 
+# DATE:             May 2023 
+# OVERVIEW:         Combine/clean bird gen time data 
 
 
 # specify dir -------------------------------------------------------------

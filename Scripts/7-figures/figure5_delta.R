@@ -1,6 +1,10 @@
-#----------------------------------------#
-# Delta Metrics (histograms and maps) ----
-#----------------------------------------#
+# TITLE:            Figure 5: Histograms and maps of dT and dP   
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Model output (5), raster stack (6) 
+# DATA OUTPUT:      Histograms and maps of dT and dP used in figure 5
+# DATE:             January 2024 
+# OVERVIEW:         Individual sub-plots were aggregated in Adobe 
 
 # specify dir -------------------------------------------------------------
 

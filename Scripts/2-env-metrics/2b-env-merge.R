@@ -1,8 +1,10 @@
-################
-# Mask out land and everything below 60 S lat for env var data and calc PCA
-#
-################
-
+# TITLE:            Final environmental data tidying
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Environmental data CSV from 2a, land mask 
+# DATA OUTPUT:      Final environmental data csv 
+# DATE:             August 2023 
+# OVERVIEW:         Mask out land and everything below 60 S lat for env var data 
 
 # Specify dir --------------------------------------------------
 

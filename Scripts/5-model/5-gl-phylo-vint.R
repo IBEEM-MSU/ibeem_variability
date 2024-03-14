@@ -1,6 +1,10 @@
-####################
-# Fit Bayes model - gl ~ env + phylo + vint
-####################
+# TITLE:            Fit bayesian model 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Bird consensus tree (4b), 
+# DATA OUTPUT:      Model output summary and figures (caterpillar plots, partial residual plots, etc.)
+# DATE:             October 2023 
+# OVERVIEW:         Fits bayesian model to data (gl ~ env + phylo + vint)
 
 
 # specify dir -------------------------------------------------------------

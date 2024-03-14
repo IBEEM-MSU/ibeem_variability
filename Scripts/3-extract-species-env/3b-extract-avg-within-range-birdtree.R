@@ -1,4 +1,10 @@
-# 3b: extract env metrics across species ranges
+# TITLE:            Extract environmental data for bird ranges
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Range shapefiles from from script 1d, Env variability from 2b
+# DATA OUTPUT:      CSV files containint environmental variables across bird ranges for subsets of species 
+# DATE:             September 2023 
+# OVERVIEW:         Extract environmental data for bird ranges for subsets of species 
 
 rm(list = ls())
 

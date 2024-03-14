@@ -1,10 +1,10 @@
-################
-# Resolve differences in species names and combine bird dataset:
-# - range maps
-# - generation time
-# - other traits
-# - phylogeny
-################
+# TITLE:            Harmonize bird taxonomy across data sets 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Range data (BirdLife International), generation length (Bird et al. 2020), life history (AVONET), and phylogeny (BirdTree)
+# DATA OUTPUT:      Shapefiles with bird ranges, and csv of corresponding IDs, bird trait data with IDs
+# DATE:             May 2023 
+# OVERVIEW:         Resolve differences in species names and combine bird dataset: range maps, generation time, other traits, phylogeny
 
 
 # specify dir -------------------------------------------------------------

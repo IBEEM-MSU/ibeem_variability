@@ -1,10 +1,16 @@
+# TITLE:            Calculate environmental variability metrics 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Environmental data csv from script 1b
+# DATA OUTPUT:      CSV with summary environmental metrics across all years
+# DATE:             May 2023 
+# OVERVIEW:         Summarize environmental variability within and between years for temperature and precipitation data. 
+
+
 ################
-# Calc env variability metrics
-#
 # args:
 # - in file
 # - out file
-#
 ################
 
 # get args fed to script --------------------------------------------------

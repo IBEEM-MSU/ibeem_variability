@@ -1,6 +1,13 @@
-# 6b-get-cor-matrix.R: script to calculate the final consensus tree
-#                      and extract a correlation matrix from it. 
+# TITLE:            Generate correlation matrix for bird phylogeny 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Partial phylogenetic trees for bird taxonomy from 4a
+# DATA OUTPUT:      Correlation matrix (rda) for full bird phylogeny
+# DATE:             October 2023 
+# OVERVIEW:         Script to calculate the final consensus tree and extract a correlation matrix from it. 
+
 rm(list = ls())
+
 library(ape)
 library(tidyverse)
 library(phytools)

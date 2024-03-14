@@ -1,6 +1,11 @@
-#---------------------------------#
-# Figure 1. Conceptual figure ----
-#---------------------------------#
+# TITLE:            Figure 1: Conceptual figure  
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Env data (2b), model output (5), ranges shpfiles for example spp
+# DATA OUTPUT:      Mean temp/precip for example spp (CSV), sub-plots for Figure 1
+# DATE:             January 2024 
+# OVERVIEW:         Individual sub-plots were aggregated in Adobe 
+
 
 ## Environmental variability map ----
 

@@ -1,6 +1,11 @@
-#----------------------------#
-# Pace of life map
-#----------------------------#
+# TITLE:            Figure 4: Pace of Life Map  
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Master bird/env raster (6b)
+# DATA OUTPUT:      
+# DATE:             January 2024 
+# NOTES:            
+
 
 ### Load packages ----
 

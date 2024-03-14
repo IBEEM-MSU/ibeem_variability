@@ -1,8 +1,11 @@
-# 6a-bird-get-con-tree-pieces.R: this script calculates a consensus tree
-#                                individually for 100 trees, then saves each 
-#                                of the resulting 10 consensus trees. The 
-#                                script does this one at a time for each piece,
-#                                as each calculation can take a good chunk of RAM.
+# TITLE:            Generate consensus tree for bird phylogeny 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Phylogenetic data from BirdTree
+# DATA OUTPUT:      Partial phylogenetic trees for bird taxonomy
+# DATE:             October 2023 
+# OVERVIEW:         This script calculates a consensus tree individually for 100 trees, then saves each of the resulting 10 consensus trees. The script does this one at a time for each piece,as each calculation can take a good chunk of RAM.
+
 rm(list = ls())
 library(ape)
 library(tidyverse)

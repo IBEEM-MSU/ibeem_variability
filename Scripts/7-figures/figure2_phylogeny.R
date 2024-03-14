@@ -1,8 +1,10 @@
-#---------------------------------#
-# Figure X. Phylogenetic tree ----
-#---------------------------------#
-
-# Code based on Monte Neate-Clegg (2023-10-30) - Neate-Clegg et al. 2023 Current Biology Fig. 2
+# TITLE:            Figure 2: Phylogeny  
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Bird consensus tree (4b),model output (5) 
+# DATA OUTPUT:      Bird phylogeny figure (labels by order)
+# DATE:             January 2024 
+# OVERVIEW:         Individual sub-plots were aggregated in Adobe Code based on Monte Neate-Clegg (2023-10-30) - Neate-Clegg et al. 2023 Current Biology Fig. 2. 
 
 ### Load packages ----
 

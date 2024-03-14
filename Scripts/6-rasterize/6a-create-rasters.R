@@ -1,11 +1,10 @@
-#############################
-# Create rasterized range maps for birds
-#
-# Rasters for: 
-# - Gl (gen length)
-# - delta T
-# - delta P
-#############################
+# TITLE:            Create rasterized range maps for individual species 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Bird breeding ranges (1d), env data (2b), model output (5)
+# DATA OUTPUT:      Rasterized maps of variables across bird ranges
+# DATE:             October 2023 
+# OVERVIEW:         Creates rasters for generation length, delta T, and delta P for each bird species
 
 
 # load packages -----------------------------------------------------------

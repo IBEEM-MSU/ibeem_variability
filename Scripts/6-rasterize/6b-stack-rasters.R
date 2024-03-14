@@ -1,8 +1,10 @@
-#############################
-# Stack rasters
-#
-#############################
-
+# TITLE:            Create raster stack  
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       Bird breeding range rasters (6a), env data (2b), model output (5)
+# DATA OUTPUT:      Raster stack with summarized gl, dT, and dP values
+# DATE:             October 2023 
+# OVERVIEW:         Creates raster stack with mean, median, and sd of generation length, delta T, and delta P across all species.
 
 # load packages -----------------------------------------------------------
 

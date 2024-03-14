@@ -1,6 +1,14 @@
+# TITLE:            Process netcdf data 
+# PROJECT:          IBEEM Environmental Variability and Life History
+# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# DATA INPUT:       NetCDF temperature and precipitation data from ERA5 
+# DATA OUTPUT:      CSV with average temp and precip over specified months for all years
+# DATE:             May 2023 
+# OVERVIEW:         Convert netcdf ERA data into df, yearly averages for specified months, and sd across specified months (seasonality)
+
+
+
 ################
-# Convert netcdf ERA data into df, yearly averages for specified months, and sd across specified months (seasonality)
-#
 # args:
 # - in dir
 # - out dir
