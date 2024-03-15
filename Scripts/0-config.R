@@ -5,4 +5,4 @@
 # OVERVIEW:         File to specify environmental variables used across multiple scripts (e.g., dir). This file will be sourced in each code file to avoid the necessity of repeatedly specifying directories, dates, etc. 
 
 # Specify data directory 
-dir='/mnt/research/ibeem/variability/'
+dir='/mnt/research/ibeem/variability_testing/'
