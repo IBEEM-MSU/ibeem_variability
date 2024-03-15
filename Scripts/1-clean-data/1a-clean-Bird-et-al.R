@@ -9,7 +9,7 @@
 
 # load environmental variables ------------------------------------------------
 
-source("0-config.R")
+source("./Scripts/0-config.R")
 
 # load packages -----------------------------------------------------------
 
