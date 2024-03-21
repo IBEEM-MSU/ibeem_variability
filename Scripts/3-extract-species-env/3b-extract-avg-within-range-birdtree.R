@@ -18,7 +18,6 @@ library(terra)
 # Specify top-level directory -------------------------------------------------------
 
 dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 
 
 # Get the current file to process -----------------------------------------
@@ -46,9 +45,16 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
                                grep('precip', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
-
+names(env.dat.rast)
 #just mean temp, precip for each cell
 tpd.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
+
+
+# summarize ---------------------------------------------------------------
+
+env.dat.rast[[c('temp_sd_year', 'temp_sd_season',
+             'precip_cv_year', 'precip_cv_season')]] %>%
+  terra::global(median, na.rm = TRUE)
 
 
 # Loop through all the species in the current file ------------------------
