@@ -1,6 +1,6 @@
 # TITLE:            Generate correlation matrix for bird phylogeny 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Partial phylogenetic trees for bird taxonomy from 4a
 # DATA OUTPUT:      Correlation matrix (rda) for full bird phylogeny
 # DATE:             October 2023 

@@ -1,6 +1,6 @@
 # TITLE:            Extract environmental data for bird ranges
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Range shapefiles from from script 1d, Env variability from 2b
 # DATA OUTPUT:      CSV files containint environmental variables across bird ranges for subsets of species 
 # DATE:             September 2023 

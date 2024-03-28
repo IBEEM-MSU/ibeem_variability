@@ -1,6 +1,6 @@
 # TITLE:            Harmonize bird taxonomy across data sets 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Range data (BirdLife International), generation length (Bird et al. 2020), life history (AVONET), and phylogeny (BirdTree)
 # DATA OUTPUT:      Shapefiles with bird ranges, and csv of corresponding IDs, bird trait data with IDs
 # DATE:             May 2023 
