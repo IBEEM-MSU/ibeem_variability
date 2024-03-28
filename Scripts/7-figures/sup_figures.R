@@ -49,7 +49,7 @@ del_df <- terra::as.data.frame(del_ras_proj, xy = T, cells = F, na.rm = T)
 head(del_df)
 
 # Calculate quantiles for color scale
-gl_q <- quantile(log(del_df$mean_gl), seq(0, 1, by = 0.05))
+gl_q <- quantile(log(del_df$median_gl), seq(0, 1, by = 0.05))
 n_sp_q <- quantile(del_df$n_sp, seq(0, 1, by = 0.05))
 
 # Base map with ggplot 
@@ -67,20 +67,38 @@ base <- ggplot() +
   theme_minimal()
 
 
-# Gen Length
+# Gen Length with viridis
 base + geom_tile(data = del_df,
                  aes(x = x,
                      y = y,
-                     fill = log(mean_gl))) +
-  scale_fill_gradient(name = "Log Gen Length",
-                      low = "#f7fbff",
-                      high = "#08519c",
-                      na.value = "#FAFAFA",
-                      limits = range(gl_q)) +
+                     fill = log(median_gl))) +
+  scale_fill_viridis_c(option = "viridis") +
   # remove X and Y labels from map   
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  ggtitle('Mean generation length')
+  ggtitle('Median generation length') +
+  labs(fill = "Log median gen. length")
+
+# Gen Length with our own color palette
+
+# Define color palette with munsell colors
+plot_mnsl(sapply(0:5, darker, col = "10BG 9/4"))
+# bg <- c("10BG 9/4", "10BG 8/4", "10BG 7/4", "10BG 6/4", "10BG 4/4", "10BG 2/2")
+# bg <- mnsl(bg)
+bg <- c("10BG 9/4", "10BG 3/4", "10BG 2/2")
+bg <- mnsl(bg)
+
+base + geom_tile(data = del_df,
+                 aes(x = x,
+                     y = y,
+                     fill = log(median_gl))) +
+  scale_fill_gradientn(colors = bg,
+                       values = c(0, gl_q[10], gl_q[21])) +
+  # remove X and Y labels from map   
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle('Median generation length') +
+  labs(fill = "Log median gen. length")
 
 # Number of sp
 base + geom_tile(data = del_df,
