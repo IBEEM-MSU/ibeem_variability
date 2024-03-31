@@ -1,6 +1,6 @@
 # TITLE:            Clean Bird et al. data 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Excel tables with bird gen time from Bird et al. 2020 Conservation Biology
 # DATA OUTPUT:      Clean csv with bird generation length data 
 # DATE:             May 2023 

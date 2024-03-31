@@ -1,6 +1,6 @@
 # TITLE:            Generate consensus tree for bird phylogeny 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Phylogenetic data from BirdTree
 # DATA OUTPUT:      Partial phylogenetic trees for bird taxonomy
 # DATE:             October 2023 

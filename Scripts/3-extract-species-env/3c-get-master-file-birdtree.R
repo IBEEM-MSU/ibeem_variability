@@ -1,6 +1,6 @@
 # TITLE:            Generate master data file 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       Combine environmental 
 # DATA OUTPUT:      Master bird ID list (rda), species-climate data from 3b, trait data (Bird et al. and AVONET) from 1d
 # DATE:             September 2023 

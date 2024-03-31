@@ -1,6 +1,6 @@
 # TITLE:            Process netcdf data 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Peter Williams, Jeff Dozer, Adriana Uscanga, Lala Kounta, Kelly Kapsar, Phoebe Zarnetske, Pat Bills
+# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
 # DATA INPUT:       NetCDF temperature and precipitation data from ERA5 
 # DATA OUTPUT:      CSV with average temp and precip over specified months for all years
 # DATE:             May 2023 
