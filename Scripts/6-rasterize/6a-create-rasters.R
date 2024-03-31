@@ -1,6 +1,6 @@
 # TITLE:            Create rasterized range maps for individual species 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
+# AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Bird breeding ranges (1d), env data (2b), model output (5)
 # DATA OUTPUT:      Rasterized maps of variables across bird ranges
 # DATE:             October 2023 

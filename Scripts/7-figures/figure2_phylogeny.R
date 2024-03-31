@@ -1,6 +1,6 @@
 # TITLE:            Figure 2: Phylogeny  
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
+# AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Bird consensus tree (4b),model output (5) 
 # DATA OUTPUT:      Bird phylogeny figure (labels by order)
 # DATE:             January 2024 

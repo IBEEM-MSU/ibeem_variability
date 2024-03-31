@@ -1,6 +1,6 @@
 # TITLE:            Generate bird data processing batches 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
+# AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Rda file with IDs of all birds in analysis
 # DATA OUTPUT:      Rda files with lists of IDs for batch processing
 # DATE:             May 2023 

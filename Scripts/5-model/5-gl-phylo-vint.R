@@ -1,6 +1,6 @@
 # TITLE:            Fit bayesian model 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
+# AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Bird consensus tree (4b), 
 # DATA OUTPUT:      Model output summary and figures (caterpillar plots, partial residual plots, etc.)
 # DATE:             October 2023 

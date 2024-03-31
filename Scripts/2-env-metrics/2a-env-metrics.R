@@ -1,6 +1,6 @@
 # TITLE:            Calculate environmental variability metrics 
 # PROJECT:          IBEEM Environmental Variability and Life History
-# AUTHORS:          Casey Youngflesh, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Kelly Kapsar, Phoebe L. Zarnetske
+# AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Environmental data csv from script 1b
 # DATA OUTPUT:      CSV with summary environmental metrics across all years
 # DATE:             May 2023 
