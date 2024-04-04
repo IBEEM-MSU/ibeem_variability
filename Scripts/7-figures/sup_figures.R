@@ -14,6 +14,7 @@ library(terra)
 library(sf)
 library(ggplot2)
 library(rnaturalearth)
+library(munsell)
 
 # Load raster ----
 
@@ -50,6 +51,7 @@ head(del_df)
 
 # Calculate quantiles for color scale
 gl_q <- quantile(log(del_df$median_gl), seq(0, 1, by = 0.05))
+gl_q2 <- quantile(del_df$median_gl, seq(0, 1, by = 0.05))
 n_sp_q <- quantile(del_df$n_sp, seq(0, 1, by = 0.05))
 
 # Base map with ggplot 
@@ -91,14 +93,14 @@ bg <- mnsl(bg)
 base + geom_tile(data = del_df,
                  aes(x = x,
                      y = y,
-                     fill = log(median_gl))) +
-  scale_fill_gradientn(colors = bg,
-                       values = c(0, gl_q[10], gl_q[21])) +
+                     fill = median_gl)) +
+  scale_fill_fermenter(breaks = c(1.75, 2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75),
+                       palette = "YlGnBu") +
   # remove X and Y labels from map   
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  ggtitle('Median generation length') +
-  labs(fill = "Log median gen. length")
+  #ggtitle("Median generation length") +
+  labs(fill = "Median gen. length")
 
 # Number of sp
 base + geom_tile(data = del_df,
