@@ -69,18 +69,6 @@ base <- ggplot() +
   theme_minimal()
 
 
-# Gen Length with viridis
-base + geom_tile(data = del_df,
-                 aes(x = x,
-                     y = y,
-                     fill = log(median_gl))) +
-  scale_fill_viridis_c(option = "viridis") +
-  # remove X and Y labels from map   
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  ggtitle('Median generation length') +
-  labs(fill = "Log median gen. length")
-
 # Gen Length with our own color palette
 
 # Define color palette with munsell colors
