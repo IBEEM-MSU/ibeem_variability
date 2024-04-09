@@ -52,9 +52,9 @@ proc_fun <- function(startvallat = 500,
   #list full file paths - corresponding to var of interest
   files_temp <- grep('moda', list.files(paste0(args[1], '/T2m/'), 
                                         full.names = TRUE), value = TRUE)
+  
   files_precip <- grep('moda', list.files(paste0(args[1], '/PREC/'), 
                                           full.names = TRUE), value = TRUE)
-
   #loop through files
   counter <- 1 #where to slot in data into df
   for (i in 1:length(files_temp)) #assuming num of temp files are the same as num precip
@@ -217,7 +217,6 @@ env_out <- proc_fun(startvallat = 1,
                      lenlat = 721, #entire world
                      months = MONTHS)
 
-
 # check -------------------------------------------------------------------
 
 # library(terra)
@@ -229,6 +228,8 @@ env_out <- proc_fun(startvallat = 1,
 # write to csv ------------------------------------------------------------
 
 #ERA5-MONTHS.csv
+ifelse(!dir.exists(file.path(args[2])), dir.create(file.path(args[2]), recursive=TRUE), FALSE)
+
 write.csv(env_out, paste0(args[2], 'ERA5-', 
                            paste0(MONTHS, collapse = '_'), '.csv'), 
           row.names = FALSE)
