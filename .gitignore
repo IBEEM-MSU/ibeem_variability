@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.SLURMout
 *.proj
 data
 Results
