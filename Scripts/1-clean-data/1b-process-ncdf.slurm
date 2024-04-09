@@ -16,6 +16,9 @@ echo `hostname`
 #load modules
 module load GCC/8.3.0
 module load OpenMPI/3.1.4
-module load R/4.1.0
+module load R/4.2.0
 
-Rscript ./Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability/data/L0/climate/era5/ /mnt/research/ibeem/variability/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12
+#manually specify R lib
+export R_LIBS=/mnt/ufs18/home-109/kapsarke/R/x86_64-pc-linux-gnu-library/4.2  
+
+Rscript ./Scripts/1-clean-data/1b-process-ncdf.R /mnt/research/ibeem/variability_testing/data/L0/climate/era5/ /mnt/research/ibeem/variability_testing/data/L1/climate/era5/ 1,2,3,4,5,6,7,8,9,10,11,12

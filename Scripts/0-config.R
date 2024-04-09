@@ -8,12 +8,14 @@
 dir='/mnt/research/ibeem/variability_testing/'
 
 # Download necessary packages if not already downloaded 
-packages <- c("tidyverse", "sf", "data.table", "moments", "terra", "ape", "phytools", "cmdstanr", "MCMCvis", "ape", "geiger", "ggplot2", "rnaturalearth", "colorplaner", "viridis", "plotfunctions")
+packages <- c("tidyverse", "sf", "data.table", "moments", "terra", "ape", 
+              "phytools", "cmdstanr", "MCMCvis", "ape", "geiger", "ggplot2", 
+              "rnaturalearth", "colorplaner", "viridis", "plotfunctions")
 
 package.check <- lapply(
   packages,
   FUN = function(x) {
-    if (!require(x, character.only = TRUE)) {
+    if ((x %in% installed.packages()[,1]) == FALSE){
       install.packages(x, dependencies = TRUE)
     }
   }

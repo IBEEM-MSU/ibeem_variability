@@ -2,10 +2,14 @@
 # PROJECT:          IBEEM Environmental Variability and Life History
 # AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Range data (BirdLife International), generation length (Bird et al. 2020), life history (AVONET), and phylogeny (BirdTree)
-# DATA OUTPUT:      Shapefiles with bird ranges, and csv of corresponding IDs, bird trait data with IDs
+# DATA OUTPUT:      Shapefiles with bird ranges, and csv of corresponding IDs, bird trait data with IDs, manually matched bird names
 # DATE:             May 2023 
 # OVERVIEW:         Resolve differences in species names and combine bird dataset: range maps, generation time, other traits, phylogeny
+# NOTE:             Requires manually uploaded file: bird-names-full-matched.csv 
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
 
 # specify dir -------------------------------------------------------------
 
@@ -19,8 +23,11 @@ avonet_dir <- paste0(dir, 'data/L0/trait/')
 
 #directory to save out intermediate file
 # out_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/Sample_output/'
-out_dir <- paste0(dir, 'data/L1/')
+range_dir <- paste0(dir, 'data/L1/range/bird-breeding/')
+trait_dir <- paste0(dir, 'data/L1/trait/')
 
+ifelse(!dir.exists(file.path(range_dir)), dir.create(file.path(range_dir), recursive=TRUE), FALSE)
+ifelse(!dir.exists(file.path(trait_dir)), dir.create(file.path(trait_dir), recursive=TRUE), FALSE)
 
 # load packages -----------------------------------------------------------
 
@@ -33,7 +40,7 @@ library(sf)
 #Birdlife range maps - takes a few minutes (40 min on HPCC) to read in
 #data location: https://drive.google.com/drive/u/1/folders/11eAFmFKUc7tU59IArNEpN5YP_ehGvAwZ
 # Get all species
-BL_data <- sf::st_read(dsn = paste0(range_map_data_dir, 'BOTW.gdb/a0000000a.gdbtable'))
+BL_data <- sf::st_read(paste0(range_map_data_dir, 'BOTW.gdb/a0000000a.gdbtable'))
 
 
 #bird life history data (processed to L1)
@@ -54,7 +61,7 @@ LH_usp <- unique(LH_data$Sci_name) # 11126
 AV_usp <- unique(AV_data$Species1) # 11009
 # Save for local manipulation
 save(BL_usp, LH_usp, AV_usp, 
-     file = paste0(out_dir, 'range/bird-breeding/species-names-all-data.rda'))
+     file = paste0(range_dir, 'species-names-all-data.rda'))
 
 # Load in species names in each data set for local manipulation -----------
 # load('data/species-names-all-data.rda')
@@ -72,14 +79,14 @@ BL.name.df <- data.frame(name = BL.sp.names,
 # Complete DF
 full.name.df <- dplyr::full_join(BL.name.df, AV.sp.names, by = 'name') %>%
   dplyr::full_join(LH.sp.names, by = 'name')
-write.csv(full.name.df, file = paste0(out_dir, 'trait/bird-names-full.csv'),
+write.csv(full.name.df, file = paste0(trait_dir, 'bird-names-full.csv'),
           row.names = FALSE)
 
 
 # Read in full CSV with all species names from all data sources -----------
 # The mismatched names between BL and Avonet and Bird et al. were manually
 # matched together in Google Sheets.
-full.name.dat <- read.csv(paste0(out_dir, 'trait/bird-names-full-matched.csv'))
+full.name.dat <- read.csv(paste0(trait_dir, 'bird-names-full-matched.csv'))
 # Change names for more clarity with linking with different names
 colnames(full.name.dat) <- c('birdlifeName', 'birdlifeID', 'notes')
 full.name.dat <- full.name.dat %>%
@@ -121,14 +128,14 @@ LH_data <- LH_data %>%
   dplyr::mutate(Sci_name = tolower(Sci_name)) %>%
   dplyr::left_join(full.name.dat, by = c('Sci_name' = 'birdlifeName'))
 
-write.csv(LH_data, file = paste0(out_dir, 'trait/bird-et-al-data-with-id.csv'), 
+write.csv(LH_data, file = paste0(trait_dir, 'bird-et-al-data-with-id.csv'), 
 	  row.names = FALSE)
 
 AV_data <- AV_data %>%
   dplyr::mutate(Species1 = tolower(Species1)) %>%
   dplyr::left_join(full.name.dat, by = c('Species1' = 'birdlifeName'))
 
-write.csv(AV_data, file = paste0(out_dir, 'trait/avonet-with-id.csv'), 
+write.csv(AV_data, file = paste0(trait_dir, 'avonet-with-id.csv'), 
 	  row.names = FALSE)
 
 BL_data <- BL_data %>%
@@ -144,7 +151,7 @@ BL_data_breeding <- BL_data %>%
 # BirdLife ----------------------------
 # Save out BL species names in case you want them without reading in the whole thing.
 BL.unique.ids <- unique(BL_data_breeding$birdlifeID)
-save(BL.unique.ids, file = paste0(out_dir, 'range/bird-breeding/BL-ids.rda'))
+save(BL.unique.ids, file = paste0(range_dir, 'BL-ids.rda'))
 
 # Takes 40 min or so
 for (i in 1:length(BL.unique.ids)) {
@@ -153,7 +160,7 @@ for (i in 1:length(BL.unique.ids)) {
   tmp <- BL_data_breeding %>%
     dplyr::filter(birdlifeID == BL.unique.ids[i])
   
-  sf::st_write(tmp, paste0(out_dir, 'range/bird-breeding/', BL.unique.ids[i], 
+  sf::st_write(tmp, paste0(range_dir, BL.unique.ids[i], 
                            '-breeding.shp'), 
                driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
 }
@@ -161,7 +168,7 @@ for (i in 1:length(BL.unique.ids)) {
 # BirdTree ----------------------------
 # Save out BirdTree species names in case you want them without reading in the whole thing.
 birdTree.unique.ids <- unique(BL_data_breeding$birdtreeID)
-save(birdTree.unique.ids, file = paste0(out_dir, 'range/bird-breeding/birdTree-ids.rda'))
+save(birdTree.unique.ids, file = paste0(range_dir, 'birdTree-ids.rda'))
 
 # Takes 40 min or so
 for (i in 1:length(birdTree.unique.ids)) {
@@ -170,7 +177,7 @@ for (i in 1:length(birdTree.unique.ids)) {
   tmp <- BL_data_breeding %>%
     dplyr::filter(birdtreeID == birdTree.unique.ids[i])
   
-  sf::st_write(tmp, paste0(out_dir, 'range/bird-breeding/birdtree-', birdTree.unique.ids[i], 
+  sf::st_write(tmp, paste0(range_dir, 'birdtree-', birdTree.unique.ids[i], 
                            '-breeding.shp'), 
                driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
 }
