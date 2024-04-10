@@ -6,11 +6,9 @@
 # DATE:             August 2023 
 # OVERVIEW:         Mask out land and everything below 60 S lat for env var data 
 
-# Specify dir --------------------------------------------------
+# load environmental variables ------------------------------------------------
 
-#path CY machine
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-dir <- '/mnt/research/ibeem/variability/'
+source("./Scripts/0-config.R")
 
 
 # load packages -----------------------------------------------------------
