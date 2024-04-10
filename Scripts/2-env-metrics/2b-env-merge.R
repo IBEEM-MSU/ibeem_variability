@@ -54,13 +54,9 @@ t_cval <- cbind(t_crds, t_vals) %>%
 
 # merge env data ----------------------------------------------------------
 
-#merge masked env var with spectral exp
-env_mrg <- dplyr::left_join(env_var, se, 
-                          by = c('var', 'lon', 'lat')) %>%
-  #land mask
-  dplyr::left_join(t_cval, by = c('cell_id', 'lon', 'lat')) %>%
-  #DHI
-  dplyr::left_join(dhi_df, by = c('lon', 'lat')) %>%
+# remove masked pixels 
+env_mrg <- dplyr::left_join(env_var, t_cval, by = c('cell_id', 'lon', 'lat'))
+
 na_idx <- which(is.na(env_mrg$valid))
 #set all ocean and land < 60 S lat to FALSE for field valid
 env_mrg$valid[na_idx] <- FALSE
