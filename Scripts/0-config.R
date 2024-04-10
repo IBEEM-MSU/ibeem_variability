@@ -16,7 +16,7 @@ package.check <- lapply(
   packages,
   FUN = function(x) {
     if ((x %in% installed.packages()[,1]) == FALSE){
-      install.packages(x, dependencies = TRUE)
+      install.packages(x, dependencies = TRUE, repos = "http://cran.us.r-project.org")
     }
   }
 )

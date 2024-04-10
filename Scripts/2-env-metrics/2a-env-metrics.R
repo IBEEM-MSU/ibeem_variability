@@ -7,6 +7,10 @@
 # OVERVIEW:         Summarize environmental variability within and between years for temperature and precipitation data. 
 
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
 ################
 # args:
 # - in file
