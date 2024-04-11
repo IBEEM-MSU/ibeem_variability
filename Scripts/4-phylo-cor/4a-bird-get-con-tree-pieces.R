@@ -7,6 +7,8 @@
 # OVERVIEW:         This script calculates a consensus tree individually for 100 trees, then saves each of the resulting 10 consensus trees. The script does this one at a time for each piece,as each calculation can take a good chunk of RAM.
 
 rm(list = ls())
+
+
 library(ape)
 library(tidyverse)
 library(phytools)

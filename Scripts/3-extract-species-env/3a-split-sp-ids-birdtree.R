@@ -8,8 +8,12 @@
 
 rm(list = ls())
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
 # Specify directory -------------------------------------------------------
-BT.dir <- '/mnt/research/ibeem/variability/data/L1/range/bird-breeding/'
+BT.dir <- paste0(dir, '/data/L1/range/bird-breeding/')
 
 # Load in full set of current IDs -----------------------------------------
 load(paste0(BT.dir, 'birdTree-ids.rda'))

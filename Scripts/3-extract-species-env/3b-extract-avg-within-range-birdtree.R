@@ -8,17 +8,15 @@
 
 rm(list = ls())
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
 library(sf)
 library(terra)
-
-
-# Specify top-level directory -------------------------------------------------------
-
-dir <- '/mnt/research/ibeem/variability/'
-
 
 # Get the current file to process -----------------------------------------
 

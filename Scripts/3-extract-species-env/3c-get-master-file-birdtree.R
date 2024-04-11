@@ -8,16 +8,14 @@
 
 rm(list = ls())
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
 # load packages ------------------------------------------------------------
 
 library(tidyverse)
-
-
-# Specify directories -----------------------------------------------------
-
-dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-
+library(dplyr)
 
 # Get the climate data ----------------------------------------------------
 
