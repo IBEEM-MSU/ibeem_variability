@@ -8,12 +8,18 @@
 
 rm(list = ls())
 
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
+# load libraries ------------------------------------------------
 library(ape)
 library(tidyverse)
 library(phytools)
 
-bt.dir <- '/mnt/research/ibeem/variability/data/L1/phylogeny/'
-out.dir <- '/mnt/research/ibeem/variability/data/L3/'
+# set directories ------------------------------------------------
+bt.dir <- paste0(dir, '/data/L1/phylogeny/')
+out.dir <- paste0(dir, '/data/L3/')
 
 # Read in each of the 10 consensus tree chunks
 bt.phylo.1 <- read.tree(paste0(bt.dir, "bird-phylo-1.tre"))
