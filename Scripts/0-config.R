@@ -9,14 +9,16 @@ dir='/mnt/research/ibeem/variability_testing/'
 
 # Download necessary packages if not already downloaded 
 packages <- c("tidyverse", "sf", "data.table", "moments", "terra", "ape", 
-              "phytools", "cmdstanr", "MCMCvis", "ape", "geiger", "ggplot2", 
-              "rnaturalearth", "colorplaner", "viridis", "plotfunctions")
+              "phytools", "MCMCvis", "ape", "geiger", "ggplot2", 
+              "rnaturalearth", "viridis", "plotfunctions")
 
-package.check <- lapply(
-  packages,
-  FUN = function(x) {
-    if ((x %in% installed.packages()[,1]) == FALSE){
-      install.packages(x, dependencies = TRUE, repos = "http://cran.us.r-project.org")
-    }
+package_download <- function(x){
+  if ((x %in% installed.packages()[,1]) == FALSE){
+    install.packages(x, dependencies = TRUE, repos = "http://cran.us.r-project.org")
   }
-)
+}
+
+# Separately check cmdstanr (not available on CRAN)
+if (("cmdstanr" %in% installed.packages()[,1]) == FALSE){
+  remotes::install_github("stan-dev/cmdstanr", upgrade = "default")
+}
