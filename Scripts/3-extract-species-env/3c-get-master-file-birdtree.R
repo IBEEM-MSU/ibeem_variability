@@ -59,11 +59,12 @@ avonet.dat1 <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
   dplyr::rename(ID = birdtreeID, Avonet_name = Species1, 
                 Birdtree_name = birdtreeName, Family = Family1, Order = Order1)
 
-avonet.dat2 <- dplyr::group_by(avonet.dat1, ID) %>%
+avonet.dat2 <- avonet.dat1 %>% dplyr::group_by(ID) %>%
   # Get means of continuous variables and the unique categorical variable for those
   # BirdTree species that are split into multiple BirdLife species.
   dplyr::summarize(Migration = unique(Migration),
-		   Trophic.Niche = unique(Trophic.Niche)) %>%
+		               Trophic.Niche = unique(Trophic.Niche), 
+		               Mass = mean(Mass)) %>%
   dplyr::ungroup() %>%
   #first Family/Order of each ID group (should be the same across all sp ID)
   dplyr::left_join(dplyr::select(avonet.dat1, ID, Avonet_name, Birdtree_name,
