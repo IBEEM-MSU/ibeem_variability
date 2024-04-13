@@ -6,15 +6,16 @@
 # DATE:             October 2023 
 # OVERVIEW:         Fits bayesian model to data (gl ~ env + phylo + vint)
 
+rm(list = ls())
 
-# specify dir -------------------------------------------------------------
+# load environmental variables ------------------------------------------------
 
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-# dir <- '/mnt/research/ibeem/variability/'
-# sc_dir <- '/mnt/home/ccy/variability/'
-run_date <- '2023-10-17'
+source("./Scripts/0-config.R")
 
+# set directories and date ------------------------------------------------
+
+sc_dir <- "./" # Assumes you're running the code from ibeem_variability root dir 
+run_date <- Sys.Date()
 
 # load packages -----------------------------------------------------------
 
@@ -69,6 +70,8 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   #((degrees / year) * (year / generation) * (1 / degrees) = degrees (sd) / generation
   dplyr::mutate(temp_delta = (temp_slope * GenLength) / temp_sd_year, 
                 precip_delta = (precip_slope * GenLength) / precip_sd_year)
+
+write.csv(bird_df, paste0(dir, "/data/L3/final-bird-data-for-archival.csv"))
 
 #subset out just traits of interest
 bird_df2 <- dplyr::select(bird_df, 
