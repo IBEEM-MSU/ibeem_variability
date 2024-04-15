@@ -28,10 +28,7 @@ TBD
     * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
     * `1b-process-ncdf.R` - create time series of env data, yearly averages for specified months, and sd across specified months (seasonality)
     * `1b-process-ncdf.slurm` - slurm script to submit job
-    * `1c-create-batch-scripts.sh` - script to create slurm scripts
-    * `1c-master-submit.sh` - script to submit batch of slurm scripts
-    * `chunks/` - slurm scripts created by `1c-create-batch-scripts.sh`
-    * `1d-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
+    * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-merge.R` - merge env metrics
@@ -46,7 +43,8 @@ TBD
     * `4a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `4b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
   * `5-model/` -
-    * `5-gl-phylo-vint.R`
+    * `5-gl-phylo-vint.R` - fit gl ~ env var
+    * `5-gl-phylo-vint.slurm` - slurm script to submit job
   * `6-rasterize` - rasterize ranges
     * `6a-create-rasters.R` - create .tif files birds
     * `6a-raster-comile.sh` - bash script to iterate through all pieces of data and run `6a-raster.sbatch`
