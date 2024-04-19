@@ -19,12 +19,15 @@
 #
 # Mail user:
 # #SBATCH --mail-user=doserjef@msu.edu
-#SBATCH --mail-user=ccy@msu.edu
+#SBATCH --mail-user=kapsarke@msu.edu
 # #SBATCH --account plzbuyin #Space lab node
 
-module load GCC/8.3.0
-module load OpenMPI/3.1.4
-module load R/4.1.0
+module load GCC/11.3.0
+module load OpenMPI/4.1.4
+module load R/4.2.1
 
-Rscript /mnt/home/ccy/variability/Scripts/6-rasterize/6a-create-rasters.R $fileName 
+#manually specify R lib
+export R_LIBS=/mnt/home/kapsarke/R/x86_64-pc-linux-gnu-library/4.2
+
+Rscript ./Scripts/6-rasterize/6a-create-rasters.R $fileName 
 

@@ -7,26 +7,28 @@
 # OVERVIEW:         Creates rasters for generation length, delta T, and delta P for each bird species
 
 
+
+rm(list = ls())
+
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
 library(sf)
 library(terra)
 
-
-# Specify top-level directory -------------------------------------------------------
-
-dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-
-gl_run_date <- '2023-10-17'
+# set run date for model results ----------------------------------------------
+gl_run_date <- '2024-04-14'
 
 
 # Get the current file to process -----------------------------------------
 
 file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BLIDsPiece-9.rda'
+# file.name <- 'BTIDsPiece-9.rda'
 if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
@@ -61,9 +63,14 @@ for (i in 1:length(ids))
   #i <- 1
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
-  curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/', 
+  
+  # if(file.exists(paste0(dir, 'data/L1/range/bird-breeding/', 
+  #                       curr.sp, '-breeding.shp'))){
+  curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/birdtree-', 
                                    curr.sp, '-breeding.shp'),
-                            quiet = TRUE)
+                              quiet = TRUE)
+  # }else(print(paste0(dir, 'data/L1/range/bird-breeding/', 
+  #                    curr.sp, '-breeding.shp does not exist.')))
   
   #filter trait for species of interest (use ID)
   tdf <- dplyr::filter(bird_df, ID == curr.sp)

@@ -7,23 +7,23 @@
 # Specify data directory 
 dir='/mnt/research/ibeem/variability_testing/'
 
-# Download necessary packages if not already downloaded
-packages <- c("tidyverse", "sf", "data.table", "moments", "terra", "ape",
-              "phytools", "MCMCvis", "ape", "geiger", "ggplot2",
-              "rnaturalearth", "viridis", "plotfunctions")
-
-package_download <- function(x){
-  if ((x %in% installed.packages()[,1]) == FALSE){
-    print(paste0("Installing package: ", x))
-    install.packages(x, dependencies = TRUE)
-  }
-}
-
-lapply(packages, package_download)
-
-# Separately check cmdstanr (not available on CRAN)
-if (("cmdstanr" %in% installed.packages()[,1]) == FALSE){
-  print("Installing package: cmdstanr")
-  install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-  cmdstanr::install_cmdstan(cores = 2)
-}
+# # Download necessary packages if not already downloaded
+# packages <- c("tidyverse", "sf", "data.table", "moments", "terra", "ape",
+#               "phytools", "MCMCvis", "ape", "geiger", "ggplot2",
+#               "rnaturalearth", "viridis", "plotfunctions")
+# 
+# package_download <- function(x){
+#   if ((x %in% installed.packages()[,1]) == FALSE){
+#     print(paste0("Installing package: ", x))
+#     install.packages(x, dependencies = TRUE, repos = "http://cran.us.r-project.org")
+#   }
+# }
+# 
+# lapply(packages, package_download)
+# 
+# # Separately check cmdstanr (not available on CRAN)
+# if (("cmdstanr" %in% installed.packages()[,1]) == FALSE){
+#   print("Installing package: cmdstanr")
+#   install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+#   cmdstanr::install_cmdstan(cores = 2)
+# }
