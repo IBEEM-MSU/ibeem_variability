@@ -5,6 +5,13 @@
 # DATA OUTPUT:      Raster stack with summarized gl, dT, and dP values
 # DATE:             October 2023 
 # OVERVIEW:         Creates raster stack with mean, median, and sd of generation length, delta T, and delta P across all species.
+# OVERVIEW: 
+
+rm(list = ls())
+
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
 
 # load packages -----------------------------------------------------------
 
@@ -13,12 +20,9 @@ library(sf)
 library(terra)
 
 
-# Specify top-level directory -------------------------------------------------------
+# set run date for model results ----------------------------------------------
 
-dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-gl_run_date <- '2023-10-17'
-
+gl_run_date <- '2024-04-14'
 
 # read in env data --------------------------------------------------------
 
@@ -129,7 +133,7 @@ mrg_ras <- c(med_gl, sd_gl, med_dT, sd_dT, med_dP, sd_dP, mn_gl, mn_dT, mn_dP, n
 
 #mask out non-land
 mrg_ras2 <- terra::mask(mrg_ras, env.dat.rast, 
-                  inverse = FALSE)
+                        inverse = FALSE)
 
 
 # terra::writeRaster(med_gl,
@@ -149,4 +153,3 @@ mrg_ras2 <- terra::mask(mrg_ras, env.dat.rast,
 terra::writeRaster(mrg_ras2,
                    filename = paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif'),
                    overwrite = TRUE)
-
