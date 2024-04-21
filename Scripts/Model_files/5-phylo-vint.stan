@@ -1,4 +1,4 @@
-// phylo intercepts, intercepts by niche group
+
 data {
   int<lower=1> N;  // total number of observations
   vector[N] Y;  // response variable

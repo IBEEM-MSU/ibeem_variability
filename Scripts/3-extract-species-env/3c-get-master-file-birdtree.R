@@ -96,7 +96,9 @@ main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
   dplyr::mutate(precip_cv_space = precip_sd_space / precip_mean) %>%
   # must have at least mean temp, gen length, and Migration
   dplyr::filter(!is.na(temp_mean), !is.na(GenLength), !is.na(Migration)) %>%
-  dplyr::relocate(precip_cv_space, .after = precip_sd_space)
+  dplyr::relocate(precip_cv_space, .after = precip_sd_space) %>%
+  dplyr::select(-temp_rng_space,-precip_rng_space, -temp_sd_space,
+                -precip_sd_space, -precip_cv_space,-cen_lon,-cen_lat,-range_size_km2)
 
 
 # write to file
