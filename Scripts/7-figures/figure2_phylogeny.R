@@ -14,17 +14,20 @@ library(tidyverse)
 library(viridis)
 library(plotfunctions)
 
-# Specify top-level directory -------------------------------------------------------
+rm(list = ls())
 
-dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-gl_run_date <- '2023-10-17'
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
+# specify model run date  ------------------------------------------------
+gl_run_date <- '2024-04-14'
 
 
 ### Data ----
 
 # Load consensus tree: '/mnt/research/ibeem/variability/data/L3/bird-consensus-tree.rda'
-load("~/bird-consensus-tree.rda")
+load(paste0(dir, "data/L3/bird-consensus-tree.rda"))
 
 # Load bird data
 

@@ -12,11 +12,12 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, comment = FALSE, message = 
 \captionsetup{width=9in}
 
 ```{r}
-#set dirs
-# dir <- '/mnt/research/ibeem/variability/'
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
+# load environmental variables ------------------------------------------------
 
-gl_run_date <- '2023-10-17'
+source("./0-config.R")
+
+gl_run_date <- '2024-04-14'
+
 ```
 
 ```{r}
@@ -54,6 +55,8 @@ bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date,
                 '$\\delta_{T}$' = temp_delta,
                 '$\\delta_{P}$' = precip_delta) %>%
   dplyr::select(-ID, -species, -niche_idx, -lGL, -lMass, -Order)
+
+# write.csv(bird_df, paste0(dir, "/data/L3/bird_table_s1.csv"))
   
 ```
 

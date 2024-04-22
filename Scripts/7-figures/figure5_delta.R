@@ -6,13 +6,15 @@
 # DATE:             January 2024 
 # OVERVIEW:         Individual sub-plots were aggregated in Adobe 
 
-# specify dir -------------------------------------------------------------
+rm(list = ls())
 
-dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-# dir <- '/mnt/research/ibeem/variability/'
-# sc_dir <- '/mnt/home/ccy/variability/'
-gl_run_date <- '2023-10-17'
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
+# specify model run date  ------------------------------------------------
+gl_run_date <- '2024-04-14'
+
 
 # Load packages ----
 

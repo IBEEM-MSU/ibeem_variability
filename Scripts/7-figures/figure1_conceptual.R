@@ -5,6 +5,7 @@
 # DATA OUTPUT:      Mean temp/precip for example spp (CSV), sub-plots for Figure 1
 # DATE:             January 2024 
 # OVERVIEW:         Individual sub-plots were aggregated in Adobe 
+# NOTE:             Colorplaner runs on R version 4.1.2 (but not R/4.2.1). Ncdf4 package needs R version 4.2.1
 
 
 ## Environmental variability map ----
@@ -22,6 +23,16 @@ library(rnaturalearth)
 # devtools::install_github("wmurphyrd/colorplaner")
 library(colorplaner)
 library(ncdf4)
+
+
+rm(list = ls())
+
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
+# specify model run date  ------------------------------------------------
+gl_run_date <- '2024-04-14'
 
 ### Data ----
 
@@ -69,6 +80,17 @@ precip_rast <- dplyr::select(env_data, lon, lat,
 
 # plot example:
 plot(precip_rast$precip_cv_season)
+
+### Save output temp and precip raster for archiving --- 
+
+archive_rast <- c(temp_rast$temp_sd_season, 
+                  temp_rast$temp_sd_year, 
+                  precip_rast$precip_cv_season, 
+                  precip_rast$precip_cv_year)
+
+terra::writeRaster(archive_rast,
+                   filename = paste0(dir, 'data/L3/env_var_ras.tif'),
+                   overwrite = TRUE)
 
 ### Transform data to Robinson projection ----
 
@@ -157,7 +179,7 @@ precip_df %>%
 precip_df <- precip_df %>%
   mutate(precip_cv_season = ifelse(precip_cv_season == Inf, 999, precip_cv_season)) 
 
-summary(precip_data)
+summary(precip_df)
 
 # Get precip quantiles to set vertical and horizontal color scales
 py_q <- quantile(precip_df$precip_cv_year, seq(0, 1, by = 0.05))
@@ -208,10 +230,6 @@ ggplot() +
 
 # load bird data
 
-dir <- '/mnt/research/ibeem/variability/'
-# dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
-gl_run_date <- '2023-10-17'
-
 bird <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
                             '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
 
@@ -239,15 +257,15 @@ bird %>%
 
 # High intra annual, low inter annual, short gen length
 
-bird_data %>%
-  select(Birdtree_name, Family, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
-  arrange(GenLength) %>%
-  #filter(Family == "Trochilidae") %>%
-  #arrange(-Modeled_max_longevity) %>%
-  #filter(temp_sd_year < 0.39) %>%
-  filter(temp_sd_season > 1.49) %>%
-  filter(Min.Latitude > 23) %>%
-  print(n= 30)
+# bird_data %>%
+#   select(Birdtree_name, Family, GenLength, Modeled_max_longevity, temp_sd_season, temp_sd_year, Min.Latitude, Max.Latitude) %>%
+#   arrange(GenLength) %>%
+#   #filter(Family == "Trochilidae") %>%
+#   #arrange(-Modeled_max_longevity) %>%
+#   #filter(temp_sd_year < 0.39) %>%
+#   filter(temp_sd_season > 1.49) %>%
+#   filter(Min.Latitude > 23) %>%
+#   print(n= 30)
 
 bird %>%
   select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
@@ -276,148 +294,147 @@ bird %>%
 ### Extract species distribution ranges and environmental data ----
 
 # distribution ranges in 'L1/range/'
-# Read shapefiles
-# files are in "/Volumes/home-219/uscanga1/Documents" for now--needs update!
+# Read shapefiles and convert to SpatVector
 
-dr_9030 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9030-breeding.shp") # parrot
+dr_9030 <- sf::st_read(paste0(dir, "/data/L1/range/bird-breeding/birdtree-9030-breeding.shp")) %>% 
+  terra::vect() # parrot
 
-dr_9708 <- sf::st_read("/Volumes/home-219/uscanga1/Documents/bird-breeding/birdtree-9708-breeding.shp")
-
-# Convert polygon to SpatVector
-
-dr_current_sp <- terra::vect(dr_9708) 
+dr_9708 <- sf::st_read(paste0(dir, "/data/L1/range/bird-breeding/birdtree-9708-breeding.shp")) %>% 
+  terra::vect() 
 
 # Read temporal env data
 
-ncfiles <- list.files(path = "/Volumes/home-219/uscanga1/Documents/T2m", pattern = "moda", full.names = T)
+ncfiles <- list.files(path = paste0(dir, "/data/L0/climate/era5/T2m"), pattern = "moda", full.names = T)
 
 # Make empty file
-
-temp_mean_sd <- data.frame(matrix(NA, nrow = length(ncfiles), ncol = 25))
-colnames(temp_mean_sd) <- c("mean_temp_01",
-                            "mean_temp_02",
-                            "mean_temp_03",
-                            "mean_temp_04",
-                            "mean_temp_05",
-                            "mean_temp_06",
-                            "mean_temp_07",
-                            "mean_temp_08",
-                            "mean_temp_09",
-                            "mean_temp_10",
-                            "mean_temp_11",
-                            "mean_temp_12",
-                            "sd_temp_01",
-                            "sd_temp_02",
-                            "sd_temp_03",
-                            "sd_temp_04",
-                            "sd_temp_05",
-                            "sd_temp_06",
-                            "sd_temp_07",
-                            "sd_temp_08",
-                            "sd_temp_09",
-                            "sd_temp_10",
-                            "sd_temp_11",
-                            "sd_temp_12",
-                            "year")
-rn <- 1
-
-for (i in 1:length(ncfiles))
-{
+get_temp_precip <- function(bird_range){
+  temp_mean_sd <- data.frame(matrix(NA, nrow = length(ncfiles), ncol = 25))
+  colnames(temp_mean_sd) <- c("mean_temp_01",
+                              "mean_temp_02",
+                              "mean_temp_03",
+                              "mean_temp_04",
+                              "mean_temp_05",
+                              "mean_temp_06",
+                              "mean_temp_07",
+                              "mean_temp_08",
+                              "mean_temp_09",
+                              "mean_temp_10",
+                              "mean_temp_11",
+                              "mean_temp_12",
+                              "sd_temp_01",
+                              "sd_temp_02",
+                              "sd_temp_03",
+                              "sd_temp_04",
+                              "sd_temp_05",
+                              "sd_temp_06",
+                              "sd_temp_07",
+                              "sd_temp_08",
+                              "sd_temp_09",
+                              "sd_temp_10",
+                              "sd_temp_11",
+                              "sd_temp_12",
+                              "year")
+  rn <- 1
   
-  ncin <- ncfiles[i]
-  print(paste0("Processing ", i, " out of ", length(ncfiles)))
-  
-  # Open netCDF file
-  nc_temp <- nc_open(ncin)
-  
-  # get lon, lat, and time
-  lon <- ncvar_get(nc_temp,"longitude")
-  dlon <- dim(lon)
-  lat <- ncvar_get(nc_temp,"latitude")
-  dlat <- dim(lat)
-  time <- ncvar_get(nc_temp,"time")
-  
-  #convert lon to -180 to 180
-  lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
-  
-  #covert dates to ymd
-  ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
-  
-  # get temperature
-  dname <- "VAR_2T"
-  tmp_array <- ncvar_get(nc_temp, dname)
-  
-  # fill in NA values
-  fillvalue_temp <- ncdf4::ncatt_get(nc_temp, "VAR_2T","_FillValue")
-  tmp_array[tmp_array == fillvalue_temp$value] <- NA
-  
-  # convert from K to C
-  tmp_array_c <- tmp_array - 273.15
-  rm(tmp_array)
-  
-  # Close netcdf file
-  ncdf4::nc_close(nc_temp)
-  
-  # convert to 2d vector
-  tmp_vec <- round(as.vector(tmp_array_c), 2)
-  
-  # create a dataframe
-  llt <- expand.grid(lon, 
-                     lat, 
-                     lubridate::year(ymd_dates)[1], 
-                     lubridate::month(ymd_dates))
-  tmp_df <- data.frame(llt, tmp_vec)
-  
-  colnames(tmp_df) <- c('lon', 'lat', 'year', 'month', 'temp')
-  
-  months <- lubridate::month(ymd_dates)
-  months_ch <- as.character(months)
-  current_year <- tmp_df$year[1]
-  
-  # Make raster
-  
-  tmp_df_w <- tmp_df %>%
-    tidyr::pivot_wider(names_from = month,
-                       values_from = temp) %>%
-    select(-year)
-  
-  temp_rast <- terra::rast(tmp_df_w, crs = "EPSG:4326")
-  
-  # Extract mean temp across range per month
-  mean_temp <- terra::extract(temp_rast,
-                             dr_current_sp,
-                             touches = TRUE,
-                             fun = mean,
-                             ID = F) 
-  
-  sd_temp <- terra::extract(temp_rast,
-                            dr_current_sp,
-                            touches = TRUE,
-                            fun = sd,
-                            ID = F) %>%
-    mutate(year = current_year)
-  
-  temp_mean_sd[rn,] <- c(mean_temp, sd_temp)
-  
-  rn <- rn + 1
-}  
+  for (i in 1:length(ncfiles))
+  {
+    
+    ncin <- ncfiles[i]
+    print(paste0("Processing ", i, " out of ", length(ncfiles)))
+    
+    # Open netCDF file
+    nc_temp <- nc_open(ncin)
+    
+    # get lon, lat, and time
+    lon <- ncdf4::ncvar_get(nc_temp,"longitude")
+    dlon <- dim(lon)
+    lat <- ncvar_get(nc_temp,"latitude")
+    dlat <- dim(lat)
+    time <- ncvar_get(nc_temp,"time")
+    
+    #convert lon to -180 to 180
+    lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
+    
+    #covert dates to ymd
+    ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
+    
+    # get temperature
+    dname <- "VAR_2T"
+    tmp_array <- ncvar_get(nc_temp, dname)
+    
+    # fill in NA values
+    fillvalue_temp <- ncdf4::ncatt_get(nc_temp, "VAR_2T","_FillValue")
+    tmp_array[tmp_array == fillvalue_temp$value] <- NA
+    
+    # convert from K to C
+    tmp_array_c <- tmp_array - 273.15
+    rm(tmp_array)
+    
+    # Close netcdf file
+    ncdf4::nc_close(nc_temp)
+    
+    # convert to 2d vector
+    tmp_vec <- round(as.vector(tmp_array_c), 2)
+    
+    # create a dataframe
+    llt <- expand.grid(lon, 
+                       lat, 
+                       lubridate::year(ymd_dates)[1], 
+                       lubridate::month(ymd_dates))
+    tmp_df <- data.frame(llt, tmp_vec)
+    
+    colnames(tmp_df) <- c('lon', 'lat', 'year', 'month', 'temp')
+    
+    months <- lubridate::month(ymd_dates)
+    months_ch <- as.character(months)
+    current_year <- tmp_df$year[1]
+    
+    # Make raster
+    
+    tmp_df_w <- tmp_df %>%
+      tidyr::pivot_wider(names_from = month,
+                         values_from = temp) %>%
+      select(-year)
+    
+    temp_rast <- terra::rast(tmp_df_w, crs = "EPSG:4326")
+    
+    # Extract mean temp across range per month
+    mean_temp <- terra::extract(temp_rast,
+                               bird_range,
+                               touches = TRUE,
+                               fun = mean,
+                               ID = F) 
+    
+    sd_temp <- terra::extract(temp_rast,
+                              bird_range,
+                              touches = TRUE,
+                              fun = sd,
+                              ID = F) %>%
+      mutate(year = current_year)
+    
+    temp_mean_sd[rn,] <- c(mean_temp, sd_temp)
+    
+    rn <- rn + 1
+  }  
+  return(temp_mean_sd)
+}
 
 # Save files:
 
-temp_mean_sd_sp9030 <- temp_mean_sd
-write_csv(temp_mean_sd_sp9030, "temp_mean_sd_sp9030.csv")  
+temp_mean_sd_sp9030 <- get_temp_precip(dr_9030)
+write_csv(temp_mean_sd_sp9030, paste0(dir, "data/L3/temp_mean_sd_sp9030.csv"))  
 
-temp_mean_sd_sp9708 <- temp_mean_sd
-write_csv(temp_mean_sd_sp9708, "temp_mean_sd_sp9708.csv")
+temp_mean_sd_sp9708 <- get_temp_precip(dr_9708)
+write_csv(temp_mean_sd_sp9708, paste0(dir, "data/L3/temp_mean_sd_sp9708.csv"))
 
 ### Plot time series ----
 
 #Read in temp_mean_sd files for both spp
 #parrot
-monthly_temp_sp9030<- read_csv("~/temp_mean_sd_sp9030.csv")
+monthly_temp_sp9030<- read_csv(paste0(dir, "data/L3/temp_mean_sd_sp9030.csv"))
 
 # Broad-tailed hummingbird
-monthly_temp_sp9708<- read_csv("~/temp_mean_sd_sp9708.csv")
+monthly_temp_sp9708<- read_csv(paste0(dir, "data/L3/temp_mean_sd_sp9708.csv"))
 
 #pivot longer
 monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
