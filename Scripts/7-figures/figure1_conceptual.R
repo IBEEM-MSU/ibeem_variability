@@ -31,9 +31,6 @@ rm(list = ls())
 
 source("./Scripts/0-config.R")
 
-# specify model run date  ------------------------------------------------
-gl_run_date <- '2024-04-14'
-
 ### Data ----
 
 # Environmental data 

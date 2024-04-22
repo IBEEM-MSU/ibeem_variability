@@ -19,11 +19,6 @@ library(tidyverse)
 library(sf)
 library(terra)
 
-
-# set run date for model results ----------------------------------------------
-
-gl_run_date <- '2024-04-14'
-
 # read in env data --------------------------------------------------------
 
 #read in data to make sure grids are the same

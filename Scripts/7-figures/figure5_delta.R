@@ -12,10 +12,6 @@ rm(list = ls())
 
 source("./Scripts/0-config.R")
 
-# specify model run date  ------------------------------------------------
-gl_run_date <- '2024-04-14'
-
-
 # Load packages ----
 
 library(tidyverse)
@@ -172,3 +168,4 @@ delta_P_map
 # correlation delta T and delta P -----------------------------------------
 
 cor(bird_df$precip_delta, bird_df$temp_delta)
+
