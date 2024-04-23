@@ -1,25 +1,14 @@
 # Variability_life_history
 
-Code for Youngflesh et al. *In prep*
+**DOI HERE**
+
+Code for Youngflesh et al. *In review*
 
 This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species.
 
 **Associated publications:**
 
-TBD
-
-
-**Project Links:**
-
-[Project Google Drive](https://drive.google.com/drive/u/1/folders/1hnJP1CRZQSph2M2cIhCEwvujxFOhfM0k)
-
-[Meeting Notes](https://docs.google.com/document/d/1ix5mSCbO7rRCj2juQN04UeabejayMgcYT0-yo08uSZ0/edit)
-
-[Data Documentation](https://docs.google.com/document/d/13Hn0klwabOQzdfCg1W-FIF00j1t_YgT40v-99Fhkt3Y/edit)
-
-[Proposal](https://drive.google.com/file/d/1K0jelDSM3ZlyHDlNI3SRYAbzlrS0hpiU/view?usp=share_link)
-
-[Annotated Bib](https://docs.google.com/document/d/1fn3lzU2IUtvY7Go_O7An_6JLgPk7Zc-OKLlNQYgOq48/edit)
+Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetske. Environmental variation shapes life history of the world’s birds. *In Review*
 
 
 **Repository structure:**
@@ -36,7 +25,7 @@ TBD
     * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
     * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
-    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC HPCC
+    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
     * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data. Also pulls in IUCN data.
     + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`, since pulling the IUCN data takes a few hours.
   * `4-phylo-cor` - get phylogenetic correlation matrix
