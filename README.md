@@ -36,7 +36,7 @@ TBD
     * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
     * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
-    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC HPCC
+    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
     * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data. Also pulls in IUCN data.
     + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`, since pulling the IUCN data takes a few hours.
   * `4-phylo-cor` - get phylogenetic correlation matrix
