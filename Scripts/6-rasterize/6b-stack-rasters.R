@@ -130,12 +130,12 @@ mrg_ras <- c(med_gl, sd_gl, med_dT, sd_dT, med_dP, sd_dP, mn_gl, mn_dT, mn_dP, n
 mrg_ras2 <- terra::mask(mrg_ras, env.dat.rast, 
                         inverse = FALSE)
 
-clim_ras <- c(mn_dT, mn_dP)
-clim_ras <- terra::mask(clim_ras, env.dat.rast, 
+delta_ras <- c(mn_dT, mn_dP)
+delta_ras <- terra::mask(delta_ras, env.dat.rast, 
                         inverse = FALSE)
 
-terra::writeRaster(clim_ras,
-                   filename = paste0(dir, 'data/L3/clim_ras.tif'),
+terra::writeRaster(delta_ras,
+                   filename = paste0(dir, 'data/L3/delta_ras.tif'),
                    overwrite = TRUE)
 # tt <- terra::rast('~/Downloads/med-test.tif')
 # plot(tt)
