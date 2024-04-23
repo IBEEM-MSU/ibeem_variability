@@ -1,12 +1,14 @@
 # Variability_life_history
 
-Code for Youngflesh et al. *In prep*
+**DOI HERE**
+
+Code for Youngflesh et al. *In review*
 
 This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species.
 
 **Associated publications:**
 
-TBD
+Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetske. Environmental variation shapes life history of the world’s birds. *In Review*
 
 
 **Repository structure:**
