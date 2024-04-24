@@ -64,3 +64,6 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `raster-gl-dT-dP-nsp.tif` - raster of median and sd of gen length and delta metrics (relative abiotic change), as well as number of species in each cell (5 layers)
     * `bird-phylo-cor-matrix.rda` - bird phylogenetic correlation matrix
     * `bird-consensus-tree.rda` - bird consensus tree
+    * `final-bird-data-for-archival.csv` - archival version of `main-bird-data.csv`
+    * `env_var.csv` - archival environmental variability grid data
+    * `delta.csv` - archival delta_T and delta_P grid data 
