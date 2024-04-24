@@ -74,7 +74,26 @@ bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
                 precip_delta = (precip_slope * GenLength) / precip_sd_year)
 
 # Save output for archival
-write.csv(bird_df, paste0(dir, "/data/L3/final-bird-data-for-archival.csv"))
+bird_df_archive <- bird_df %>% dplyr::select(ID, 
+                                             Birdtree_name, 
+                                             Avonet_name, 
+                                             Family, 
+                                             Order, 
+                                             Migration, 
+                                             Trophic_niche, 
+                                             Mass, 
+                                             GenLength, 
+                                             temp_sd_year, 
+                                             temp_sd_season, 
+                                             precip_cv_year, 
+                                             precip_cv_season, 
+                                             lMass, 
+                                             lGL, 
+                                             species, 
+                                             temp_delta, 
+                                             precip_delta) 
+
+write.csv(bird_df_archive, paste0(dir, "/data/L3/final-bird-data-for-archival.csv"))
 
 #subset out just traits of interest
 bird_df2 <- dplyr::select(bird_df,
