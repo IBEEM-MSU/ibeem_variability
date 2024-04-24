@@ -26,12 +26,12 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
     * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
     * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
-    * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data. Also pulls in IUCN data.
-    + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`, since pulling the IUCN data takes a few hours.
+    * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data
+    + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`
   * `4-phylo-cor` - get phylogenetic correlation matrix
     * `4a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `4b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
-  * `5-model/` -
+  * `5-model/`
     * `5-gl-phylo-vint.R` - fit gl ~ env var
     * `5-gl-phylo-vint.slurm` - slurm script to submit job
   * `6-rasterize` - rasterize ranges
@@ -43,26 +43,22 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
   * `Model_files` - Stan model files
 * `Data/` (ignored)
   * `L0/` - raw data
-    * `DHI/` - Dynamic Habitat Index data
     * `climate/era5/` - raw ERA5 reanalysis data
     * `ranges/BOTW.gdb` - BirdLife range maps
     * `trait/` - raw trait data
   * `L1/`
-    * `DHI/` - processed DHI data (cv year and cv season)
     * `climate/era5/` - ERA data averaged over specified months (one value per cell/year)
       * `ERA5-1_2_3_4_5_6_7_8_9_10_11_12.csv` - yearly average over all months and sd across months (seasonality) for temp and (sqrt root transform of) precip
-      * `Env-spectral-exp-monthly.csv` - spectral exponent of monthly env variables
     * `range/` - bird ranges
     * `trait/` - processed bird traits
   * `L2/`
-    * `climate/era5/` - env variability metrics per cell (including seasonality)
+    * `climate/era5/` - env variability metrics per cell
       * `Env-var-1_2_3_4_5_6_7_8_9_10_11_12.csv` - variability for all months
-      * `Env-main.csv` - THIS IS THE MAIN MERGED ENV DATA TO USE DOWNSTREAM
-    * `range-env-pieces/` - ??? birds
-    * `range-env-pieces-mammal/` - ??? mammals
-    * `range-raster/` - rasterized ranges (tifs) with gen length and delta haldane (relative temp change) as layers
+      * `Env-main.csv` - main env data
+    * `range-env-pieces/` - IDs for species
+    * `range-raster/` - rasterized ranges (tifs) with gen length and delta metrics (relative abiotic change) as layers
   * `L3/` - main data files
     * `main-bird-data.csv` - merged bird data
-    * `raster-gl-dT-dP-nsp.tif` - raster of median and sd of gen length and delta haldane (relative temp change), as well as number of species in each cell (5 layers)
+    * `raster-gl-dT-dP-nsp.tif` - raster of median and sd of gen length and delta metrics (relative abiotic change), as well as number of species in each cell (5 layers)
     * `bird-phylo-cor-matrix.rda` - bird phylogenetic correlation matrix
     * `bird-consensus-tree.rda` - bird consensus tree
