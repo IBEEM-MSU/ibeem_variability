@@ -13,7 +13,7 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
 
 **Repository structure:**
 * `Scripts/`
-  * `0-congfig.R` - congfiguration file specifying location of data directory and model run date
+  * `0-config.R` - congfiguration file specifying location of data directory and model run date
   * `0-csv-to-tif.R` - convert csv files back into geospatial format (tif) for analysis  
   * `1-clean-data/`
     * `1a-clean-Bird-et-al.R` - clean and combine gen time data from Bird et al. 2020
