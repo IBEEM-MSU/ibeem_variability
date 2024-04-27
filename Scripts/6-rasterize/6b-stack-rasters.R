@@ -130,7 +130,7 @@ mrg_ras <- c(med_gl, sd_gl, med_dT, sd_dT, med_dP, sd_dP, mn_gl, mn_dT, mn_dP, n
 mrg_ras2 <- terra::mask(mrg_ras, env.dat.rast, 
                         inverse = FALSE)
 
-delta_ras <- c(mn_dT, mn_dP)
+delta_ras <- c(med_dT, med_dP)
 delta_ras <- terra::mask(delta_ras, env.dat.rast, 
                         inverse = FALSE)
 
