@@ -135,7 +135,7 @@ delta_ras <- terra::mask(delta_ras, env.dat.rast,
                         inverse = FALSE)
 
 terra::writeRaster(delta_ras,
-                   filename = paste0(dir, 'data/L3/delta_ras.tif'),
+                   filename = paste0(dir, 'data/L3/delta.tif'),
                    overwrite = TRUE)
 # tt <- terra::rast('~/Downloads/med-test.tif')
 # plot(tt)
