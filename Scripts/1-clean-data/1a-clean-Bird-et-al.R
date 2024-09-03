@@ -7,9 +7,10 @@
 # OVERVIEW:         Combine/clean bird gen time data 
 
 
-# load environmental variables ------------------------------------------------
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
+
 
 # load packages -----------------------------------------------------------
 
@@ -24,7 +25,7 @@ library(tidyverse)
 #ignored Data dir on git...small size though so could add it if desired
 #recorded
 table3 <- readxl::read_excel(paste0(dir, 'data/L0/Bird_et_al_2020/cobi13486-sup-0003-tables3.xlsx'))
-#modeled - should use GenLength
+#final - should use GenLength
 table4 <- readxl::read_excel(paste0(dir, 'data/L0/Bird_et_al_2020/cobi13486-sup-0004-tables4.xlsx'))
 
 
@@ -43,22 +44,21 @@ t3_mod <- dplyr::rename(table3,
                 Measured_age_first_breeding, Measured_max_longevity)
 
 t4_mod <- dplyr::rename(table4, 
-                        Modeled_survival = 'Adult survival',
-                        Modeled_age_first_breeding = 'Age at first breeding',
-                        Modeled_max_longevity = 'Maximum longevity',
+                        Final_survival = 'Adult survival',
+                        Final_age_first_breeding = 'Age at first breeding',
+                        Final_max_longevity = 'Maximum longevity',
                         Sci_name = 'Scientific name') %>%
-  dplyr::select(Order, Family, Genus, Sci_name, Modeled_survival, 
-                Modeled_age_first_breeding, Modeled_max_longevity, GenLength)
+  dplyr::select(Order, Family, Genus, Sci_name, Final_survival, 
+                Final_age_first_breeding, Final_max_longevity, GenLength)
 
 #combine
 comb <- cbind(t4_mod, t3_mod) %>%
   dplyr::relocate(c(Measured_survival, 
                     Measured_age_first_breeding,
-                    Measured_max_longevity), .before = Modeled_survival)
+                    Measured_max_longevity), .before = Final_survival)
 
 
 # write out ---------------------------------------------------------------
 
 write.csv(comb, paste0(dir, 'data/L0/trait/Bird_et_al_gen_length_birds.csv'))
 
-          

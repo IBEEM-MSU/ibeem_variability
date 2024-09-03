@@ -19,8 +19,6 @@ library(rnaturalearth)
 
 # Bird data
 
-# bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-LH-nsp.tif'))
-# bird_ras <- terra::rast("~/Documents/Documents/ibeem/raster-gl-dh-nsp.tif") #needs update!
 bird_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif')) 
 
 # Mask areas with fewer than NSP species

@@ -61,12 +61,10 @@ na_idx <- which(is.na(env_mrg$valid))
 #set all ocean and land < 60 S lat to FALSE for field valid
 env_mrg$valid[na_idx] <- FALSE
 
-# saveRDS(env_mrg, '~/tt.rds')
-
 
 # merge and write out -----------------------------------------------------
 
-#temp, precip, and DHI together
+#temp and precip together
 tt_temp <- dplyr::filter(env_mrg, var == 'temp')
 names(tt_temp) <- c('cell_id', 'var', 'lon', 'lat', 
                     paste0('temp_', names(tt_temp)[-c(1:4)]))

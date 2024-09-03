@@ -5,12 +5,13 @@
 # OVERVIEW:         File to specify environmental variables used across multiple scripts (e.g., dir). This file will be sourced in each code file to avoid the necessity of repeatedly specifying directories, dates, etc. 
 
 # Specify data directory
-dir='/mnt/research/ibeem/variability_testing/'
+# dir='/mnt/research/ibeem/variability_testing/'
 # dir='/mnt/research/ibeem/variability/'
+# dir='~/Work/Research/Projects/IBEEM_variability/'
+dir='~/Work/Research/Projects/variability/'
 
 # Specify model run date (for step 6 and beyond)
-gl_run_date <- '2024-04-14'
-# gl_run_date <- '2023-10-17'
+gl_run_date <- '2024-08-13'
 
 
 # # Download necessary packages if not already downloaded

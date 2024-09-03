@@ -7,12 +7,12 @@
 # OVERVIEW:         Creates rasters for generation length, delta T, and delta P for each bird species
 
 
-
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
+
 
 # load packages -----------------------------------------------------------
 
@@ -20,12 +20,13 @@ library(tidyverse)
 library(sf)
 library(terra)
 
+
 # Get the current file to process -----------------------------------------
 
-file.name <- commandArgs(trailingOnly = TRUE)
+# file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BTIDsPiece-9.rda'
-if(length(file.name) == 0) base::stop('Need to give the file name to process')
+file.name <- 'BTIDsPiece-1.rda'
+# if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
 # Read in data ------------------------------------------------------------
@@ -46,8 +47,8 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 
 #read in life history and other traits
 #from results
-bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
-               '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
+               '/bird-gl-phylo-vint-berk-oe-data-', gl_run_date, '.rds'))$pro_data
 
 
 # loop through ranges -----------------------------------------------------
@@ -56,7 +57,7 @@ bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date,
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 1
+  #i <- 2
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
   
@@ -110,7 +111,7 @@ for (i in 1:length(ids))
     curr.range.rast <- terra::rasterize(terra::vect(curr.range2), 
                                         env.dat.rast, 
                                         touches = TRUE)
-    #two layers
+    #three layers
     curr.range.rast2 <- c(curr.range.rast, curr.range.rast,
                           curr.range.rast)
     

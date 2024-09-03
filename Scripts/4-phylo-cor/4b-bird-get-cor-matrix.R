@@ -6,18 +6,24 @@
 # DATE:             October 2023 
 # OVERVIEW:         Script to calculate the final consensus tree and extract a correlation matrix from it. 
 
+
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
 
-# load libraries ------------------------------------------------
+
+# load packages ------------------------------------------------
+
 library(ape)
 library(tidyverse)
 library(phytools)
 
+
 # set directories ------------------------------------------------
+
 bt.dir <- paste0(dir, '/data/L1/phylogeny/')
 out.dir <- paste0(dir, '/data/L3/')
 

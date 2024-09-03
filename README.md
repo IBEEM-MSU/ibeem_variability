@@ -20,22 +20,26 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `1b-process-ncdf.R` - create time series of env data, yearly averages for specified months, and sd across specified months (seasonality)
     * `1b-process-ncdf.slurm` - slurm script to submit job
     * `1c-taxonomic-harmonization.R` - sort out naming differences and save individual range maps for birds
+    * `1d-uncertainty-gl.R` - calculate gen length uncertainty
   * `2-env-metrics/`
     * `2a-env-metrics.R` - calculate env variability metrics
     * `2b-env-merge.R` - merge env metrics
+    * `2c-env-var-time.R` - explore trend in env variation over time
   * `3-extract-species-env/` - extract env var data from species range
     * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
     * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
     * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
     * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
     * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data
-    + `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`
+    * `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`
+    * `3d-env-var-range.R` - explore spatial variation in environmental variation across species ranges
   * `4-phylo-cor` - get phylogenetic correlation matrix
     * `4a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `4b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
   * `5-model/`
     * `5-gl-phylo-vint.R` - fit gl ~ env var
     * `5-gl-phylo-vint.slurm` - slurm script to submit job
+    * `5-gl-phylo-vint-berk-oe.R` - fit gl ~ env var
   * `6-rasterize` - rasterize ranges
     * `6a-create-rasters.R` - create .tif files birds
     * `6a-raster-comile.sh` - bash script to iterate through all pieces of data and run `6a-raster.sbatch`

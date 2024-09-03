@@ -23,8 +23,8 @@ library(rnaturalearth)
 # Read in data ------------------------------------------------------------
 
 # df from results
-bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
-                          '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
+                          '/bird-gl-phylo-vint-berk-oe-data-', gl_run_date, '.rds'))$pro_data
 
 # stacked raster
 del_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif')) 

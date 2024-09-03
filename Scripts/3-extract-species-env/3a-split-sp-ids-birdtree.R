@@ -6,21 +6,27 @@
 # DATE:             May 2023 
 # OVERVIEW:         Split the saved rda file of BirdTree IDs into multiple files for easily running multiple jobs.
 
+
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
 
+
 # Specify directory -------------------------------------------------------
+
 BT.dir <- paste0(dir, '/data/L1/range/bird-breeding/')
 
+
 # Load in full set of current IDs -----------------------------------------
+
 load(paste0(BT.dir, 'birdTree-ids.rda'))
-# Remove NA id from BL.unique.ids
+# Remove NA id from birdTree.unique.ids
 BT.unique.ids <- birdTree.unique.ids[!is.na(birdTree.unique.ids)]
 n.ids <- length(BT.unique.ids)
-n.pieces <- 100
+n.pieces <- 10000
 vals <- split(BT.unique.ids, ceiling(seq_along(1:n.ids)/n.pieces))
 
 for (i in 1:length(vals)) {

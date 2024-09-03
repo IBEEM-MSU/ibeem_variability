@@ -5,19 +5,22 @@
 # DATA OUTPUT:      Raster stack with summarized gl, dT, and dP values
 # DATE:             October 2023 
 # OVERVIEW:         Creates raster stack with mean, median, and sd of generation length, delta T, and delta P across all species.
-# OVERVIEW: 
+
 
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
+
 
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
 library(sf)
 library(terra)
+
 
 # read in env data --------------------------------------------------------
 
@@ -36,8 +39,8 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
 # read in bird data -------------------------------------------------------
 
 #from results
-bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
-                          '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
+                          '/bird-gl-phylo-vint-berk-oe-data-', gl_run_date, '.rds'))$pro_data
 ids <- bird_df$ID
 
 #copy rasters to local
@@ -82,10 +85,6 @@ lf_dP <- grep('delta_P', lf2, value = TRUE)
 gl_stack <- terra::rast(lf_gl)
 dT_stack <- terra::rast(lf_dT)
 dP_stack <- terra::rast(lf_dP)
-
-# #apply land mask
-# gl_stack2 <- terra::mask(tt, env.dat.rast)
-# dh_stack2 <- terra::mask(dh_stack, env.dat.rast)
 
 #calculate median - close to mean of logged values for gen length VVV
 #https://www.wikiwand.com/en/Log-normal_distribution
@@ -137,17 +136,10 @@ delta_ras <- terra::mask(delta_ras, env.dat.rast,
 terra::writeRaster(delta_ras,
                    filename = paste0(dir, 'data/L3/delta.tif'),
                    overwrite = TRUE)
-# tt <- terra::rast('~/Downloads/med-test.tif')
-# plot(tt)
 
 
 # save out tifs -----------------------------------------------------------
 
-#species in Sahara (checked with QGIS):
-# 1107 - Scissor-tailed kite
-# 2018 - Nile Valley sunbird
-# 9268 - brown-necked raven
-# 10487 - common ostrich -> locations in Sahara where this is the only resident species
 terra::writeRaster(mrg_ras2,
                    filename = paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif'),
                    overwrite = TRUE)
