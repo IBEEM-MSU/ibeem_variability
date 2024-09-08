@@ -7,13 +7,17 @@
 # OVERVIEW:         This script calculates a consensus tree individually for 100 trees, then saves each of the resulting 10 consensus trees. The script does this one at a time for each piece,as each calculation can take a good chunk of RAM.
 # NOTES:            Run in R version 4.2.1 
 
+
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
 
-# load libraries ------------------------------------------------
+
+# load packages ------------------------------------------------
+
 library(ape)
 library(tidyverse)
 library(phytools)
@@ -22,6 +26,7 @@ library(phytools)
 bt.dir <- paste0(dir, '/data/L0/phylogeny/')
 out.dir <- paste0(dir, '/data/L1/phylogeny/')
 bt.dat <- read.tree(paste0(bt.dir, 'BirdzillaHackett6.tre'))
+
 
 # Running from desktop (or interactive session) ----------
 
@@ -40,6 +45,7 @@ for(i in 1:length(chunks)){
   rm(bt.phylo)
   print(start-Sys.time())
 }
+
 
 # Running from command line ----------
 

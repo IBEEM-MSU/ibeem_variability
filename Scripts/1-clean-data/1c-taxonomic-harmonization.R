@@ -2,14 +2,16 @@
 # PROJECT:          IBEEM Environmental Variability and Life History
 # AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Range data (BirdLife International), generation length (Bird et al. 2020), life history (AVONET), and phylogeny (BirdTree)
-# DATA OUTPUT:      Shapefiles with bird ranges, and csv of corresponding IDs, bird trait data with IDs, manually matched bird names
+# DATA OUTPUT:      .shp files with bird ranges, and csv of corresponding IDs, bird trait data with IDs, manually matched bird names
 # DATE:             May 2023 
 # OVERVIEW:         Resolve differences in species names and combine bird dataset: range maps, generation time, other traits, phylogeny
 # NOTE:             Requires manually uploaded file: bird-names-full-matched.csv 
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
+
 
 # specify dir -------------------------------------------------------------
 
@@ -28,6 +30,7 @@ trait_dir <- paste0(dir, 'data/L1/trait/')
 
 ifelse(!dir.exists(file.path(range_dir)), dir.create(file.path(range_dir), recursive=TRUE), FALSE)
 ifelse(!dir.exists(file.path(trait_dir)), dir.create(file.path(trait_dir), recursive=TRUE), FALSE)
+
 
 # load packages -----------------------------------------------------------
 
@@ -51,8 +54,6 @@ LH_data <- read.csv(paste0(life_history_dir, 'Bird_et_al_gen_length_birds.csv'))
 # Avonet trait data
 AV_data <- read.csv(paste0(avonet_dir, 'AVONET1_Birdlife.csv'))
 
-#OR read in species names - SEE BELOW
-
 
 # Process data to get consistent names ------------------------------------
 
@@ -63,17 +64,19 @@ AV_usp <- unique(AV_data$Species1) # 11009
 save(BL_usp, LH_usp, AV_usp, 
      file = paste0(range_dir, 'species-names-all-data.rda'))
 
+
 # Load in species names in each data set for local manipulation -----------
+
 # load('data/species-names-all-data.rda')
 # Convert all names to lower letters
-AV.sp.names <- data.frame(name = tolower(AV_usp))
 BL.sp.names <- data.frame(name = tolower(BL_usp))
 LH.sp.names <- data.frame(name = tolower(LH_usp))
+AV.sp.names <- data.frame(name = tolower(AV_usp))
 
 
-# Using BirdLife taxonomy as the overall master taxonomy ------------------ 
+# Using BirdLife taxonomy as the overall master taxonomy ------------------
 
-BL.name.df <- data.frame(name = BL.sp.names, 
+BL.name.df <- data.frame(name = BL.sp.names,
                          BL.id = 1:dplyr::n_distinct(BL.sp.names))
 
 # Complete DF
@@ -84,6 +87,7 @@ write.csv(full.name.df, file = paste0(trait_dir, 'bird-names-full.csv'),
 
 
 # Read in full CSV with all species names from all data sources -----------
+
 # The mismatched names between BL and Avonet and Bird et al. were manually
 # matched together in Google Sheets.
 full.name.dat <- read.csv(paste0(trait_dir, 'bird-names-full-matched.csv'))
@@ -105,73 +109,64 @@ crosswalk <- crosswalk %>%
 full.name.dat <- left_join(full.name.dat, crosswalk, by = 'birdlifeName')
 # How many BirdTree species are there in the data complete data set
 n_distinct(full.name.dat$birdtreeName, na.rm = TRUE)
-# 9988 (the full data set has 9993 species, so that's pretty good!)
+# 9988 (the full birdtree data set has 9993 unique species, so that's pretty good!)
 # Generate a column with unique BirdTree ID
-unique.birdtree.names <- unique(full.name.dat$birdtreeName)
+unique.birdtree.names <- sort(unique(full.name.dat$birdtreeName))
 # Remove any NA values that that pulled
 unique.birdtree.names <- unique.birdtree.names[which(!is.na(unique.birdtree.names))]
-# My not-so-elegant way of doing this
+# Fill birdtreeIDs
 full.name.dat$birdtreeID <- NA
-for (i in 1:nrow(full.name.dat)) {
-  tmp <- which(unique.birdtree.names == full.name.dat$birdtreeName[i])
-  if (length(tmp) > 0) {
-    full.name.dat$birdtreeID[i] <- tmp
+for (i in 1:length(unique.birdtree.names))
+{
+  #i <- 3360
+  tmp <- which(full.name.dat$birdtreeName == unique.birdtree.names[i])
+  if (length(tmp) > 0)
+  {
+    full.name.dat$birdtreeID[tmp] <- i
   }
 }
 
-# Associate each record of the Avonet and Bird et al data with BirdLife ID
-# and birdtreeID and save to output file
 
 # Bird et al data --------------------- 
 
-LH_data <- LH_data %>%
+LH_data2 <- LH_data %>%
   dplyr::mutate(Sci_name = tolower(Sci_name)) %>%
   dplyr::left_join(full.name.dat, by = c('Sci_name' = 'birdlifeName'))
 
-write.csv(LH_data, file = paste0(trait_dir, 'bird-et-al-data-with-id.csv'), 
+write.csv(LH_data2, file = paste0(trait_dir, 'bird-et-al-data-with-id.csv'), 
 	  row.names = FALSE)
 
-AV_data <- AV_data %>%
+AV_data2 <- AV_data %>%
   dplyr::mutate(Species1 = tolower(Species1)) %>%
   dplyr::left_join(full.name.dat, by = c('Species1' = 'birdlifeName'))
 
-write.csv(AV_data, file = paste0(trait_dir, 'avonet-with-id.csv'), 
+write.csv(AV_data2, file = paste0(trait_dir, 'avonet-with-id.csv'), 
 	  row.names = FALSE)
 
-BL_data <- BL_data %>%
+BL_data2 <- BL_data %>%
   dplyr::mutate(sci_name = tolower(sci_name)) %>%
   dplyr::left_join(full.name.dat, by = c('sci_name' = 'birdlifeName'))
+
 
 # Bird range data one by one ----------
 
 # Grab breeding/resident ranges, only extant ranges, only native ranges
-BL_data_breeding <- BL_data %>%
-  dplyr::filter(seasonal %in% 1:2, presence == 1, origin == 1)
+BL_data_breeding <- BL_data2 %>%
+  dplyr::filter(seasonal %in% 1:2, 
+                presence == 1, 
+                origin == 1,
+                !is.na(birdtreeID))
 
-# BirdLife ----------------------------
-# Save out BL species names in case you want them without reading in the whole thing.
-BL.unique.ids <- unique(BL_data_breeding$birdlifeID)
-save(BL.unique.ids, file = paste0(range_dir, 'BL-ids.rda'))
-
-# Takes 40 min or so
-for (i in 1:length(BL.unique.ids)) {
-  print(paste0("Currently on ", i, " out of ", length(BL.unique.ids)))
-  
-  tmp <- BL_data_breeding %>%
-    dplyr::filter(birdlifeID == BL.unique.ids[i])
-  
-  sf::st_write(tmp, paste0(range_dir, BL.unique.ids[i], 
-                           '-breeding.shp'), 
-               driver = 'ESRI Shapefile', quiet = TRUE, append = FALSE)
-}
 
 # BirdTree ----------------------------
+
 # Save out BirdTree species names in case you want them without reading in the whole thing.
 birdTree.unique.ids <- unique(BL_data_breeding$birdtreeID)
 save(birdTree.unique.ids, file = paste0(range_dir, 'birdTree-ids.rda'))
 
 # Takes 40 min or so
-for (i in 1:length(birdTree.unique.ids)) {
+for (i in 1:length(birdTree.unique.ids))
+{
   print(paste0("Currently on ", i, " out of ", length(birdTree.unique.ids)))
   
   tmp <- BL_data_breeding %>%

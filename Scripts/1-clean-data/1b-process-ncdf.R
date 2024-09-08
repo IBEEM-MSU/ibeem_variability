@@ -25,6 +25,7 @@ args <- commandArgs(trailingOnly = TRUE)
 #convert to numeric
 MONTHS <- as.numeric(strsplit(args[3], ',')[[1]])
 
+
 # load packages -----------------------------------------------------------
 
 library(tidyverse)
@@ -126,7 +127,7 @@ proc_fun <- function(startvallat = 500,
       var_array_temp3 <- apply(var_array_temp2, c(1, 2), mean)
       var_array_precip3 <- apply(var_array_precip2, c(1, 2), mean)
       
-      #sd acros months
+      #sd across months
       season_array_temp3 <- apply(var_array_temp2, c(1, 2), sd)
       season_array_precip3 <- apply(var_array_precip2, c(1, 2), sd)
       

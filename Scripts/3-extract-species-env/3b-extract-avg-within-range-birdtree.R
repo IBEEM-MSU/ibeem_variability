@@ -2,15 +2,18 @@
 # PROJECT:          IBEEM Environmental Variability and Life History
 # AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:       Range shapefiles from from script 1d, Env variability from 2b
-# DATA OUTPUT:      CSV files containint environmental variables across bird ranges for subsets of species 
+# DATA OUTPUT:      CSV files containing environmental variables across bird ranges for subsets of species 
 # DATE:             September 2023 
 # OVERVIEW:         Extract environmental data for bird ranges for subsets of species 
 
+
 rm(list = ls())
 
-# load environmental variables ------------------------------------------------
+
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
+
 
 # load packages -----------------------------------------------------------
 
@@ -18,12 +21,13 @@ library(tidyverse)
 library(sf)
 library(terra)
 
+
 # Get the current file to process -----------------------------------------
 
-file.name <- commandArgs(trailingOnly = TRUE)
+# file.name <- commandArgs(trailingOnly = TRUE)
 # Testing
-# file.name <- 'BTIDsPiece-14.rda'
-if(length(file.name) == 0) base::stop('Need to give the file name to process')
+file.name <- 'BTIDsPiece-1.rda'
+# if(length(file.name) == 0) base::stop('Need to give the file name to process')
 
 
 # Read in data ------------------------------------------------------------
@@ -43,7 +47,7 @@ env.dat.rast <- dplyr::select(env.dat, lon, lat,
                                grep('temp', colnames(env.dat), value = TRUE),
                                grep('precip', colnames(env.dat), value = TRUE)) %>%
   terra::rast(crs = "epsg:4326")
-names(env.dat.rast)
+
 #just mean temp, precip for each cell
 tpd.dat.rast <- env.dat.rast[[c('temp_mean', 'precip_mean')]]
 
@@ -59,8 +63,8 @@ env.dat.rast[[c('temp_sd_year', 'temp_sd_season',
 
 # Make data frame to hold everything
 cn <- c('ID', names(env.dat.rast), 
+        paste0(names(env.dat.rast), '_sd_space'),
         'temp_rng_space', 'precip_rng_space',
-        'temp_sd_space', 'precip_sd_space',
         'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
 colnames(env.out) <- cn                      
@@ -107,23 +111,49 @@ for (i in 1:length(ids))
     curr.range2 <- curr.range
   }
   
-  # Extract median env value across range from raster
-  env.vals <- terra::extract(env.dat.rast,
+  # exclude Inf for those cells that divide by 0 for CV
+  # keep only finite values within 3 MAD of median if range covers more than 5 cells
+  filt_fun <- function(x)
+  {
+    x2 <- x[is.finite(x)]
+    if (length(x2) > 5)
+    {
+      x3 <- x2[(x2 < (median(x2) + 3 * mad(x2))) & (x2 > (median(x2) - 3 * mad(x2)))]
+    } else {
+      x3 <- x2
+    }
+    return(x3)
+  }
+  
+  sd_filt_fun <- function(x)
+  {
+    x2 <- filt_fun(x)
+    if (length(x2) > 1)
+    {
+      x3 <- sd(x2)
+    } else {
+      x3 <- 0
+    }
+    return(x3)
+  }
+  
+  # Extract mean env value across range from raster
+  env.mn.vals <- terra::extract(env.dat.rast,
                  terra::vect(curr.range2),
                  touches = TRUE,
-                 fun = function(x) median(x, na.rm = TRUE))
+                 fun = function(x) mean(filt_fun(x)))
+
+  #sd of env values across space
+  env.sd.vals <- terra::extract(env.dat.rast,
+                            terra::vect(curr.range2),
+                            touches = TRUE,
+                            fun = function(x) sd_filt_fun(x))
   
   #range of mean values across space
   rng.vals <- terra::extract(tpd.dat.rast,
                              terra::vect(curr.range2),
                              touches = TRUE,
-                             fun = function(x) diff(range(x, na.rm = TRUE)))
-  
-  #sd of mean values across space
-  sd.vals <- terra::extract(tpd.dat.rast,
-                             terra::vect(curr.range2),
-                             touches = TRUE,
-                             fun = function(x) sd(x, na.rm = TRUE))
+                             fun = function(x) diff(range(filt_fun(x))))
   
   # reproject to laea (equal area)
   curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
@@ -136,18 +166,18 @@ for (i in 1:length(ids))
   rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
   
   #fill df - current id, env vals, centroid, range size
-  env.out[counter,] <- c(curr.sp, env.vals[-1], 
-                         rng.vals[-1], sd.vals[-1],
+  env.out[counter,] <- c(curr.sp, env.mn.vals[-1], 
+                         env.sd.vals[-1], rng.vals[-1],
                          cen_ll, rsize_km2)
   
   #advance counter
   counter <- counter + 1
   
   #clean up memory
-  rm(curr.range, curr.range2, curr.range.tr, env.vals, rng.vals, sd.vals)
+  rm(curr.range, curr.range2, curr.range.tr, env.mn.vals, env.sd.vals, rng.vals)
   gc()
 }
 
 #write out file
-save(env.out, file = paste0(dir, 'data/L2/range-env-pieces-birdtree/summarized-data-piece-BT-', 
+save(env.out, file = paste0(dir, 'data/L2/range-env-pieces-birdtree/new-summarized-data-piece-BT-', 
 				stringr::str_extract(file.name, '\\d+')))

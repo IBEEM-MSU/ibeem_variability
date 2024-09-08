@@ -23,8 +23,8 @@ library(rnaturalearth)
 # Read in data ------------------------------------------------------------
 
 # df from results
-bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
-                          '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+bird_df <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
+                          '/bird-gl-phylo-vint-berk-oe-data-', gl_run_date, '.rds'))$pro_data
 
 # stacked raster
 del_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif')) 
@@ -46,7 +46,7 @@ dt_col <- ifelse(dt_hist$breaks >= 0.1 & dt_hist$breaks < 0.3, "gray60",
                  ifelse(dt_hist$breaks >= 0.3, "gray20", "gray85"))
 
 plot(dt_hist, col = dt_col, border = FALSE, main = NULL,  
-     xlab = 'Rate of change degrees C (sd / generation)') 
+     xlab = 'Delta T') 
 
 #      xlim = XLIM,
 #      xaxt = 'n')
@@ -64,7 +64,7 @@ dp_col <- ifelse((dp_hist$breaks >= 0.1 & dp_hist$breaks < 0.3) | dp_hist$breaks
                  ifelse(dp_hist$breaks >= 0.3, "gray20", "gray85"))
 
 plot(dp_hist, col = dp_col, border = FALSE, main = NULL, 
-     xlab = 'Rate of change mm precipitation (sd / generation)')
+     xlab = 'Delta P')
 
 # xlim = XLIM,
 # xaxt = 'n')
@@ -138,7 +138,7 @@ delta_T_map <- base + geom_tile(data = del_df,
                       low = "#ffffcc",
                       high = "#bd0026",
                       na.value = "#FAFAFA",
-                      #limits = c(0,5)) +
+                      #limits = c(0.08, 0.20)) +
                       limits = range(med_dT_q)) +
   # remove X and Y labels from map   
   theme(axis.title.x = element_blank(),

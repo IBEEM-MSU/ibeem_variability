@@ -7,7 +7,7 @@
 # OVERVIEW:         Summarize environmental variability within and between years for temperature and precipitation data. 
 
 
-# load environmental variables ------------------------------------------------
+# load environment variables ------------------------------------------------
 
 source("./Scripts/0-config.R")
 
@@ -16,6 +16,7 @@ source("./Scripts/0-config.R")
 # - in file
 # - out file
 ################
+
 
 # get args fed to script --------------------------------------------------
 
@@ -29,7 +30,6 @@ args <- commandArgs(trailingOnly = TRUE)
 
 library(tidyverse)
 library(data.table)
-library(moments)
 
 
 # read in data -------------------------------------------------

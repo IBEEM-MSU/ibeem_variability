@@ -12,13 +12,13 @@ dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 sc_dir <- '~/Google_Drive/Research/Projects/IBEEM_variabilty/'
 # dir <- '/mnt/research/ibeem/variability/'
 # sc_dir <- '/mnt/home/ccy/variability/'
-gl_run_date <- '2023-10-17'
+gl_run_date <- '2024-08-13'
 
 
 # read in data ------------------------------------------------------------
 
 #pairwise difference from model fit
-pw_df2 <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
+pw_df2 <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
                           '/pairwise_gamma.rds'))
 
 
