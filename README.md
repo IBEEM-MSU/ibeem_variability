@@ -10,6 +10,9 @@ This repository contains code to assess the relationship between environmental v
 
 Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetske. Environmental variation shapes life history of the world’s birds. *In Review*
 
+**Associated data**
+
+Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c (Accessed 2024-09-11).
 
 **Repository structure:**
 * `Scripts/`
