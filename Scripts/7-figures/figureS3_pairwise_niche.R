@@ -1,4 +1,4 @@
-# TITLE:            Figure S2: Pairwise niche figure   
+# TITLE:            Figure S3: Pairwise niche figure   
 # PROJECT:          IBEEM Environmental Variability and Life History
 # AUTHORS:          Casey Youngflesh, Kelly Kapsar, Adriana Uscanga, Peter J. Williams, Jeffrey W. Doser, Lala Kounta, Phoebe L. Zarnetske
 # DATA INPUT:        

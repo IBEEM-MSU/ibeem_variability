@@ -26,10 +26,10 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `2b-env-merge.R` - merge env metrics
     * `2c-env-var-time.R` - explore trend in env variation over time
   * `3-extract-species-env/` - extract env var data from species range
-    * `3a-split-sp-ids.R` - generate sets of bird ids for parallel processing
-    * `3b-extract-avg-within-range.R` - extract environmental covariates from species ranges
-    * `3b-extract-compile.sh` - bash script to iterate through all pieces of data and run `3b-extract.sbatch`
-    * `3b-extract.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range.R` on HPCC
+    * `3a-split-sp-ids-birdtree.R` - generate sets of bird ids for parallel processing
+    * `3b-extract-avg-within-range-birdtree.R` - extract environmental covariates from species ranges
+    * `3b-extract-compile-birdtree.sh` - bash script to iterate through all pieces of data and run `3b-extract-birdtree.sbatch`
+    * `3b-extract-birdtree.sbatch` - bash script to load one piece of data and run `3b-extract-avg-within-range-birdtree.R` on HPCC
     * `3c-get-master-file-birdtree.R` - generate master file with rows for species and columns for environmental and life history data
     * `3c-get-master-file-birdtree.sbatch` - bash script to run `3c-get-master-file-birdtree.R`
     * `3d-env-var-range.R` - explore spatial variation in environmental variation across species ranges
@@ -37,8 +37,6 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `4a-bird-get-con-tree-pieces.R` - calculate consensus trees for 10 chunks of 100 phylogenies for birds
     * `4b-bird-get-cor-matrix.R` - calculate final consensus tree and phylo cor matrix for birds 
   * `5-model/`
-    * `5-gl-phylo-vint.R` - fit gl ~ env var
-    * `5-gl-phylo-vint.slurm` - slurm script to submit job
     * `5-gl-phylo-vint-berk-oe.R` - fit gl ~ env var
   * `6-rasterize` - rasterize ranges
     * `6a-create-rasters.R` - create .tif files birds
@@ -46,7 +44,7 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
     * `6a-raster.sbatch` - bash script to load one piece of data and run `6a-create-rasters.R` on HPCC
     * `6b-stack-rasters.R` - script to stack rasters and produce main .tif
   * `7-figures` - figures
-  * `Model_files` - Stan model files
+  * `Model_files/` - Stan model files
 * `Data/` (ignored)
   * `L0/` - raw data
     * `climate/era5/` - raw ERA5 reanalysis data

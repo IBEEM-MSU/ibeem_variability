@@ -37,5 +37,7 @@ csv_to_tif <- function(full_dir, filename, save_output = TRUE){
 # tif_to_csv(full_dir = paste0(dir, "data/L3/"), filename = "env_var")
 
 # load csv data sets to convert to tifs ------------------------------------------------
-csv_to_tif(full_dir = paste0(dir, "data/L3/"), filename = "delta", save_output = TRUE)
-csv_to_tif(full_dir = paste0(dir, "data/L3/"), filename = "env_var", save_output = TRUE)
+csv_to_tif(full_dir = paste0(dir, "data/L3/"), filename = "delta", 
+           save_output = TRUE)
+csv_to_tif(full_dir = paste0(dir, "data/L3/"), filename = "env_var", 
+           save_output = TRUE)

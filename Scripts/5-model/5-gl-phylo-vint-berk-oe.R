@@ -78,11 +78,8 @@ bird_df2 <- dplyr::select(bird_df,
                           temp_delta,
                           precip_delta)
 
-# write.csv(bird_df2, paste0(dir, "/data/L3/final-bird-data-for-archival.csv"))
-
-# set.seed(1)
-# sidx <- sample(1:NROW(bird_df2), size = 1500)
-# bird_df2 <- bird_df2[sidx,]
+# write.csv(bird_df2, paste0(dir, "/data/L3/final-bird-data-for-archival.csv"),
+#           row.names = FALSE)
 
 
 # phylo -------------------------------------------------------------------
