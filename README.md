@@ -1,18 +1,52 @@
 # Variability_life_history
 
-**DOI HERE**
+This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species. 
 
-Code for Youngflesh et al. *In review*
+## Table of Contents
+- [Overview](#Overview)
+- [Funding](#Funding)
+- [Associated publications](#Associated-publications)
+- [Location of data](#Location-of-data)
+- [Spatiotemporal extent and resolution](#Spatiotemporal-extent-and-resolution)
+- [Workflow](#Workflow)
+- [File naming conventions](#File-naming-conventions)
+- [Usage](#Usage)
+- [License](#License)
+- [Contributors](#Contributors)
+- [Contact Information](#Contact-information)
 
-This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species.
+## Overview
 
-**Associated publications:**
+This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species. The project is part of the [Institute for Biodiversity, Ecology, Evolution, and Macrosystems (IBEEM)](https://ibeem.msu.edu/) at Michigan State University, and led by IBEEM Postdoctoral Fellows. The research uses data from open access biodiversity repositories to evaluate how patterns of environmental variability within a year (i.e., seasons) and between years affect species' life histories. The analysis investigates environmental variability within and between years across the ranges of 7,477 non-migratory and non-marine avian species in order to evaluate the impacts of temporal environmental variability on species' pace of life. Environmental data are from the ERA5 climate reanalysis, bird trait and distribution data are from AVONET, BirdTree, and BirdLife databases as well as previously published research. Environmental variability values were extracted across individual species' ranges in order to quantify how environmental change has affected avian species' pace of life around the world. For more on the project see the [project research summary](https://ibeem.msu.edu/research--news.html) and the publications linked below. 
+
+## Funding
+
+Funding is provided by a Michigan State University Strategic Partnership Grant for the [Institute for Biodiversity, Ecology, Evolution, and Macrosystems (IBEEM)](https://ibeem.msu.edu/).
+
+## Associated publications
 
 Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetske. Environmental variation shapes life history of the world’s birds. *In Review*
 
-**Associated data**
+Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. [https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c](https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c) (Accessed 2024-09-11).
+
+## Location of data
 
 Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c (Accessed 2024-09-11).
+
+## Spatiotemporal extent and resolution
+
+- Spatial extent: global
+- Spatial resolution: 
+- Temporal extent: 
+- Temporal resolution: 
+
+## Usage
+
+Software used to analyze data includes: R version ?
+
+## Workflow
+
+The workflow for this repository follows the guidelines set out by the Environmental Data Initiative (EDI). Briefly, this involves aligning with FAIR data practices, and employing a workflow that uses different levels for harmonization and derived data products. Data are read in as raw data at Level 0 (L0). Level 1 (L1) data represent cleaned L0 data. Level 2 data are data merged or otherwise derived from two or more L1 data.
 
 **Repository structure:**
 * `Scripts/`
@@ -72,3 +106,32 @@ Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and
     * `final-bird-data-for-archival.csv` - archival version of `main-bird-data.csv`
     * `env_var.csv` - archival environmental variability grid data
     * `delta.csv` - archival $\delta_T$ and $\delta_P$ grid data 
+
+## File naming conventions
+
+- **Data Files**: [*Specify a clear naming convention for data files, such as `YYYY-MM-DD_sensorID_raw.csv`.*]
+- **Scripts**: [*Use descriptive names for scripts and follow a consistent naming convention, such as `process_data.py` or `cleaning_script.R`. If scripts are designed to be run in sequence, it may be helpful to number them in order (e.g., `1_cleaning_script.R`, `2_process_data.R`)*]
+
+[*Provide descriptions of the scripts in the `/L0` folder, including their purpose, inputs, and outputs. Specify whether scripts are standalone or designed to be run in sequence.*] 
+
+### [*`preprocess_data.py`*]
+
+- **Purpose**: [*Cleans and preprocesses raw Level 0 data.*]
+- **Inputs**: [*Raw data files in the `/data` folder (`YYYY-MM-DD_sensorID_raw.ext`).*]
+- **Outputs**: [*Processed data files in a new folder (`/processed_data`).*]
+
+### [*`merge_datasets.R`*]
+
+- **Purpose**: [*Merges multiple preprocessed datasets.*]
+- **Inputs**: [*Processed data files in the `/processed_data` folder.*]
+- **Outputs**: [*Merged dataset saved as `merged_data.csv` in the `/output` folder.*]
+
+## License
+
+## Contributors
+
+## Contact Information
+
+
+
+
