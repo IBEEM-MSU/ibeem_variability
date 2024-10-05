@@ -71,8 +71,7 @@ prop_res <- data.frame(ID = rep(NA, length(ids)), prop_res = NA)
 colnames(env.out) <- cn                      
 
 counter <- 1
-# for (i in 1:length(ids))
-for (i in 1:100)
+for (i in 1:length(ids))
 {
   #i <- 6
   print(paste0("Currently on species ", i, " out of ", length(ids)))

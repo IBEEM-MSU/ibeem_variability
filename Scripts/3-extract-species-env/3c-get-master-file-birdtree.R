@@ -23,7 +23,7 @@ library(tidyverse)
 # Get the climate data ----------------------------------------------------
 
 # Loads the full set of current BL IDs
-load(paste0(dir, 'data/L1/range/bird-resident/birdTree-ids.rda'))
+load(paste0(dir, 'data/L1/range/bird-breeding/birdTree-ids.rda'))
 # Load the first chunk of species and climate averages to get number of variables
 # Loads object called "env.out"
 load(paste0(dir, 'data/L2/range-env-pieces-birdtree/summarized-data-piece-BT-1'))
