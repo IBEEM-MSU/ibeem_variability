@@ -81,7 +81,6 @@ for (i in 1:length(ids))
                             quiet = TRUE)
   
   #if more than one polygon
-  #if low, merge all polygons
   if (NROW(curr.range) > 1)
   {
     #if there is res and breeding
@@ -115,7 +114,7 @@ for (i in 1:length(ids))
       
       if (inherits(curr.range.res2, "try-error"))
       {
-        # to avoid some 'duplciate vertex' errors:
+        # to avoid some 'duplicate vertex' errors:
         # https://github.com/r-spatial/sf/issues/1762
         sf::sf_use_s2(FALSE)
         curr.range.res2 <- sf::st_union(curr.range.res)
@@ -135,8 +134,6 @@ for (i in 1:length(ids))
       
       if (inherits(curr.range.br2, "try-error"))
       {
-        # to avoid some 'duplciate vertex' errors:
-        # https://github.com/r-spatial/sf/issues/1762
         sf::sf_use_s2(FALSE)
         curr.range.br2 <- sf::st_union(curr.range.br)
         sf::sf_use_s2(TRUE)
