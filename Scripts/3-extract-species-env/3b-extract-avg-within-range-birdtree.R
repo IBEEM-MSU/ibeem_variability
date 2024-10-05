@@ -73,7 +73,7 @@ colnames(env.out) <- cn
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 6
+  #i <- 6721
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/birdtree-', 
@@ -108,8 +108,9 @@ for (i in 1:length(ids))
       #to address lines across globe for species that cross date line
       # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
       tcrs <- sf::st_crs(curr.range.res)
-      sf::st_crs(curr.range.res) <- NA
-      curr.range.res2 <- try(sf::st_union(sf::st_make_valid(curr.range.res)))
+      curr.range.res.t <- curr.range.res
+      sf::st_crs(curr.range.res.t) <- NA
+      curr.range.res2 <- try(sf::st_union(sf::st_make_valid(curr.range.res.t)))
       sf::st_crs(curr.range.res2) <- tcrs
       
       if (inherits(curr.range.res2, "try-error"))
@@ -128,8 +129,9 @@ for (i in 1:length(ids))
     if (sum(!is.na(curr.range.br)) > 0)
     {
       tcrs <- sf::st_crs(curr.range.br)
-      sf::st_crs(curr.range.br) <- NA
-      curr.range.br2 <- try(sf::st_union(sf::st_make_valid(curr.range.br)))
+      curr.range.br.t <- curr.range.br
+      sf::st_crs(curr.range.br.t) <- NA
+      curr.range.br2 <- try(sf::st_union(sf::st_make_valid(curr.range.br.t)))
       sf::st_crs(curr.range.br2) <- tcrs
       
       if (inherits(curr.range.br2, "try-error"))
@@ -160,7 +162,13 @@ for (i in 1:length(ids))
       }
     }
   } else {
-    prop_res[counter,] <- c(curr.sp, 1)
+    #if that one range is a resident range (not a breeding range)
+    if (sum(curr.range$seasonl == 1) > 0)
+    {
+      prop_res[counter,] <- c(curr.sp, 1)
+    } else {
+      prop_res[counter,] <- c(curr.sp, 0)
+    }
     curr.range.res2 <- curr.range
     curr.range.res <- NA
     curr.range.br <- NA
