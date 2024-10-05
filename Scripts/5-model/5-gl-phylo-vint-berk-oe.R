@@ -45,7 +45,8 @@ or_excl <- c('Sphenisciformes', #penguins
 bird_df <- read.csv(paste0(dir, 'data/L3/main-bird-data-birdtree2.csv')) %>%
   dplyr::arrange(Birdtree_name) %>%
   dplyr::filter(Order %ni% or_excl,
-                Migration == 1,
+                # Migration == 1,
+                prop_res > 0.5,
                 !is.na(temp_sd_year)) %>%
   dplyr::mutate(lMass = log(Mass),
                 lGL = log(GenLength),

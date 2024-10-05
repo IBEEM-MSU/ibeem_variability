@@ -151,6 +151,7 @@ BL_data2 <- BL_data %>%
 # Bird range data one by one ----------
 
 # Grab breeding/resident ranges, only extant ranges, only native ranges
+# https://datazone.birdlife.org/species/spcdistPOS
 BL_data_breeding <- BL_data2 %>%
   dplyr::filter(seasonal %in% 1:2, 
                 presence == 1, 

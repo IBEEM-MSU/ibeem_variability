@@ -67,48 +67,108 @@ cn <- c('ID', names(env.dat.rast),
         'temp_rng_space', 'precip_rng_space',
         'cen_lon', 'cen_lat', 'range_size_km2')
 env.out <- data.frame(matrix(NA, nrow = length(ids), ncol = length(cn)))
+prop_res <- data.frame(ID = rep(NA, length(ids)), prop_res = NA)
 colnames(env.out) <- cn                      
 
 counter <- 1
-for (i in 1:length(ids))
+# for (i in 1:length(ids))
+for (i in 1:100)
 {
-  #i <- 1
+  #i <- 6
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/birdtree-', 
                                    curr.sp, '-breeding.shp'),
                             quiet = TRUE)
   
-  #if more than one polygon (resident + breeding ranges), merge them
+  #if more than one polygon
+  #if low, merge all polygons
   if (NROW(curr.range) > 1)
   {
-    #to address 'duplciate vertex' errors:
-    # https://github.com/r-spatial/sf/issues/1762
-    #to address lines across globe for species that cross date line
-    # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
-    tcrs <- sf::st_crs(curr.range) # save crs for later
-    sf::st_crs(curr.range) <- NA  # set crs to missing
-    curr.range2 <- try(sf::st_union(curr.range))
-    sf::st_crs(curr.range2) <- tcrs #reassign crs
-    
-    if (inherits(curr.range2, "try-error"))
+    #if there is res and breeding
+    if (sum(curr.range$seasonl == 2) > 0 & sum(curr.range$seasonl == 1) > 0)
     {
-      tcrs <- sf::st_crs(curr.range)
-      sf::st_crs(curr.range)
-      curr.range2 <- try(sf::st_union(sf::st_make_valid(curr.range)))
-      sf::st_crs(curr.range2) <- tcrs
+      curr.range.res <- dplyr::filter(curr.range, seasonl == 1)
+      curr.range.br <- dplyr::filter(curr.range, seasonl == 2)
+    } else {
+      #if there is res and no breeding
+      if (sum(curr.range$seasonl == 2) == 0 & sum(curr.range$seasonl == 1) > 0)
+      {
+        curr.range.res <- curr.range
+        curr.range.br <- NA
+      } else {
+        #if there is breeding and no res
+        curr.range.res <- NA
+        curr.range.br <- curr.range
+      }
+    }
+    
+    if (sum(!is.na(curr.range.res)) > 0)
+    {
+      #to address 'duplicate vertex' errors:
+      # https://github.com/r-spatial/sf/issues/1762
+      #to address lines across globe for species that cross date line
+      # https://gis.stackexchange.com/questions/462335/st-union-in-r-creates-artifacts-for-global-data
+      tcrs <- sf::st_crs(curr.range.res)
+      sf::st_crs(curr.range.res) <- NA
+      curr.range.res2 <- try(sf::st_union(sf::st_make_valid(curr.range.res)))
+      sf::st_crs(curr.range.res2) <- tcrs
       
-      if (inherits(curr.range2, "try-error"))
+      if (inherits(curr.range.res2, "try-error"))
       {
         # to avoid some 'duplciate vertex' errors:
         # https://github.com/r-spatial/sf/issues/1762
         sf::sf_use_s2(FALSE)
-        curr.range2 <- sf::st_union(curr.range)
+        curr.range.res2 <- sf::st_union(curr.range.res)
         sf::sf_use_s2(TRUE)
+      }
+    } else {
+      curr.range.res2 <- NA
+    }
+    
+    #if there is s breeding range, do the same as with res
+    if (sum(!is.na(curr.range.br)) > 0)
+    {
+      tcrs <- sf::st_crs(curr.range.br)
+      sf::st_crs(curr.range.br) <- NA
+      curr.range.br2 <- try(sf::st_union(sf::st_make_valid(curr.range.br)))
+      sf::st_crs(curr.range.br2) <- tcrs
+      
+      if (inherits(curr.range.br2, "try-error"))
+      {
+        # to avoid some 'duplciate vertex' errors:
+        # https://github.com/r-spatial/sf/issues/1762
+        sf::sf_use_s2(FALSE)
+        curr.range.br2 <- sf::st_union(curr.range.br)
+        sf::sf_use_s2(TRUE)
+      }
+    } else {
+      curr.range.br2 <- NA
+    }
+    
+    #if valid res and br
+    if (!is.na(curr.range.res2) & !is.na(curr.range.br2))
+    {
+      #calculate proportion res/breeding range that is res only
+      area_res <- sf::st_area(curr.range.res2)
+      area_br <- sf::st_area(curr.range.br2)
+      prop_res[counter,] <- c(curr.sp, as.numeric(area_res / (area_res + area_br)))
+    } else {
+      #if res only
+      if (!is.na(curr.range.res2))
+      {
+        prop_res[counter,] <- c(curr.sp, 1)
+      } else {
+      #if br only
+        prop_res[counter,] <- c(curr.sp, 0)
       }
     }
   } else {
-    curr.range2 <- curr.range
+    prop_res[counter,] <- c(curr.sp, 1)
+    curr.range.res2 <- curr.range
+    curr.range.res <- NA
+    curr.range.br <- NA
+    curr.range.br2 <- NA
   }
   
   # exclude Inf for those cells that divide by 0 for CV
@@ -137,47 +197,57 @@ for (i in 1:length(ids))
     return(x3)
   }
   
-  # Extract mean env value across range from raster
-  env.mn.vals <- terra::extract(env.dat.rast,
-                 terra::vect(curr.range2),
-                 touches = TRUE,
-                 fun = function(x) mean(filt_fun(x)))
-
-  #sd of env values across space
-  env.sd.vals <- terra::extract(env.dat.rast,
-                            terra::vect(curr.range2),
-                            touches = TRUE,
-                            fun = function(x) sd_filt_fun(x))
+  if (sum(!is.na(curr.range.res2) > 0))
+  {
+    # Extract mean env value across range from raster
+    env.mn.vals <- terra::extract(env.dat.rast,
+                   terra::vect(curr.range.res2),
+                   touches = TRUE,
+                   fun = function(x) mean(filt_fun(x)))
   
-  #range of mean values across space
-  rng.vals <- terra::extract(tpd.dat.rast,
-                             terra::vect(curr.range2),
-                             touches = TRUE,
-                             fun = function(x) diff(range(filt_fun(x))))
-  
-  # reproject to laea (equal area)
-  curr.range.tr <- sf::st_transform(curr.range2, crs = "+proj=laea")
-  # get centroid - ignore warning
-  cen_ll <- sf::st_centroid(curr.range.tr) %>%
-    sf::st_transform(4326) %>%
-    sf::st_coordinates() %>%
-    as.numeric()
-  # get range size - km^2
-  rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
-  
-  #fill df - current id, env vals, centroid, range size
-  env.out[counter,] <- c(curr.sp, env.mn.vals[-1], 
-                         env.sd.vals[-1], rng.vals[-1],
-                         cen_ll, rsize_km2)
+    #sd of env values across space
+    env.sd.vals <- terra::extract(env.dat.rast,
+                              terra::vect(curr.range.res2),
+                              touches = TRUE,
+                              fun = function(x) sd_filt_fun(x))
+    
+    #range of mean values across space
+    rng.vals <- terra::extract(tpd.dat.rast,
+                               terra::vect(curr.range.res2),
+                               touches = TRUE,
+                               fun = function(x) diff(range(filt_fun(x))))
+    
+    # reproject to laea (equal area)
+    curr.range.tr <- sf::st_transform(curr.range.res2, crs = "+proj=laea")
+    # get centroid - ignore warning
+    cen_ll <- sf::st_centroid(curr.range.tr) %>%
+      sf::st_transform(4326) %>%
+      sf::st_coordinates() %>%
+      as.numeric()
+    # get range size - km^2
+    rsize_km2 <- as.numeric(round(sf::st_area(curr.range.tr) / 1000^2, 0))
+    
+    #fill df - current id, env vals, centroid, range size
+    env.out[counter,] <- c(curr.sp, env.mn.vals[-1], 
+                           env.sd.vals[-1], rng.vals[-1],
+                           cen_ll, rsize_km2)
+  } else {
+    env.mn.vals <- NA
+    env.sd.vals <- NA
+    rng.vals <- NA
+    env.out[counter,] <- c(curr.sp, rep(NA, 37))
+  }
   
   #advance counter
   counter <- counter + 1
   
   #clean up memory
-  rm(curr.range, curr.range2, curr.range.tr, env.mn.vals, env.sd.vals, rng.vals)
+  rm(curr.range, curr.range.res, curr.range.res2, curr.range.br, 
+     curr.range.br2, curr.range.tr, env.mn.vals, env.sd.vals, rng.vals)
   gc()
 }
 
 #write out file
+saveRDS(prop_res, paste0(dir, 'data/L2/range-env-pieces-birdtree/prop_res.rds'))
 save(env.out, file = paste0(dir, 'data/L2/range-env-pieces-birdtree/new-summarized-data-piece-BT-', 
 				stringr::str_extract(file.name, '\\d+')))

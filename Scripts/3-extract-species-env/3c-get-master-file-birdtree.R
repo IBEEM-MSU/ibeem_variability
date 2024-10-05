@@ -23,10 +23,12 @@ library(tidyverse)
 # Get the climate data ----------------------------------------------------
 
 # Loads the full set of current BL IDs
-load(paste0(dir, 'data/L1/range/bird-breeding/birdTree-ids.rda'))
+load(paste0(dir, 'data/L1/range/bird-resident/birdTree-ids.rda'))
 # Load the first chunk of species and climate averages to get number of variables
 # Loads object called "env.out"
 load(paste0(dir, 'data/L2/range-env-pieces-birdtree/summarized-data-piece-BT-1'))
+#read in prop res
+prop_res <- readRDS(paste0(dir, 'data/L2/range-env-pieces-birdtree/prop_res.rds'))
 
 #build into list
 climate.list <- list()
@@ -91,6 +93,7 @@ gen.time.dat <- read.csv(paste0(dir, 'data/L1/trait/bird-et-al-data-with-id.csv'
 main.dat <- dplyr::full_join(avonet.dat2, gen.time.dat,
                              by = 'ID') %>%
   dplyr::full_join(climate.df, by = 'ID') %>%
+  dplyr::full_join(prop_res, by = 'ID') %>%
   dplyr::filter(!is.na(GenLength)) %>%
   # add CV for precip over species range (spatial CV)
   dplyr::mutate(precip_mean_cv_space = precip_mean_sd_space / precip_mean) %>%
