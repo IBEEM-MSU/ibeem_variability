@@ -73,7 +73,7 @@ colnames(env.out) <- cn
 counter <- 1
 for (i in 1:length(ids))
 {
-  #i <- 6721
+  #i <- 1710
   print(paste0("Currently on species ", i, " out of ", length(ids)))
   curr.sp <- ids[i]
   curr.range <- sf::st_read(paste0(dir, 'data/L1/range/bird-breeding/birdtree-', 
