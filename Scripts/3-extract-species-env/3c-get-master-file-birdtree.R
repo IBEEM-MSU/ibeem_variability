@@ -50,9 +50,9 @@ avonet.dat1 <- read.csv(paste0(dir, 'data/L1/trait/avonet-with-id.csv')) %>%
   dplyr::select(-Sequence, -Avibase.ID1,
                 -Total.individuals, -Female, -Male, -Unknown,
                 -Complete.measures, -Inference, -Traits.inferred,
-                -Reference.species, -Centroid.Latitude, -Centroid.Longitude,
+                -Reference.species, -Centroid.Longitude,
                 -Range.Size, -birdlifeID, -notes, -Mass.Source, -Mass.Refs.Other,
-		-matchType) %>%
+                -matchType) %>%
   dplyr::rename(ID = birdtreeID, Avonet_name = Species1,
                 Birdtree_name = birdtreeName, Family = Family1, Order = Order1)
 
@@ -62,8 +62,9 @@ avonet.dat2 <- avonet.dat1 %>%
   # BirdTree species that are split into multiple BirdLife species.
   # Migration and Trophic Niche same across species that have same ID
   dplyr::summarize(Migration = min(Migration),
-		               Trophic.Niche = min(Trophic.Niche),
-		               Mass = mean(Mass)) %>%
+                   Trophic.Niche = min(Trophic.Niche),
+                   Mass = mean(Mass),
+                   Lat = mean(Centroid.Latitude, na.rm = TRUE)) %>%
   dplyr::ungroup() %>%
   #first Family/Order of each ID group (should be the same across all sp ID)
   dplyr::left_join(dplyr::select(avonet.dat1, ID, Avonet_name, Birdtree_name,

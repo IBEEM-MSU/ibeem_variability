@@ -152,6 +152,10 @@ bird_df3[c(min_idx, max_idx),] %>%
 qs <- quantile(exp(bird_df3$lGL), probs = c(0.25, 0.5, 0.75))
 iqr <- qs[3] - qs[1]
 
+#correlation lat and seasonal temp
+cor(abs(bird_df$Lat), bird_df$temp_sd_season)
+cor(abs(bird_df$Lat), bird_df$precip_cv_season)
+
 
 # scale/prep data ---------------------------------------------------------
 

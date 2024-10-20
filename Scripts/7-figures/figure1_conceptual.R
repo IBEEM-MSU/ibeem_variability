@@ -227,8 +227,8 @@ ggplot() +
 
 # load bird data
 
-bird <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-', gl_run_date, 
-                            '/bird-gl-phylo-vint-data-', gl_run_date, '.rds'))$pro_data
+bird <- readRDS(paste0(dir, 'Results/bird-gl-phylo-vint-berk-oe-', gl_run_date, 
+                       '/bird-gl-phylo-vint-berk-oe-data-', gl_run_date, '.rds'))$pro_data
 
 head(bird)
 summary(bird)
