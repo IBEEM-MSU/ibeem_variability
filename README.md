@@ -27,28 +27,28 @@ Funding is provided by a Michigan State University Strategic Partnership Grant f
 
 Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetske. Environmental variation shapes life history of the world’s birds. *In Review*
 
-Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. [https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c](https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c) (Accessed 2024-09-11).
-
 ## Location of data
 
-Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c (Accessed 2024-09-11).
+Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2024. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 2. Environmental Data Initiative. [https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c](https://doi.org/10.6073/pasta/fc057e288924cb09fc3eb5092856d99c) (Accessed 2024-09-11).
 
 ## Spatiotemporal extent and resolution
 
 - Spatial extent: global
-- Spatial resolution: 
-- Temporal extent: 
-- Temporal resolution: 
+- Spatial resolution: 0.25° (climate data)
+- Temporal extent: 1950–2022 (climate data)
 
 ## Usage
 
-Software used to analyze data includes: R version ?
+Software used to analyze data includes: R version 4.3.2
 
 ## Workflow
 
-The workflow for this repository follows the guidelines set out by the Environmental Data Initiative (EDI). Briefly, this involves aligning with FAIR data practices, and employing a workflow that uses different levels for harmonization and derived data products. Data are read in as raw data at Level 0 (L0). Level 1 (L1) data represent cleaned L0 data. Level 2 data are data merged or otherwise derived from two or more L1 data.
+The workflow for this repository follows the guidelines set out by the Environmental Data Initiative (EDI). Briefly, this involves aligning with FAIR data practices, and employing a workflow that uses different levels for harmonization and derived data products. Data are read in as raw data at Level 0 (L0). Level 1 (L1) data represent cleaned L0 data. Level 2 data are data merged or otherwise derived from two or more L1 data, etc.
 
 **Repository structure:**
+
+*Note: Scripts are designed to be run in sequence from 0-XXXX.R -> 1-XXXX.R -> ...*
+
 * `Scripts/`
   * `0-config.R` - congfiguration file specifying location of data directory and model run date
   * `0-csv-to-tif.R` - convert csv files back into geospatial format (tif) for analysis  
@@ -107,31 +107,8 @@ The workflow for this repository follows the guidelines set out by the Environme
     * `env_var.csv` - archival environmental variability grid data
     * `delta.csv` - archival $\delta_T$ and $\delta_P$ grid data 
 
-## File naming conventions
-
-- **Data Files**: [*Specify a clear naming convention for data files, such as `YYYY-MM-DD_sensorID_raw.csv`.*]
-- **Scripts**: [*Use descriptive names for scripts and follow a consistent naming convention, such as `process_data.py` or `cleaning_script.R`. If scripts are designed to be run in sequence, it may be helpful to number them in order (e.g., `1_cleaning_script.R`, `2_process_data.R`)*]
-
-[*Provide descriptions of the scripts in the `/L0` folder, including their purpose, inputs, and outputs. Specify whether scripts are standalone or designed to be run in sequence.*] 
-
-### [*`preprocess_data.py`*]
-
-- **Purpose**: [*Cleans and preprocesses raw Level 0 data.*]
-- **Inputs**: [*Raw data files in the `/data` folder (`YYYY-MM-DD_sensorID_raw.ext`).*]
-- **Outputs**: [*Processed data files in a new folder (`/processed_data`).*]
-
-### [*`merge_datasets.R`*]
-
-- **Purpose**: [*Merges multiple preprocessed datasets.*]
-- **Inputs**: [*Processed data files in the `/processed_data` folder.*]
-- **Outputs**: [*Merged dataset saved as `merged_data.csv` in the `/output` folder.*]
-
-## License
-
-## Contributors
-
 ## Contact Information
 
-
+Casey Youngflesh - cyoungf@clemson.edu
 
 
