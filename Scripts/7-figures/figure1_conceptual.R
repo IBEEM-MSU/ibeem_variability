@@ -280,13 +280,15 @@ bird %>%
   select(ID, species, Order, Family, lGL, temp_sd_season, temp_sd_year) %>%
   arrange(lGL) %>%
   #filter(temp_sd_season > 1.49) %>%
-  filter(temp_sd_season > 4) %>%
+  filter(temp_sd_season > 4) #%>%
   #filter(temp_sd_year < 0.39) %>%
   #filter(Family == "Elachuridae") %>%
-  filter(Family == "Trochilidae") %>%
-  print(n= 50)
+  #filter(Family == "Trochilidae") %>%
+  #print(n= 50)
 
 # Selasphorus platycercus (ID 9708), GenLength = 2.593, temp_sd_season = 8.40, temp_sd_year = 0.639
+
+# Otus_rutilus (ID 6394), GenLength = 2.047, temp_sd_season = 2.102686, temp_sd_year = 0.2770754
 
 ### Extract species distribution ranges and environmental data ----
 
@@ -297,6 +299,9 @@ dr_9030 <- sf::st_read(paste0(dir, "/data/L1/range/bird-breeding/birdtree-9030-b
   terra::vect() # parrot
 
 dr_9708 <- sf::st_read(paste0(dir, "/data/L1/range/bird-breeding/birdtree-9708-breeding.shp")) %>% 
+  terra::vect() 
+
+dr_6394 <- sf::st_read(paste0(dir, "/data/L1/range/bird-breeding/birdtree-6394-breeding.shp")) %>% 
   terra::vect() 
 
 # Read temporal env data
@@ -352,7 +357,7 @@ get_temp_precip <- function(bird_range){
     #convert lon to -180 to 180
     lon[which(lon > 180)] <- (360 - lon[which(lon> 180)]) * -1
     
-    #covert dates to ymd
+    #convert dates to ymd
     ymd_dates <- lubridate::ymd("1900-01-01") + lubridate::hours(time)
     
     # get temperature
@@ -424,14 +429,18 @@ write_csv(temp_mean_sd_sp9030, paste0(dir, "data/L3/temp_mean_sd_sp9030.csv"))
 temp_mean_sd_sp9708 <- get_temp_precip(dr_9708)
 write_csv(temp_mean_sd_sp9708, paste0(dir, "data/L3/temp_mean_sd_sp9708.csv"))
 
+temp_mean_sd_sp6394 <- get_temp_precip(dr_6394)
+write_csv(temp_mean_sd_sp6394, paste0(dir, "data/L3/temp_mean_sd_sp6394.csv"))
+
 ### Plot time series ----
 
 #Read in temp_mean_sd files for both spp
-#parrot
+
+# Parrot
 monthly_temp_sp9030<- read_csv(paste0(dir, "data/L3/temp_mean_sd_sp9030.csv"))
 
-# Broad-tailed hummingbird
-monthly_temp_sp9708<- read_csv(paste0(dir, "data/L3/temp_mean_sd_sp9708.csv"))
+# Owl
+monthly_temp_sp6394<- read_csv(paste0(dir, "data/L3/temp_mean_sd_sp6394.csv"))
 
 #pivot longer
 monthly_temp_sp9030_long_t <- pivot_longer(monthly_temp_sp9030,
@@ -466,7 +475,7 @@ monthly_temp_sp9030_long <- monthly_temp_sp9030_long_t %>%
 rm(monthly_temp_sp9030_long_sd, monthly_temp_sp9030_long_t)
 
 #pivot longer
-monthly_temp_sp9708_long_t <- pivot_longer(monthly_temp_sp9708,
+monthly_temp_sp6394_long_t <- pivot_longer(monthly_temp_sp6394,
                                            cols = starts_with("mean"),
                                            names_to = "month_temp",
                                            values_to = "temp") %>% 
@@ -479,7 +488,7 @@ monthly_temp_sp9708_long_t <- pivot_longer(monthly_temp_sp9708,
   select(-month_temp, -date_ym) %>%
   relocate(temp, .after = date)
 
-monthly_temp_sp9708_long_sd <- pivot_longer(monthly_temp_sp9708,
+monthly_temp_sp6394_long_sd <- pivot_longer(monthly_temp_sp6394,
                                             cols = starts_with("sd"),
                                             names_to = "month_sd",
                                             values_to = "sd") %>% 
@@ -492,10 +501,10 @@ monthly_temp_sp9708_long_sd <- pivot_longer(monthly_temp_sp9708,
   select(-month_sd, -date_ym) %>%
   relocate(sd, .after = date)
 
-monthly_temp_sp9708_long <- monthly_temp_sp9708_long_t %>%
-  left_join(monthly_temp_sp9708_long_sd, by = c("year", "month", "date"))
+monthly_temp_sp6394_long <- monthly_temp_sp6394_long_t %>%
+  left_join(monthly_temp_sp6394_long_sd, by = c("year", "month", "date"))
 
-rm(monthly_temp_sp9708_long_sd, monthly_temp_sp9708_long_t)
+rm(monthly_temp_sp6394_long_sd, monthly_temp_sp6394_long_t)
 
 # plots
 
@@ -512,7 +521,7 @@ monthly_temp_sp9030_long %>%
                date_labels = "%Y") +
   scale_y_continuous(limits = c(-30, 30))
 
-monthly_temp_sp9708_long %>%
+monthly_temp_sp6394_long %>%
   ggplot(aes(x = date, y = temp)) +
   #geom_point() +
   geom_line() +
@@ -526,12 +535,12 @@ monthly_temp_sp9708_long %>%
   scale_y_continuous(limits = c(-30, 30))
 
 ggplot() +
-  geom_line(aes(x = monthly_temp_sp9708_long$date,
-                y = monthly_temp_sp9708_long$temp),
+  geom_line(aes(x = monthly_temp_sp6394_long$date,
+                y = monthly_temp_sp6394_long$temp),
             color = "#bf1da1") +
-  geom_ribbon(aes(x = monthly_temp_sp9708_long$date,
-                  ymin = monthly_temp_sp9708_long$temp - monthly_temp_sp9708_long$sd,
-                  ymax = monthly_temp_sp9708_long$temp + monthly_temp_sp9708_long$sd),
+  geom_ribbon(aes(x = monthly_temp_sp6394_long$date,
+                  ymin = monthly_temp_sp6394_long$temp - monthly_temp_sp6394_long$sd,
+                  ymax = monthly_temp_sp6394_long$temp + monthly_temp_sp6394_long$sd),
               alpha = 0.2,
               fill = "#bf1da1") +
   geom_line(aes(x = monthly_temp_sp9030_long$date,
@@ -543,9 +552,9 @@ ggplot() +
               alpha = 0.2,
               fill = "#1dbf76") +
   geom_segment(aes(x = as_date(-7490),
-                   xend = as_date(-6541),
-                   y = -11,
-                   yend = -11),
+                   xend = as_date(-6760),
+                   y = 14,
+                   yend = 14),
                color = "#bf1da1",
                #fill = "black",
                linewidth = 1.5) +
@@ -558,7 +567,7 @@ ggplot() +
   theme_classic() +
   scale_x_date(date_breaks = "5 years",
                date_labels = "%Y") +
-  scale_y_continuous(limits = c(-12, 30)) +
+  scale_y_continuous(limits = c(13, 30)) +
   labs(y = "Temperature (°C)",
        x = NULL) +
   theme(legend.text = element_text(size = 16))
@@ -589,14 +598,14 @@ ggplot() +
                fill = "grey75",
                color = "gray10",
                size = 0.1) +
-  geom_sf(data = dr_9708,
+  geom_sf(data = dr_6394,
           color = "#bf1da1",
           fill = "#bf1da1",
           linetype = "solid",
           alpha = 0.8) +
   coord_sf(crs = 4326,
-           xlim = c(-120,-80),
-           ylim = c(15,43)) +
+           xlim = c(20,60),
+           ylim = c(-10,-30)) +
   theme_bw() +
   labs(y = NULL,
        x = NULL)
