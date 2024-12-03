@@ -1,4 +1,4 @@
-# Variability_life_history
+# Environmental variability shapes life history of the world’s birds
 
 This repository contains code to assess the relationship between environmental variability and pace of life across the world's resident bird species. 
 
