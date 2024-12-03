@@ -9,7 +9,7 @@
 
 # load environment variables ------------------------------------------------
 
-source("./Scripts/0-config.R")
+source('./Scripts/0-config.R')
 
 
 # load packages -----------------------------------------------------------
@@ -19,10 +19,12 @@ library(tidyverse)
 
 # read in data ------------------------------------------------------------
 
+#source data: 
+#Bird, J. P., R. Martin, H. R. Akçakaya, J. Gilroy, I. J. Burfield, S. Garnett, A. Symes, J. Taylor, Ç. H. Şekercioğlu, and S. H. M. Butchart. 2020. Generation lengths of the world’s birds and their implications for extinction risk. Conservation Biology. 34(5), 1252-1261. (DOI: doi.org/10.1111/cobi.13486)
+
 #from Bird et al. 2020: 
 #Published values of F, L and S and the original source (Appendix S1), published (observed), modelled and extrapolated values of F, L and S (Appendix S2), a database of avian life-history traits recorded for individual species (Appendix S3), calculated GFLS, GFL, GFS and G for all birds (noting those considered priorities for research prior to the adoption of the G for Red List assessments) (Appendix S4), and revised Red List trend estimates with predicted qualifying Red List categories for all birds (Appendix S5) are available online. The authors are solely responsible for the content and functionality of these materials. Queries (other than absence of the material) should be directed to the corresponding author.
 
-#ignored Data dir on git...small size though so could add it if desired
 #recorded
 table3 <- readxl::read_excel(paste0(dir, 'data/L0/Bird_et_al_2020/cobi13486-sup-0003-tables3.xlsx'))
 #final - should use GenLength

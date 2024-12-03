@@ -13,7 +13,7 @@ rm(list = ls())
 
 # load environment variables ------------------------------------------------
 
-source("./Scripts/0-config.R")
+source('./Scripts/0-config.R')
 
 
 # load packages ------------------------------------------------
@@ -26,6 +26,13 @@ library(phytools)
 bt.dir <- paste0(dir, '/data/L0/phylogeny/')
 out.dir <- paste0(dir, '/data/L1/phylogeny/')
 bt.dat <- read.tree(paste0(bt.dir, 'BirdzillaHackett6.tre'))
+
+
+# data --------------------------------------------------------------------
+
+#tree data were compiled from `HackettStage2_XXXX.zip` downloads from Birdtree.org
+#source data: 
+#Jetz, W., G. H. Thomas, J. B. Joy, K. Hartmann, and A. O. Mooers. 2012. The global diversity of birds in space and time. Nature 491:444–448.(DOI: [https://doi.org/10.1038/nature11631](https://doi.org/10.1038/nature11631))
 
 
 # Running from desktop (or interactive session) ----------

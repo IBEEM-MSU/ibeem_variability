@@ -12,7 +12,7 @@ rm(list = ls())
 
 # load environment variables ------------------------------------------------
 
-source("./Scripts/0-config.R")
+source('./Scripts/0-config.R')
 
 
 # load packages -----------------------------------------------------------

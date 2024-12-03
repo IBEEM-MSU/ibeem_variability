@@ -32,6 +32,16 @@ library(tidyverse)
 library(ncdf4)
 
 
+# data --------------------------------------------------------------------
+
+#data are compiled from two products
+#source data 1950-1978: 
+#European Centre for Medium-Range Weather Forecasts. 2022. ERA5 monthly mean back extension 1950-1978 (Preliminary version). Research Data Archive at the National Center for Atmospheric Research, Computational and Information Systems Laboratory. (DOI: https://doi.org/10.5065/JAXB-X906)
+
+#source data 1979-2022: 
+#European Centre for Medium-Range Weather Forecasts. 2019, updated yearly. ERA5 Reanalysis (Monthly Mean 0.25 Degree Latitude-Longitude Grid). Research Data Archive at the National Center for Atmospheric Research, Computational and Information Systems Laboratory. (DOI: https://doi.org/10.5065/P8GT-0R61)
+
+
 # function ----------------------------------------------------------------
 
 #function to process temp and precip data

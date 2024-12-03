@@ -9,7 +9,7 @@
 
 # load environment variables ------------------------------------------------
 
-source("./Scripts/0-config.R")
+source('./Scripts/0-config.R')
 
 
 # load packages -----------------------------------------------------------
@@ -19,7 +19,9 @@ library(tidyverse)
 
 # load bird data ---------------------------------------------------------------
 
-#Bired et al. Supp Table 4
+#Bird et al. Supp Table 4
+#Bird, J. P., R. Martin, H. R. Akçakaya, J. Gilroy, I. J. Burfield, S. Garnett, A. Symes, J. Taylor, Ç. H. Şekercioğlu, and S. H. M. Butchart. 2020. Generation lengths of the world’s birds and their implications for extinction risk. Conservation Biology. 34(5), 1252-1261. (DOI: doi.org/10.1111/cobi.13486)
+
 table4 <- readxl::read_excel(paste0(dir, 'data/L0/Bird_et_al_2020/cobi13486-sup-0004-tables4.xlsx'))
 
 t4_mod <- dplyr::rename(table4, 
