@@ -12,12 +12,12 @@ rm(list = ls())
 
 # load environment variables ------------------------------------------------
 
-source("./Scripts/0-config.R")
+source('./Scripts/0-config.R')
 
 
 # set directories and date ------------------------------------------------
 
-sc_dir <- "./" # Assumes you're running the code from dir sourced in 0-config.Rsc_dir <- dir
+sc_dir <- 'dir' # Assumes you're running the code from dir sourced in 0-config.R
 run_date <- Sys.Date()
 
 
@@ -167,19 +167,6 @@ precip_cv_season_scalar <- 0.1
 precip_cv_year_scalar <- 0.5
 y_scalar <- 2
 
-# #center predictors
-# tt <- data.frame(lMass = bird_df3$lMass *
-#                    lMass_scalar,
-#                  temp_sd_season = bird_df3$temp_sd_season *
-#                    temp_sd_season_scalar,
-#                  temp_sd_year = bird_df3$temp_sd_year *
-#                    temp_sd_year_scalar,
-#                  precip_cv_season = bird_df3$precip_cv_season *
-#                    precip_cv_season_scalar,
-#                  precip_cv_year = bird_df3$precip_cv_year *
-#                    precip_cv_year_scalar) %>%
-#   apply(2, function(x) scale(x, scale = FALSE)[,1])
-
 
 # delta -------------------------------------------------------------------
 
@@ -261,11 +248,6 @@ DATA <- list(N = NROW(bird_df3),
              Rho = Rho, #corr matrix
              pro_data = bird_df3)
 
-# summary(lm(DATA$Y ~ DATA$X[,1] +
-#              DATA$X[,2] +
-#              DATA$X[,3] +
-#              DATA$X[,4] +
-#              DATA$X[,5]))
 
 options(mc.cores = parallel::detectCores())
 
