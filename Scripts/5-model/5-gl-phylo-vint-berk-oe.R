@@ -17,7 +17,7 @@ source('./Scripts/0-config.R')
 
 # set directories and date ------------------------------------------------
 
-sc_dir <- 'dir' # Assumes you're running the code from dir sourced in 0-config.R
+sc_dir <- dir # Assumes you're running the code from dir sourced in 0-config.R
 run_date <- Sys.Date()
 
 
