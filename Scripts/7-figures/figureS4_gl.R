@@ -16,6 +16,14 @@ library(ggplot2)
 library(rnaturalearth)
 library(munsell)
 
+
+rm(list = ls())
+
+# load environmental variables ------------------------------------------------
+
+source("./Scripts/0-config.R")
+
+
 # Load raster ----
 
 del_ras <- terra::rast(paste0(dir, 'data/L3/raster-gl-dT-dP-nsp.tif')) 
