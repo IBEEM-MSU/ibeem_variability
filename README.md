@@ -25,7 +25,7 @@ Youngflesh, C, K Kapsar, A Uscanga, PJ Williams, JW Doser, L Kounta, PL Zarnetsk
 
 ## Data
 
-* Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2025. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 4. Environmental Data Initiative. https://doi.org/10.6073/pasta/31b676ea512fe95e8702d209c75dd5fb (Accessed 2025-01-10).
+* Youngflesh, C., K. Kapsar, A. Uscanga, P.J. Williams, J.W. Doser, L. Kounta, and P.L. Zarnetske. 2025. Inter- and intra-annual temperature and precipitation variability (1950-2022) across the ranges of non-migratory birds and their association with generation length ver 4. Environmental Data Initiative. DOI [https://doi.org/10.6073/pasta/31b676ea512fe95e8702d209c75dd5fb](https://doi.org/10.6073/pasta/31b676ea512fe95e8702d209c75dd5fb) (Accessed 2025-01-10).
   * `env_var.csv` - Global grid of environmental variability
   * `delta.csv` - Global grid of environmental change scaled by variability and generation length 
   * `final-bird-data-for-archival.csv` - Model data: Species generation length as a function of environmental variability
